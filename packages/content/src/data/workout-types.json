@@ -1,0 +1,10 @@
+[
+  { "id": "strength", "name": "Strength", "icon": "barbell", "color": "#FF4D6D", "summary": "Heavy compound lifts, 3–6 reps, long rest. Build raw force.", "minutes": [45, 75], "intensity": 4, "settings": ["GYM", "HYBRID"] },
+  { "id": "hypertrophy", "name": "Hypertrophy", "icon": "body", "color": "#7C5CFF", "summary": "6–15 reps close to failure. Build muscle size and shape.", "minutes": [40, 70], "intensity": 3, "settings": ["HOME", "GYM", "HYBRID"] },
+  { "id": "calisthenics", "name": "Calisthenics", "icon": "accessibility", "color": "#3DDC97", "summary": "Bodyweight mastery and skill progressions. Train anywhere.", "minutes": [30, 60], "intensity": 3, "settings": ["HOME", "GYM", "HYBRID"] },
+  { "id": "hiit", "name": "HIIT", "icon": "flash", "color": "#FF9F43", "summary": "Short, hard intervals. Conditioning and fat loss in less time.", "minutes": [15, 30], "intensity": 5, "settings": ["HOME", "GYM", "HYBRID"] },
+  { "id": "cardio", "name": "Zone 2 Cardio", "icon": "heart", "color": "#38C6F4", "summary": "Steady, conversational pace. Builds your aerobic engine.", "minutes": [30, 60], "intensity": 2, "settings": ["HOME", "GYM", "HYBRID"] },
+  { "id": "core", "name": "Core", "icon": "fitness", "color": "#F5C451", "summary": "Anti-extension, anti-rotation and carries. A stronger trunk.", "minutes": [10, 20], "intensity": 2, "settings": ["HOME", "GYM", "HYBRID"] },
+  { "id": "mobility", "name": "Mobility", "icon": "leaf", "color": "#7BE8B8", "summary": "Joint range, flexibility and recovery flows.", "minutes": [10, 30], "intensity": 1, "settings": ["HOME", "GYM", "HYBRID"] },
+  { "id": "power", "name": "Power & Athletic", "icon": "rocket", "color": "#A893FF", "summary": "Jumps, throws and sprints. Speed and explosiveness.", "minutes": [30, 45], "intensity": 4, "settings": ["GYM", "HYBRID", "HOME"] }
+]

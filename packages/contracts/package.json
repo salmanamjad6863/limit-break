@@ -1,0 +1,12 @@
+{
+  "name": "@lb/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "typecheck": "tsc -p tsconfig.json" },
+  "dependencies": { "zod": "^4.3.2" },
+  "devDependencies": { "@lb/config": "workspace:*", "typescript": "~5.9.3" }
+}

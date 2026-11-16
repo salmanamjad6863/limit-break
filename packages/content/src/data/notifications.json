@@ -1,0 +1,10 @@
+{
+  "dailyQuest": "[SYSTEM] Daily Quest has arrived, {name}. Failure to complete will result in an appropriate penalty.",
+  "gateOpen": "[SYSTEM] Gate {gate} has opened. Estimated clear time: {minutes} min.",
+  "streakRisk": "[SYSTEM] Your {streak}-day streak will collapse in 2 hours.",
+  "penaltyZone": "[SYSTEM] You have entered the Penalty Zone. Survive 5 minutes to restore your streak.",
+  "proteinLow": "[SYSTEM] Mana at {pct}%. {grams} g protein remaining.",
+  "trialUnlocked": "[SYSTEM] You are eligible for promotion to {rank}-Rank. The Trial awaits.",
+  "weeklyDebrief": "[SYSTEM] Weekly report compiled. The System has… observations.",
+  "winBack": "[SYSTEM] Your Shadow-Self grows stronger while you rest."
+}

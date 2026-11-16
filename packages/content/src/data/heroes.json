@@ -1,0 +1,8 @@
+[
+  { "id": "ren", "name": "Ren Kurogane", "epithet": "The Shadow Hunter", "heroClass": "HYBRID", "accent": "#8B5CF6" },
+  { "id": "jin", "name": "Jin Sakai", "epithet": "The Ronin", "heroClass": "FIGHTER", "accent": "#F43F5E" },
+  { "id": "kaze", "name": "Kaze", "epithet": "The Shinobi", "heroClass": "ASSASSIN", "accent": "#34D399" },
+  { "id": "gora", "name": "Gora", "epithet": "The Iron Titan", "heroClass": "JUGGERNAUT", "accent": "#FB923C" },
+  { "id": "aiko", "name": "Aiko Tsubasa", "epithet": "The Wind Ranger", "heroClass": "RANGER", "accent": "#38BDF8" },
+  { "id": "hoshi", "name": "Master Hoshi", "epithet": "The Fist Monk", "heroClass": "MONK", "accent": "#FACC15" }
+]

@@ -1,0 +1,29 @@
+{
+  "id": "burn-protocol", "name": "Burn Protocol", "typeId": "hiit",
+  "summary": "Strength circuits plus a short HIIT finisher. Built for a fat-loss phase at home.",
+  "levels": ["beginner", "novice", "intermediate"], "locations": ["HOME", "HYBRID", "GYM"], "goals": ["cut"], "daysPerWeek": [3, 4, 5],
+  "blockWeeks": 6, "deloadEvery": 6,
+  "days": [
+    { "id": "a", "name": "Burn A · Lower Bias", "focus": "full", "slots": [
+      { "pattern": "squat", "role": "main", "sets": 3, "reps": [10, 15], "rir": 2, "prefer": ["goblet-squat", "bodyweight-squat"] },
+      { "pattern": "horizontal_push", "role": "main", "sets": 3, "reps": [8, 15], "rir": 2, "prefer": ["push-up", "knee-push-up", "db-floor-press"] },
+      { "pattern": "hinge", "role": "secondary", "sets": 3, "reps": [10, 15], "rir": 2, "prefer": ["db-romanian-deadlift", "single-leg-rdl", "kettlebell-swing"] },
+      { "pattern": "horizontal_pull", "role": "secondary", "sets": 3, "reps": [10, 15], "rir": 2, "prefer": ["db-row", "band-row", "doorframe-row"] },
+      { "pattern": "conditioning", "role": "finisher", "sets": 6, "seconds": [30, 30], "rir": 1, "prefer": ["mountain-climber", "burpee", "high-knees"] }
+    ]},
+    { "id": "b", "name": "Burn B · Upper Bias", "focus": "full", "slots": [
+      { "pattern": "lunge", "role": "main", "sets": 3, "reps": [10, 12], "rir": 2, "prefer": ["reverse-lunge", "walking-lunge"] },
+      { "pattern": "vertical_push", "role": "main", "sets": 3, "reps": [8, 12], "rir": 2, "prefer": ["db-shoulder-press", "pike-push-up", "band-overhead-press"], "fallback": ["horizontal_push"] },
+      { "pattern": "vertical_pull", "role": "secondary", "sets": 3, "reps": [8, 12], "rir": 2, "prefer": ["band-pulldown", "lat-pulldown", "negative-pull-up"], "fallback": ["horizontal_pull"] },
+      { "pattern": "hip_thrust", "role": "accessory", "sets": 3, "reps": [12, 20], "rir": 1, "prefer": ["glute-bridge"] },
+      { "pattern": "conditioning", "role": "finisher", "sets": 8, "seconds": [20, 20], "rir": 1, "prefer": ["burpee", "skater-hop", "jumping-jack"] }
+    ]},
+    { "id": "c", "name": "Burn C · Total Body", "focus": "full", "slots": [
+      { "pattern": "squat", "role": "main", "sets": 3, "reps": [12, 20], "rir": 2, "prefer": ["bodyweight-squat", "goblet-squat"] },
+      { "pattern": "horizontal_pull", "role": "main", "sets": 3, "reps": [10, 15], "rir": 2, "prefer": ["inverted-row", "band-row", "db-row"] },
+      { "pattern": "horizontal_push", "role": "secondary", "sets": 3, "reps": [8, 15], "rir": 2, "prefer": ["push-up", "incline-push-up"] },
+      { "pattern": "carry", "role": "accessory", "sets": 3, "seconds": [30, 45], "rir": 2, "prefer": ["farmer-carry"], "fallback": ["core_anti_extension"] },
+      { "pattern": "conditioning", "role": "finisher", "sets": 6, "seconds": [40, 40], "rir": 1, "prefer": ["high-knees", "mountain-climber"] }
+    ]}
+  ]
+}

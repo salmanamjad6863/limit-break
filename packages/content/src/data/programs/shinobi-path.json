@@ -1,0 +1,36 @@
+{
+  "id": "shinobi-path", "name": "Shinobi Path", "typeId": "calisthenics",
+  "summary": "Calisthenics skill progressions: pull-ups, pistols and handstand push-ups. Upper/lower split.",
+  "levels": ["novice", "intermediate"], "locations": ["HOME", "HYBRID"], "goals": ["recomp", "maintain", "cut", "bulk"], "daysPerWeek": [4],
+  "blockWeeks": 5, "deloadEvery": 5,
+  "days": [
+    { "id": "upper-a", "name": "Upper A · Pull Focus", "focus": "upper", "slots": [
+      { "pattern": "vertical_pull", "role": "main", "sets": 4, "reps": [4, 8], "rir": 2, "prefer": ["pull-up", "band-assisted-pull-up", "negative-pull-up"], "fallback": ["horizontal_pull"] },
+      { "pattern": "horizontal_push", "role": "main", "sets": 4, "reps": [6, 12], "rir": 2, "prefer": ["diamond-push-up", "decline-push-up", "push-up"] },
+      { "pattern": "horizontal_pull", "fallback": ["rear_delt"], "role": "secondary", "sets": 3, "reps": [8, 12], "rir": 2, "prefer": ["inverted-row", "doorframe-row"] },
+      { "pattern": "vertical_push", "role": "secondary", "sets": 3, "reps": [5, 10], "rir": 2, "prefer": ["pike-push-up"] },
+      { "pattern": "core_anti_extension", "role": "core", "sets": 3, "seconds": [15, 30], "rir": 2, "prefer": ["hollow-hold", "plank"] }
+    ]},
+    { "id": "lower-a", "name": "Lower A · Single-Leg Strength", "focus": "lower", "slots": [
+      { "pattern": "lunge", "role": "main", "sets": 4, "reps": [6, 10], "rir": 2, "prefer": ["bulgarian-split-squat", "split-squat"] },
+      { "pattern": "hinge", "role": "secondary", "sets": 3, "reps": [8, 12], "rir": 2, "prefer": ["single-leg-rdl"] },
+      { "pattern": "hip_thrust", "role": "accessory", "sets": 3, "reps": [10, 15], "rir": 1, "prefer": ["single-leg-glute-bridge"] },
+      { "pattern": "calf", "role": "accessory", "sets": 3, "reps": [12, 20], "rir": 1 },
+      { "pattern": "core_flexion", "role": "core", "sets": 3, "reps": [8, 12], "rir": 2, "prefer": ["hanging-knee-raise"], "fallback": ["core_anti_extension"] }
+    ]},
+    { "id": "upper-b", "name": "Upper B · Push Focus", "focus": "upper", "slots": [
+      { "pattern": "vertical_push", "role": "main", "sets": 4, "reps": [4, 8], "rir": 2, "prefer": ["pike-push-up", "wall-handstand-push-up"] },
+      { "pattern": "vertical_pull", "role": "main", "sets": 4, "reps": [5, 10], "rir": 2, "prefer": ["chin-up", "band-assisted-pull-up", "negative-pull-up"], "fallback": ["horizontal_pull"] },
+      { "pattern": "horizontal_push", "role": "secondary", "sets": 3, "reps": [6, 10], "rir": 2, "prefer": ["archer-push-up", "diamond-push-up", "push-up"] },
+      { "pattern": "horizontal_pull", "fallback": ["rear_delt"], "role": "secondary", "sets": 3, "reps": [8, 12], "rir": 2, "prefer": ["inverted-row", "doorframe-row"] },
+      { "pattern": "core_anti_lateral", "role": "core", "sets": 3, "seconds": [20, 40], "rir": 2, "prefer": ["side-plank"] }
+    ]},
+    { "id": "lower-b", "name": "Lower B · Squat Skills", "focus": "lower", "slots": [
+      { "pattern": "squat", "role": "main", "sets": 4, "reps": [3, 8], "rir": 2, "prefer": ["pistol-squat", "bulgarian-split-squat"], "fallback": ["lunge"] },
+      { "pattern": "lunge", "role": "secondary", "sets": 3, "reps": [8, 12], "rir": 2, "prefer": ["step-up", "walking-lunge"] },
+      { "pattern": "plyo", "role": "accessory", "sets": 3, "reps": [5, 8], "rir": 3, "prefer": ["jump-squat"], "optional": true },
+      { "pattern": "calf", "role": "accessory", "sets": 3, "reps": [12, 20], "rir": 1 },
+      { "pattern": "core_anti_rotation", "role": "core", "sets": 3, "reps": [8, 12], "rir": 2, "prefer": ["bird-dog", "pallof-press"] }
+    ]}
+  ]
+}

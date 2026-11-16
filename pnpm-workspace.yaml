@@ -1,0 +1,12 @@
+packages:
+  - apps/*
+  - packages/*
+
+# React Native libraries resolve more reliably with a hoisted node_modules.
+# (Expo docs: isolated installs are supported from SDK 54; hoisted is the safe fallback.)
+nodeLinker: hoisted
+
+onlyBuiltDependencies:
+  - "@prisma/engines"
+  - prisma
+  - esbuild

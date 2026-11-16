@@ -1,0 +1,30 @@
+{
+  "id": "foundation", "name": "Foundation", "typeId": "calisthenics",
+  "summary": "Learn the core movement patterns with bodyweight. Three full-body sessions a week.",
+  "levels": ["beginner"], "locations": ["HOME", "HYBRID"], "goals": ["cut", "maintain", "recomp", "bulk"], "daysPerWeek": [3],
+  "blockWeeks": 6, "deloadEvery": 6,
+  "days": [
+    { "id": "a", "name": "Full Body A", "focus": "full", "slots": [
+      { "pattern": "squat", "role": "main", "sets": 3, "reps": [8, 15], "rir": 2, "prefer": ["bodyweight-squat", "goblet-squat"] },
+      { "pattern": "horizontal_push", "role": "main", "sets": 3, "reps": [6, 12], "rir": 2, "prefer": ["knee-push-up", "push-up", "incline-push-up"] },
+      { "pattern": "horizontal_pull", "role": "secondary", "sets": 3, "reps": [8, 12], "rir": 2, "prefer": ["doorframe-row", "band-row", "db-row"] },
+      { "pattern": "hip_thrust", "role": "accessory", "sets": 3, "reps": [10, 15], "rir": 2, "prefer": ["glute-bridge"] },
+      { "pattern": "core_anti_extension", "role": "core", "sets": 3, "seconds": [20, 40], "rir": 2, "prefer": ["plank"] }
+    ]},
+    { "id": "b", "name": "Full Body B", "focus": "full", "slots": [
+      { "pattern": "lunge", "role": "main", "sets": 3, "reps": [8, 12], "rir": 2, "prefer": ["reverse-lunge", "split-squat"] },
+      { "pattern": "vertical_push", "role": "main", "sets": 3, "reps": [6, 10], "rir": 2, "prefer": ["pike-push-up", "band-overhead-press", "db-shoulder-press"], "fallback": ["horizontal_push"] },
+      { "pattern": "vertical_pull", "role": "secondary", "sets": 3, "reps": [6, 10], "rir": 2, "prefer": ["band-pulldown", "negative-pull-up"], "fallback": ["horizontal_pull"] },
+      { "pattern": "hinge", "role": "accessory", "sets": 3, "reps": [8, 12], "rir": 2, "prefer": ["single-leg-rdl", "db-romanian-deadlift"] },
+      { "pattern": "core_anti_extension", "role": "core", "sets": 3, "reps": [8, 12], "rir": 2, "prefer": ["dead-bug"] },
+      { "pattern": "calf", "role": "accessory", "sets": 2, "reps": [12, 20], "rir": 2 }
+    ]},
+    { "id": "c", "name": "Full Body C", "focus": "full", "slots": [
+      { "pattern": "squat", "role": "main", "sets": 3, "reps": [10, 15], "rir": 2, "prefer": ["goblet-squat", "bodyweight-squat"] },
+      { "pattern": "horizontal_push", "role": "main", "sets": 3, "reps": [6, 12], "rir": 2, "prefer": ["push-up", "incline-push-up", "db-floor-press"] },
+      { "pattern": "horizontal_pull", "role": "secondary", "sets": 3, "reps": [8, 12], "rir": 2, "prefer": ["inverted-row", "band-row", "doorframe-row"] },
+      { "pattern": "hip_thrust", "role": "accessory", "sets": 3, "reps": [8, 12], "rir": 2, "prefer": ["single-leg-glute-bridge", "glute-bridge"] },
+      { "pattern": "core_anti_lateral", "role": "core", "sets": 2, "seconds": [15, 30], "rir": 2, "prefer": ["side-plank"] }
+    ]}
+  ]
+}

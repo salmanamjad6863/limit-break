@@ -1,0 +1,446 @@
+import { Redirect, router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { View } from 'react-native';
+import { haptics } from '@/lib/haptics';
+import {
+  exerciseById,
+  exerciseName,
+  patternLabel,
+  useTraining,
+  useWorkoutSession,
+} from '@/features/training';
+import { mmss, ROLE_LABEL } from '@/features/training/format';
+import { SetRow } from '@/features/training/SetRow';
+import { useTheme } from '@/theme';
+import { Button, Card, Icon, Page, Pill, PressableScale, Text } from '@/ui';
+import { Ring } from '@/ui/fx';
+
+export default function WorkoutSession() {
+  const { c, spacing, radius } = useTheme();
+  const active = useWorkoutSession((s) => s.active);
+  const logSet = useWorkoutSession((s) => s.logSet);
+  const go = useWorkoutSession((s) => s.go);
+  const swap = useWorkoutSession((s) => s.swap);
+  const startRest = useWorkoutSession((s) => s.startRest);
+  const clearRest = useWorkoutSession((s) => s.clearRest);
+  const end = useWorkoutSession((s) => s.end);
+  const lastSet = useTraining((s) => s.lastSet);
+  const flagPain = useTraining((s) => s.flagPain);
+  const [now, setNow] = useState(Date.now());
+  const [showHow, setShowHow] = useState(false);
+  const [sheet, setSheet] = useState<'none' | 'swap' | 'pain' | 'exit'>('none');
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(id);
+  }, []);
+  useEffect(() => {
+    if (active?.restUntil && now >= active.restUntil) {
+      haptics.success();
+      clearRest();
+    }
+  }, [now, active?.restUntil, clearRest]);
+
+  if (!active) return <Redirect href="/train" />;
+
+  const i = active.current;
+  const pe = active.exercises[i]!;
+  const ex = exerciseById.get(pe.exerciseId)!;
+  const logs = active.logs[i] ?? [];
+  const nextSetIndex = logs.length;
+  const exerciseDone = nextSetIndex >= pe.sets.length;
+  const isLast = i === active.exercises.length - 1;
+  const elapsed = Math.floor((now - Date.parse(active.startedAt)) / 1000);
+  const resting = active.restUntil != null && active.restUntil > now;
+  const restLeft = resting ? Math.ceil((active.restUntil! - now) / 1000) : 0;
+  const bodyweight = ex.loadType === 'bodyweight' || ex.loadType === 'none';
+  const workingIdx = (k: number) =>
+    pe.sets.slice(0, k + 1).filter((s) => s.kind === 'working').length;
+  const doneCount = active.exercises.filter(
+    (x, k) => (active.logs[k]?.length ?? 0) >= x.sets.length,
+  ).length;
+
+  const upNext = exerciseDone
+    ? isLast
+      ? 'Finish workout'
+      : exerciseName(active.exercises[i + 1]!.exerciseId)
+    : `${ex.name} · set ${nextSetIndex + 1}`;
+
+  return (
+    <View style={{ flex: 1 }}>
+      <Page
+        header={
+          <View style={{ paddingHorizontal: spacing[4], paddingTop: spacing[2], gap: spacing[2] }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
+              <PressableScale
+                haptic="tap"
+                onPress={() => setSheet('exit')}
+                accessibilityRole="button"
+                accessibilityLabel="End workout"
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: c.surfaceRaised,
+                }}
+              >
+                <Icon name="close" size={20} color={c.text} />
+              </PressableScale>
+              <View style={{ flex: 1 }}>
+                <Text variant="heading" numberOfLines={1}>
+                  {active.name}
+                </Text>
+                <Text
+                  variant="caption"
+                  muted
+                >{`Exercise ${i + 1} of ${active.exercises.length}`}</Text>
+              </View>
+              <Pill icon="time-outline" label={mmss(elapsed)} />
+            </View>
+            <View style={{ flexDirection: 'row', gap: 4 }}>
+              {active.exercises.map((x, k) => {
+                const full = (active.logs[k]?.length ?? 0) >= x.sets.length;
+                return (
+                  <PressableScale
+                    key={k}
+                    haptic="tap"
+                    onPress={() => go(k)}
+                    accessibilityLabel={`Go to exercise ${k + 1}`}
+                    style={{ flex: 1, paddingVertical: 4 }}
+                  >
+                    <View
+                      style={{
+                        height: 4,
+                        borderRadius: 2,
+                        backgroundColor: full ? c.success : k === i ? c.accent : c.track,
+                      }}
+                    />
+                  </PressableScale>
+                );
+              })}
+            </View>
+          </View>
+        }
+        footer={
+          <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+            <View style={{ flex: 1 }}>
+              <Button
+                variant="secondary"
+                size="md"
+                icon="chevron-back"
+                label="Prev"
+                disabled={i === 0}
+                onPress={() => go(i - 1)}
+              />
+            </View>
+            <View style={{ flex: 2 }}>
+              {isLast ? (
+                <Button
+                  size="md"
+                  icon="flag"
+                  label={doneCount === active.exercises.length ? 'Finish' : 'Finish early'}
+                  onPress={() => router.replace('/workout/debrief')}
+                />
+              ) : (
+                <Button
+                  size="md"
+                  variant={exerciseDone ? 'primary' : 'secondary'}
+                  label="Next exercise"
+                  onPress={() => go(i + 1)}
+                />
+              )}
+            </View>
+          </View>
+        }
+      >
+        <Card>
+          <View style={{ flexDirection: 'row', gap: spacing[2], flexWrap: 'wrap' }}>
+            <Pill
+              label={ROLE_LABEL[pe.role] ?? pe.role}
+              color={pe.role === 'main' ? c.accentGlow : c.textDim}
+            />
+            <Pill label={patternLabel(ex.pattern)} />
+            {ex.unilateral ? <Pill label="Each side" color={c.mana} /> : null}
+          </View>
+          <Text variant="title" style={{ fontSize: 24, lineHeight: 30 }}>
+            {ex.name}
+          </Text>
+          <PressableScale
+            haptic="tap"
+            onPress={() => setShowHow((v) => !v)}
+            accessibilityRole="button"
+            accessibilityLabel="How to"
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+          >
+            <Icon
+              name={showHow ? 'chevron-down' : 'chevron-forward'}
+              size={16}
+              color={c.accentGlow}
+            />
+            <Text variant="callout" color={c.accentGlow}>
+              How to do it
+            </Text>
+          </PressableScale>
+          {showHow ? (
+            <View style={{ gap: spacing[2] }}>
+              {ex.cues.map((cue, k) => (
+                <View key={k} style={{ flexDirection: 'row', gap: spacing[2] }}>
+                  <Text variant="callout" color={c.accentGlow}>
+                    {k + 1}
+                  </Text>
+                  <Text variant="callout" style={{ flex: 1 }}>
+                    {cue}
+                  </Text>
+                </View>
+              ))}
+              {ex.mistakes.length ? (
+                <Text
+                  variant="caption"
+                  color={c.warning}
+                >{`Avoid: ${ex.mistakes.join(' · ')}`}</Text>
+              ) : null}
+            </View>
+          ) : null}
+          <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+            <Chip icon="swap-horizontal" label="Swap" onPress={() => setSheet('swap')} />
+            <Chip icon="medkit-outline" label="This hurts" onPress={() => setSheet('pain')} />
+            <Chip
+              icon="information-circle-outline"
+              label="Details"
+              onPress={() => router.push(`/exercise/${ex.id}`)}
+            />
+          </View>
+        </Card>
+
+        {active.coachNote ? (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: spacing[2],
+              padding: spacing[3],
+              borderRadius: radius.md,
+              backgroundColor: `${c.mana}1A`,
+            }}
+          >
+            <Icon name="sparkles" size={16} color={c.mana} />
+            <Text variant="callout" color={c.mana} style={{ flex: 1 }}>
+              {active.coachNote}
+            </Text>
+          </View>
+        ) : null}
+
+        <View style={{ gap: spacing[2] }}>
+          {pe.sets.map((s, k) => (
+            <SetRow
+              key={`${pe.exerciseId}-${k}`}
+              index={k}
+              label={s.kind === 'warmup' ? `W${k + 1}` : String(workingIdx(k))}
+              planned={s}
+              logged={logs[k]}
+              active={k === nextSetIndex && !resting}
+              loadType={ex.loadType}
+              bodyweight={bodyweight}
+              unilateral={ex.unilateral}
+              defaultReps={lastSet[ex.id]?.reps ?? null}
+              defaultLoad={lastSet[ex.id]?.loadKg ?? null}
+              onLog={(e) => {
+                haptics.press();
+                logSet(i, { setIndex: k, isWarmup: s.kind === 'warmup', ...e });
+                const finishedExercise = k === pe.sets.length - 1;
+                if (!finishedExercise) startRest(s.kind === 'warmup' ? 60 : pe.restSeconds);
+                else if (!isLast) startRest(Math.min(pe.restSeconds, 120));
+              }}
+            />
+          ))}
+        </View>
+
+        {resting ? (
+          <Card tint={c.accent}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[4] }}>
+              <Ring
+                ratio={restLeft / Math.max(1, active.restTotal || restLeft)}
+                size={84}
+                stroke={8}
+                color={c.accent}
+              >
+                <Text variant="stat" style={{ fontSize: 22, lineHeight: 26 }}>
+                  {mmss(restLeft)}
+                </Text>
+              </Ring>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text variant="label" color={c.accentGlow}>
+                  Rest
+                </Text>
+                <Text variant="caption" muted>
+                  Up next
+                </Text>
+                <Text variant="callout">{upNext}</Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+              <View style={{ flex: 1 }}>
+                <Button
+                  variant="secondary"
+                  size="md"
+                  label="+30 s"
+                  onPress={() => startRest(restLeft + 30)}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button variant="secondary" size="md" label="Skip rest" onPress={clearRest} />
+              </View>
+            </View>
+          </Card>
+        ) : exerciseDone ? (
+          <Card>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+              <Icon name="checkmark-circle" size={20} color={c.success} />
+              <Text variant="heading">{isLast ? 'Last exercise done' : 'Exercise complete'}</Text>
+            </View>
+            <Text variant="callout" dim>
+              {isLast ? 'Finish to see your results and XP.' : `Up next: ${upNext}`}
+            </Text>
+          </Card>
+        ) : null}
+      </Page>
+      {sheet !== 'none' ? (
+        <View style={{ position: 'absolute', inset: 0, justifyContent: 'flex-end' }}>
+          <PressableScale
+            haptic="none"
+            scaleTo={1}
+            onPress={() => setSheet('none')}
+            accessibilityLabel="Close sheet"
+            style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)' }}
+          >
+            <View />
+          </PressableScale>
+          <View
+            style={{
+              padding: spacing[3],
+              paddingBottom: spacing[8],
+              width: '100%',
+              maxWidth: 560,
+              alignSelf: 'center',
+            }}
+          >
+            <Card style={{ borderColor: c.borderStrong }}>
+              {sheet === 'exit' ? (
+                <>
+                  <Text variant="heading">End this workout?</Text>
+                  <Text variant="callout" dim>
+                    Your logged sets are saved. Finish to get XP for what you did, or discard it.
+                  </Text>
+                  <Button
+                    label="Finish & save"
+                    icon="flag"
+                    onPress={() => router.replace('/workout/debrief')}
+                  />
+                  <Button
+                    variant="secondary"
+                    label="Discard workout"
+                    onPress={() => {
+                      end();
+                      router.replace('/train');
+                    }}
+                  />
+                  <Button variant="ghost" label="Keep going" onPress={() => setSheet('none')} />
+                </>
+              ) : (
+                <>
+                  <Text variant="heading">
+                    {sheet === 'pain' ? 'Let’s protect that' : 'Swap exercise'}
+                  </Text>
+                  <Text variant="callout" dim>
+                    {sheet === 'pain'
+                      ? `${ex.name} will be left out of future workouts. Pick an alternative that feels comfortable, or skip it today.`
+                      : 'Same movement pattern, fits your equipment.'}
+                  </Text>
+                  {pe.alternatives.length === 0 ? (
+                    <Text variant="callout" muted>
+                      No alternatives for your equipment.
+                    </Text>
+                  ) : null}
+                  {pe.alternatives.map((id) => (
+                    <PressableScale
+                      key={id}
+                      haptic="press"
+                      onPress={() => {
+                        if (sheet === 'pain') flagPain(ex.id);
+                        swap(i, id);
+                        setSheet('none');
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Swap to ${exerciseName(id)}`}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: spacing[3],
+                        padding: spacing[3],
+                        borderRadius: radius.md,
+                        backgroundColor: c.surfaceRaised,
+                      }}
+                    >
+                      <Text variant="callout" style={{ flex: 1 }}>
+                        {exerciseName(id)}
+                      </Text>
+                      <Icon name="swap-horizontal" size={16} />
+                    </PressableScale>
+                  ))}
+                  {sheet === 'pain' ? (
+                    <Button
+                      variant="secondary"
+                      label="Skip it today"
+                      onPress={() => {
+                        flagPain(ex.id);
+                        setSheet('none');
+                        if (!isLast) go(i + 1);
+                      }}
+                    />
+                  ) : null}
+                  <Button variant="ghost" label="Cancel" onPress={() => setSheet('none')} />
+                </>
+              )}
+            </Card>
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function Chip({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: React.ComponentProps<typeof Icon>['name'];
+  label: string;
+  onPress: () => void;
+}) {
+  const { c, radius } = useTheme();
+  return (
+    <PressableScale
+      haptic="tap"
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        paddingHorizontal: 10,
+        paddingVertical: 7,
+        borderRadius: radius.pill,
+        backgroundColor: c.surfaceRaised,
+      }}
+    >
+      <Icon name={icon} size={15} color={c.textDim} />
+      <Text variant="caption" dim>
+        {label}
+      </Text>
+    </PressableScale>
+  );
+}

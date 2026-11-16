@@ -1,0 +1,32 @@
+{
+  "name": "@lb/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "generate": "prisma generate",
+    "validate": "prisma validate",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "seed": "tsx prisma/seed.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "7.10.1",
+    "@prisma/client": "7.10.1",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@lb/config": "workspace:*",
+    "@lb/content": "workspace:*",
+    "@types/node": "^22.18.0",
+    "@types/pg": "^8.15.5",
+    "dotenv": "^17.2.3",
+    "prisma": "7.10.1",
+    "tsx": "^4.20.6",
+    "typescript": "~5.9.3"
+  }
+}

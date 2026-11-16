@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.turbo/
+.expo/
+*.log
+.env
+.env.*
+!.env.example
+packages/db/src/generated/
+apps/mobile/ios/
+apps/mobile/android/
+.DS_Store
+coverage/
+apps/mobile/public/canvaskit.wasm

@@ -1,0 +1,20 @@
+{
+  "id": "linear-strength", "name": "Linear Strength", "typeId": "strength",
+  "summary": "Classic novice strength: squat every session, alternating presses and pulls. Add weight every workout.",
+  "levels": ["novice"], "locations": ["GYM"], "goals": ["recomp", "bulk", "maintain"], "daysPerWeek": [3],
+  "blockWeeks": 6, "deloadEvery": 6,
+  "days": [
+    { "id": "a", "name": "Workout A", "focus": "full", "slots": [
+      { "pattern": "squat", "role": "main", "sets": 5, "reps": [5, 5], "rir": 2, "prefer": ["back-squat"] },
+      { "pattern": "horizontal_push", "role": "main", "sets": 5, "reps": [5, 5], "rir": 2, "prefer": ["bench-press"] },
+      { "pattern": "horizontal_pull", "role": "secondary", "sets": 3, "reps": [6, 8], "rir": 2, "prefer": ["barbell-row"] },
+      { "pattern": "core_anti_extension", "role": "core", "sets": 3, "seconds": [30, 45], "rir": 2, "prefer": ["plank"] }
+    ]},
+    { "id": "b", "name": "Workout B", "focus": "full", "slots": [
+      { "pattern": "squat", "role": "main", "sets": 5, "reps": [5, 5], "rir": 2, "prefer": ["back-squat"] },
+      { "pattern": "vertical_push", "role": "main", "sets": 5, "reps": [5, 5], "rir": 2, "prefer": ["overhead-press"] },
+      { "pattern": "hinge", "role": "main", "sets": 1, "reps": [5, 5], "rir": 2, "prefer": ["deadlift"] },
+      { "pattern": "vertical_pull", "role": "secondary", "sets": 3, "reps": [5, 10], "rir": 2, "prefer": ["chin-up", "lat-pulldown"] }
+    ]}
+  ]
+}

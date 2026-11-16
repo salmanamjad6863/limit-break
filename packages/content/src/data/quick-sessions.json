@@ -1,0 +1,14 @@
+[
+  { "id": "express-7", "name": "7-Minute Express", "typeId": "hiit", "rpe": 6, "work": 30, "rest": 10, "rounds": 1,
+    "summary": "A fast full-body circuit for busy days. No equipment.",
+    "moves": ["jumping-jack", "bodyweight-squat", "push-up", "plank", "reverse-lunge", "mountain-climber", "glute-bridge", "side-plank", "high-knees", "dead-bug"] },
+  { "id": "hiit-15", "name": "15-Minute HIIT", "typeId": "hiit", "rpe": 8, "work": 40, "rest": 20, "rounds": 3,
+    "summary": "Five moves, three rounds, 40 seconds on and 20 off. Expect to sweat.",
+    "moves": ["burpee", "jump-squat", "mountain-climber", "high-knees", "skater-hop"] },
+  { "id": "mobility-10", "name": "10-Minute Mobility", "typeId": "mobility", "rpe": 2, "work": 55, "rest": 5, "rounds": 1,
+    "summary": "Loosen hips, spine and shoulders. Great on rest days.",
+    "moves": ["cat-cow", "worlds-greatest-stretch", "hip-flexor-stretch", "thoracic-open-book", "ninety-ninety", "deep-squat-hold", "downward-dog", "childs-pose", "worlds-greatest-stretch", "cat-cow"] },
+  { "id": "core-12", "name": "12-Minute Core", "typeId": "core", "rpe": 5, "work": 40, "rest": 20, "rounds": 3,
+    "summary": "Anti-extension, anti-rotation and side strength in four moves.",
+    "moves": ["dead-bug", "side-plank", "bird-dog", "plank"] }
+]

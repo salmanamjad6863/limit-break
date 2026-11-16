@@ -1,0 +1,2671 @@
+[
+ {
+  "id": "incline-push-up",
+  "name": "Incline Push-up",
+  "pattern": "horizontal_push",
+  "equipment": [],
+  "primary": [
+   "chest"
+  ],
+  "secondary": [
+   "triceps",
+   "front_delts"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0.41,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Hands on a sturdy table or bench, body in one straight line",
+   "Lower your chest to the edge, elbows about 45° from your body",
+   "Push the surface away until your arms are straight"
+  ],
+  "mistakes": [
+   "Hips sagging or piking",
+   "Flaring elbows straight out to the sides"
+  ],
+  "avoid": [
+   "wrist"
+  ]
+ },
+ {
+  "id": "knee-push-up",
+  "name": "Knee Push-up",
+  "pattern": "horizontal_push",
+  "equipment": [],
+  "primary": [
+   "chest"
+  ],
+  "secondary": [
+   "triceps",
+   "front_delts"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0.49,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Knees down, straight line from knees to head",
+   "Lower until your chest is a fist away from the floor",
+   "Squeeze your glutes to keep hips in line"
+  ],
+  "mistakes": [
+   "Bending at the hips instead of keeping a straight line",
+   "Half reps"
+  ],
+  "avoid": [
+   "wrist"
+  ]
+ },
+ {
+  "id": "push-up",
+  "name": "Push-up",
+  "pattern": "horizontal_push",
+  "equipment": [],
+  "primary": [
+   "chest"
+  ],
+  "secondary": [
+   "triceps",
+   "front_delts",
+   "core"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0.64,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Hands just wider than shoulders, body rigid like a plank",
+   "Lower until your chest nearly touches the floor",
+   "Elbows about 45° from your torso, then press back up"
+  ],
+  "mistakes": [
+   "Sagging hips",
+   "Head dropping forward",
+   "Stopping halfway down"
+  ],
+  "avoid": [
+   "wrist"
+  ],
+  "progression": "incline-push-up>knee-push-up>push-up>diamond-push-up>archer-push-up"
+ },
+ {
+  "id": "decline-push-up",
+  "name": "Decline Push-up",
+  "pattern": "horizontal_push",
+  "equipment": [],
+  "primary": [
+   "chest",
+   "front_delts"
+  ],
+  "secondary": [
+   "triceps"
+  ],
+  "difficulty": 3,
+  "bwFactor": 0.7,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Feet on a chair or bench, hands on the floor",
+   "Keep a straight line from heels to head",
+   "Lower under control, press back up"
+  ],
+  "mistakes": [
+   "Arching the lower back",
+   "Bouncing off the floor"
+  ],
+  "avoid": [
+   "wrist",
+   "shoulder"
+  ]
+ },
+ {
+  "id": "diamond-push-up",
+  "name": "Diamond Push-up",
+  "pattern": "horizontal_push",
+  "equipment": [],
+  "primary": [
+   "triceps",
+   "chest"
+  ],
+  "secondary": [
+   "front_delts"
+  ],
+  "difficulty": 3,
+  "bwFactor": 0.64,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Index fingers and thumbs touch to form a diamond under your chest",
+   "Elbows stay close to your sides",
+   "Lower until your chest touches your hands"
+  ],
+  "mistakes": [
+   "Elbows flaring wide",
+   "Hips sagging"
+  ],
+  "avoid": [
+   "wrist",
+   "elbow"
+  ]
+ },
+ {
+  "id": "archer-push-up",
+  "name": "Archer Push-up",
+  "pattern": "horizontal_push",
+  "equipment": [],
+  "primary": [
+   "chest",
+   "triceps"
+  ],
+  "secondary": [
+   "front_delts",
+   "core"
+  ],
+  "difficulty": 4,
+  "bwFactor": 0.8,
+  "restType": "mainCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Very wide hand position",
+   "Shift your weight to one side, bending that arm while the other stays straight",
+   "Alternate sides each rep"
+  ],
+  "mistakes": [
+   "Rotating the torso",
+   "Bending both arms equally"
+  ],
+  "unilateral": true,
+  "avoid": [
+   "wrist",
+   "shoulder"
+  ]
+ },
+ {
+  "id": "db-floor-press",
+  "name": "Dumbbell Floor Press",
+  "pattern": "horizontal_push",
+  "equipment": [
+   "dumbbells"
+  ],
+  "primary": [
+   "chest",
+   "triceps"
+  ],
+  "secondary": [
+   "front_delts"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "dumbbell",
+  "cues": [
+   "Lie on the floor, knees bent, dumbbells over your chest",
+   "Lower until your upper arms touch the floor",
+   "Press up and slightly together"
+  ],
+  "mistakes": [
+   "Letting elbows slam into the floor",
+   "Flaring elbows to 90°"
+  ]
+ },
+ {
+  "id": "db-bench-press",
+  "name": "Dumbbell Bench Press",
+  "pattern": "horizontal_push",
+  "equipment": [
+   "dumbbells",
+   "bench"
+  ],
+  "primary": [
+   "chest"
+  ],
+  "secondary": [
+   "triceps",
+   "front_delts"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0,
+  "restType": "mainCompound",
+  "kind": "reps",
+  "loadType": "dumbbell",
+  "cues": [
+   "Shoulder blades pulled back and down into the bench",
+   "Lower the dumbbells to the sides of your chest",
+   "Press up, keeping wrists stacked over elbows"
+  ],
+  "mistakes": [
+   "Bouncing at the bottom",
+   "Losing shoulder-blade position"
+  ],
+  "avoid": [
+   "shoulder"
+  ]
+ },
+ {
+  "id": "incline-db-press",
+  "name": "Incline Dumbbell Press",
+  "pattern": "horizontal_push",
+  "equipment": [
+   "dumbbells",
+   "bench"
+  ],
+  "primary": [
+   "chest",
+   "front_delts"
+  ],
+  "secondary": [
+   "triceps"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "dumbbell",
+  "cues": [
+   "Bench at 30–45°",
+   "Lower to upper chest with elbows slightly tucked",
+   "Press up without letting the dumbbells crash together"
+  ],
+  "mistakes": [
+   "Bench set too steep (turns into a shoulder press)",
+   "Arching off the bench"
+  ],
+  "avoid": [
+   "shoulder"
+  ]
+ },
+ {
+  "id": "bench-press",
+  "name": "Barbell Bench Press",
+  "pattern": "horizontal_push",
+  "equipment": [
+   "barbell",
+   "bench",
+   "rack"
+  ],
+  "primary": [
+   "chest"
+  ],
+  "secondary": [
+   "triceps",
+   "front_delts"
+  ],
+  "difficulty": 3,
+  "bwFactor": 0,
+  "restType": "mainCompound",
+  "kind": "reps",
+  "loadType": "barbell",
+  "cues": [
+   "Eyes under the bar, feet planted, shoulder blades squeezed",
+   "Lower to mid-chest with control",
+   "Drive the bar up and slightly back over your shoulders"
+  ],
+  "mistakes": [
+   "Bouncing the bar off the chest",
+   "Hips lifting off the bench",
+   "No spotter or safety pins on heavy sets"
+  ],
+  "avoid": [
+   "shoulder"
+  ]
+ },
+ {
+  "id": "machine-chest-press",
+  "name": "Machine Chest Press",
+  "pattern": "horizontal_push",
+  "equipment": [
+   "machines"
+  ],
+  "primary": [
+   "chest"
+  ],
+  "secondary": [
+   "triceps",
+   "front_delts"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "machine",
+  "cues": [
+   "Handles at mid-chest height",
+   "Press forward until arms are nearly straight",
+   "Return slowly until you feel a chest stretch"
+  ],
+  "mistakes": [
+   "Seat too high or low",
+   "Letting the weight stack slam"
+  ]
+ },
+ {
+  "id": "dip",
+  "name": "Parallel Bar Dip",
+  "pattern": "vertical_push_dip",
+  "equipment": [
+   "dip_bars"
+  ],
+  "primary": [
+   "chest",
+   "triceps"
+  ],
+  "secondary": [
+   "front_delts"
+  ],
+  "difficulty": 3,
+  "bwFactor": 0.95,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Start at the top with arms locked",
+   "Lean slightly forward and lower until shoulders are just below elbows",
+   "Push back up to full lockout"
+  ],
+  "mistakes": [
+   "Going too deep and straining the shoulders",
+   "Shrugging the shoulders up"
+  ],
+  "avoid": [
+   "shoulder",
+   "elbow"
+  ]
+ },
+ {
+  "id": "pike-push-up",
+  "name": "Pike Push-up",
+  "pattern": "vertical_push",
+  "equipment": [],
+  "primary": [
+   "front_delts"
+  ],
+  "secondary": [
+   "triceps",
+   "upper_chest"
+  ],
+  "difficulty": 3,
+  "bwFactor": 0.55,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Hips high in an inverted V",
+   "Lower the top of your head toward a point in front of your hands",
+   "Press back up through your shoulders"
+  ],
+  "mistakes": [
+   "Turning it into a push-up by dropping the hips",
+   "Elbows flaring out"
+  ],
+  "avoid": [
+   "shoulder",
+   "wrist"
+  ],
+  "progression": "pike-push-up>wall-handstand-push-up"
+ },
+ {
+  "id": "wall-handstand-push-up",
+  "name": "Wall Handstand Push-up",
+  "pattern": "vertical_push",
+  "equipment": [],
+  "primary": [
+   "front_delts",
+   "triceps"
+  ],
+  "secondary": [
+   "upper_chest",
+   "core"
+  ],
+  "difficulty": 5,
+  "bwFactor": 0.9,
+  "restType": "mainCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Kick up into a handstand facing away from the wall",
+   "Lower your head to a soft surface under control",
+   "Press back up to straight arms"
+  ],
+  "mistakes": [
+   "Arching the back excessively",
+   "Dropping fast onto your head"
+  ],
+  "avoid": [
+   "shoulder",
+   "wrist"
+  ]
+ },
+ {
+  "id": "band-overhead-press",
+  "name": "Band Overhead Press",
+  "pattern": "vertical_push",
+  "equipment": [
+   "bands"
+  ],
+  "primary": [
+   "front_delts"
+  ],
+  "secondary": [
+   "triceps"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "accessory",
+  "kind": "reps",
+  "loadType": "band",
+  "cues": [
+   "Stand on the band, handles at shoulder height",
+   "Press straight overhead, biceps by your ears",
+   "Lower slowly back to the shoulders"
+  ],
+  "mistakes": [
+   "Leaning back to finish the rep",
+   "Pressing forward instead of up"
+  ],
+  "avoid": [
+   "shoulder"
+  ]
+ },
+ {
+  "id": "db-shoulder-press",
+  "name": "Dumbbell Shoulder Press",
+  "pattern": "vertical_push",
+  "equipment": [
+   "dumbbells"
+  ],
+  "primary": [
+   "front_delts"
+  ],
+  "secondary": [
+   "triceps",
+   "side_delts"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "dumbbell",
+  "cues": [
+   "Seated or standing, dumbbells at shoulder height",
+   "Press up until arms are straight overhead",
+   "Lower under control to ear level"
+  ],
+  "mistakes": [
+   "Arching the lower back",
+   "Half reps that stop at the forehead"
+  ],
+  "avoid": [
+   "shoulder"
+  ]
+ },
+ {
+  "id": "overhead-press",
+  "name": "Barbell Overhead Press",
+  "pattern": "vertical_push",
+  "equipment": [
+   "barbell",
+   "rack"
+  ],
+  "primary": [
+   "front_delts"
+  ],
+  "secondary": [
+   "triceps",
+   "upper_chest",
+   "core"
+  ],
+  "difficulty": 3,
+  "bwFactor": 0,
+  "restType": "mainCompound",
+  "kind": "reps",
+  "loadType": "barbell",
+  "cues": [
+   "Bar on your front delts, grip just outside shoulders",
+   "Squeeze glutes, press straight up moving your head back then through",
+   "Lock out with the bar over mid-foot"
+  ],
+  "mistakes": [
+   "Leaning back into a standing bench press",
+   "Pressing the bar around your face instead of moving your head"
+  ],
+  "avoid": [
+   "shoulder",
+   "lower_back"
+  ]
+ },
+ {
+  "id": "machine-shoulder-press",
+  "name": "Machine Shoulder Press",
+  "pattern": "vertical_push",
+  "equipment": [
+   "machines"
+  ],
+  "primary": [
+   "front_delts"
+  ],
+  "secondary": [
+   "triceps"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "machine",
+  "cues": [
+   "Handles at shoulder height",
+   "Press up without locking out hard",
+   "Lower slowly"
+  ],
+  "mistakes": [
+   "Seat too low, causing shoulder pinch"
+  ],
+  "avoid": [
+   "shoulder"
+  ]
+ },
+ {
+  "id": "doorframe-row",
+  "name": "Doorframe Row",
+  "pattern": "horizontal_pull",
+  "equipment": [],
+  "primary": [
+   "lats",
+   "upper_back"
+  ],
+  "secondary": [
+   "biceps",
+   "rear_delts"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0.35,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Grip both sides of a sturdy doorframe, feet close to the frame",
+   "Lean back with straight arms and a rigid body",
+   "Pull your chest toward the frame, squeezing shoulder blades"
+  ],
+  "mistakes": [
+   "Using a door that isn't sturdy",
+   "Shrugging instead of pulling with the back"
+  ]
+ },
+ {
+  "id": "band-row",
+  "name": "Band Row",
+  "pattern": "horizontal_pull",
+  "equipment": [
+   "bands"
+  ],
+  "primary": [
+   "upper_back",
+   "lats"
+  ],
+  "secondary": [
+   "biceps",
+   "rear_delts"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "accessory",
+  "kind": "reps",
+  "loadType": "band",
+  "cues": [
+   "Anchor the band at chest height",
+   "Pull the handles to your ribs, elbows close",
+   "Pause and squeeze your shoulder blades"
+  ],
+  "mistakes": [
+   "Leaning back to cheat the rep",
+   "Rushing the return"
+  ]
+ },
+ {
+  "id": "inverted-row",
+  "name": "Inverted Row",
+  "pattern": "horizontal_pull",
+  "equipment": [],
+  "primary": [
+   "upper_back",
+   "lats"
+  ],
+  "secondary": [
+   "biceps",
+   "rear_delts",
+   "core"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0.55,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Hang under a bar set at waist height, heels on the floor",
+   "Body straight from heels to head",
+   "Pull your chest to the bar, then lower fully"
+  ],
+  "mistakes": [
+   "Hips sagging",
+   "Pulling with the neck"
+  ],
+  "anyOf": [
+   "rack",
+   "pull_up_bar"
+  ]
+ },
+ {
+  "id": "db-row",
+  "name": "One-Arm Dumbbell Row",
+  "pattern": "horizontal_pull",
+  "equipment": [
+   "dumbbells"
+  ],
+  "primary": [
+   "lats",
+   "upper_back"
+  ],
+  "secondary": [
+   "biceps",
+   "rear_delts"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "dumbbell",
+  "cues": [
+   "Support one hand and knee on a bench or chair, back flat",
+   "Pull the dumbbell to your hip",
+   "Lower until your arm is straight and you feel a stretch"
+  ],
+  "mistakes": [
+   "Twisting the torso to swing the weight",
+   "Rounding the back"
+  ],
+  "unilateral": true,
+  "avoid": [
+   "lower_back"
+  ]
+ },
+ {
+  "id": "chest-supported-row",
+  "name": "Chest-Supported Dumbbell Row",
+  "pattern": "horizontal_pull",
+  "equipment": [
+   "dumbbells",
+   "bench"
+  ],
+  "primary": [
+   "upper_back",
+   "lats"
+  ],
+  "secondary": [
+   "rear_delts",
+   "biceps"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "dumbbell",
+  "cues": [
+   "Lie chest-down on an incline bench",
+   "Row both dumbbells toward your hips",
+   "Squeeze the shoulder blades, then lower slowly"
+  ],
+  "mistakes": [
+   "Lifting the chest off the bench",
+   "Shrugging"
+  ]
+ },
+ {
+  "id": "barbell-row",
+  "name": "Barbell Row",
+  "pattern": "horizontal_pull",
+  "equipment": [
+   "barbell"
+  ],
+  "primary": [
+   "upper_back",
+   "lats"
+  ],
+  "secondary": [
+   "biceps",
+   "rear_delts",
+   "lower_back"
+  ],
+  "difficulty": 3,
+  "bwFactor": 0,
+  "restType": "mainCompound",
+  "kind": "reps",
+  "loadType": "barbell",
+  "cues": [
+   "Hinge to about 45°, flat back, bar at the knees",
+   "Row the bar to your lower ribs",
+   "Lower under control without standing up"
+  ],
+  "mistakes": [
+   "Standing more upright each rep",
+   "Jerking the weight with the hips"
+  ],
+  "avoid": [
+   "lower_back"
+  ]
+ },
+ {
+  "id": "seated-cable-row",
+  "name": "Seated Cable Row",
+  "pattern": "horizontal_pull",
+  "equipment": [
+   "cable"
+  ],
+  "primary": [
+   "upper_back",
+   "lats"
+  ],
+  "secondary": [
+   "biceps",
+   "rear_delts"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "machine",
+  "cues": [
+   "Sit tall, slight knee bend",
+   "Pull the handle to your stomach, elbows close",
+   "Let your shoulders reach forward on the return"
+  ],
+  "mistakes": [
+   "Rocking the torso back and forth",
+   "Rounding the lower back"
+  ]
+ },
+ {
+  "id": "band-pulldown",
+  "name": "Band Pulldown",
+  "pattern": "vertical_pull",
+  "equipment": [
+   "bands"
+  ],
+  "primary": [
+   "lats"
+  ],
+  "secondary": [
+   "biceps",
+   "upper_back"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "accessory",
+  "kind": "reps",
+  "loadType": "band",
+  "cues": [
+   "Anchor the band high (door anchor)",
+   "Kneel and pull your elbows down to your sides",
+   "Control the band back up"
+  ],
+  "mistakes": [
+   "Pulling with the arms only",
+   "Leaning way back"
+  ]
+ },
+ {
+  "id": "lat-pulldown",
+  "name": "Lat Pulldown",
+  "pattern": "vertical_pull",
+  "equipment": [],
+  "primary": [
+   "lats"
+  ],
+  "secondary": [
+   "biceps",
+   "upper_back"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "machine",
+  "cues": [
+   "Grip just outside shoulders, thighs under the pad",
+   "Pull the bar to your upper chest, chest up",
+   "Return slowly to a full stretch"
+  ],
+  "mistakes": [
+   "Pulling behind the neck",
+   "Using momentum from the torso"
+  ],
+  "anyOf": [
+   "cable",
+   "machines"
+  ]
+ },
+ {
+  "id": "band-assisted-pull-up",
+  "name": "Band-Assisted Pull-up",
+  "pattern": "vertical_pull",
+  "equipment": [
+   "pull_up_bar",
+   "bands"
+  ],
+  "primary": [
+   "lats"
+  ],
+  "secondary": [
+   "biceps",
+   "upper_back"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0.7,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Loop a band over the bar and under one knee or foot",
+   "Pull until your chin clears the bar",
+   "Lower to straight arms each rep"
+  ],
+  "mistakes": [
+   "Kipping or swinging",
+   "Half reps at the top"
+  ],
+  "avoid": [
+   "shoulder",
+   "elbow"
+  ]
+ },
+ {
+  "id": "negative-pull-up",
+  "name": "Negative Pull-up",
+  "pattern": "vertical_pull",
+  "equipment": [
+   "pull_up_bar"
+  ],
+  "primary": [
+   "lats"
+  ],
+  "secondary": [
+   "biceps",
+   "upper_back"
+  ],
+  "difficulty": 2,
+  "bwFactor": 1.0,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Jump or step to the top position, chin over the bar",
+   "Lower yourself slowly over 3–5 seconds",
+   "Reset and repeat"
+  ],
+  "mistakes": [
+   "Dropping quickly",
+   "Not reaching full hang"
+  ],
+  "avoid": [
+   "shoulder",
+   "elbow"
+  ]
+ },
+ {
+  "id": "pull-up",
+  "name": "Pull-up",
+  "pattern": "vertical_pull",
+  "equipment": [
+   "pull_up_bar"
+  ],
+  "primary": [
+   "lats"
+  ],
+  "secondary": [
+   "biceps",
+   "upper_back",
+   "core"
+  ],
+  "difficulty": 3,
+  "bwFactor": 1.0,
+  "restType": "mainCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Overhand grip just outside shoulders, start from a dead hang",
+   "Drive elbows down until your chin passes the bar",
+   "Lower all the way under control"
+  ],
+  "mistakes": [
+   "Kipping or swinging the legs",
+   "Not straightening the arms between reps"
+  ],
+  "avoid": [
+   "shoulder",
+   "elbow"
+  ],
+  "progression": "doorframe-row>inverted-row>negative-pull-up>band-assisted-pull-up>pull-up"
+ },
+ {
+  "id": "chin-up",
+  "name": "Chin-up",
+  "pattern": "vertical_pull",
+  "equipment": [
+   "pull_up_bar"
+  ],
+  "primary": [
+   "lats",
+   "biceps"
+  ],
+  "secondary": [
+   "upper_back"
+  ],
+  "difficulty": 3,
+  "bwFactor": 1.0,
+  "restType": "mainCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Underhand grip, shoulder width",
+   "Pull your chest toward the bar",
+   "Lower to a full hang"
+  ],
+  "mistakes": [
+   "Partial range",
+   "Swinging"
+  ],
+  "avoid": [
+   "elbow"
+  ]
+ },
+ {
+  "id": "bodyweight-squat",
+  "name": "Bodyweight Squat",
+  "pattern": "squat",
+  "equipment": [],
+  "primary": [
+   "quads",
+   "glutes"
+  ],
+  "secondary": [
+   "hamstrings"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0.85,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Feet shoulder width, toes slightly out",
+   "Sit down between your heels, chest up",
+   "Drive through the whole foot to stand"
+  ],
+  "mistakes": [
+   "Knees caving inward",
+   "Heels lifting",
+   "Rounding the back at the bottom"
+  ],
+  "avoid": [
+   "knee"
+  ]
+ },
+ {
+  "id": "goblet-squat",
+  "name": "Goblet Squat",
+  "pattern": "squat",
+  "equipment": [],
+  "primary": [
+   "quads",
+   "glutes"
+  ],
+  "secondary": [
+   "core",
+   "upper_back"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "dumbbell",
+  "cues": [
+   "Hold the weight at your chest, elbows down",
+   "Squat between your knees, torso tall",
+   "Push the floor away to stand"
+  ],
+  "mistakes": [
+   "Letting the weight pull you forward",
+   "Knees caving in"
+  ],
+  "anyOf": [
+   "dumbbells",
+   "kettlebell"
+  ],
+  "avoid": [
+   "knee"
+  ]
+ },
+ {
+  "id": "back-squat",
+  "name": "Barbell Back Squat",
+  "pattern": "squat",
+  "equipment": [
+   "barbell",
+   "rack"
+  ],
+  "primary": [
+   "quads",
+   "glutes"
+  ],
+  "secondary": [
+   "hamstrings",
+   "lower_back",
+   "core"
+  ],
+  "difficulty": 3,
+  "bwFactor": 0,
+  "restType": "mainCompound",
+  "kind": "reps",
+  "loadType": "barbell",
+  "cues": [
+   "Bar on your upper back, brace your core hard",
+   "Sit down until hips are at or below knee level",
+   "Drive up, keeping chest and hips rising together"
+  ],
+  "mistakes": [
+   "Knees caving in",
+   "Good-morning the weight up (hips rise first)",
+   "Squatting heavy without safety pins"
+  ],
+  "avoid": [
+   "knee",
+   "lower_back"
+  ]
+ },
+ {
+  "id": "front-squat",
+  "name": "Barbell Front Squat",
+  "pattern": "squat",
+  "equipment": [
+   "barbell",
+   "rack"
+  ],
+  "primary": [
+   "quads"
+  ],
+  "secondary": [
+   "glutes",
+   "core",
+   "upper_back"
+  ],
+  "difficulty": 4,
+  "bwFactor": 0,
+  "restType": "mainCompound",
+  "kind": "reps",
+  "loadType": "barbell",
+  "cues": [
+   "Bar on front delts, elbows high",
+   "Stay upright and sit straight down",
+   "Keep elbows up as you stand"
+  ],
+  "mistakes": [
+   "Elbows dropping",
+   "Rounding the upper back"
+  ],
+  "avoid": [
+   "knee",
+   "wrist"
+  ]
+ },
+ {
+  "id": "leg-press",
+  "name": "Leg Press",
+  "pattern": "squat",
+  "equipment": [
+   "machines"
+  ],
+  "primary": [
+   "quads",
+   "glutes"
+  ],
+  "secondary": [
+   "hamstrings"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "machine",
+  "cues": [
+   "Feet shoulder width mid-platform",
+   "Lower until knees reach about 90°",
+   "Press without locking the knees hard"
+  ],
+  "mistakes": [
+   "Lower back peeling off the pad",
+   "Locking out the knees"
+  ],
+  "avoid": [
+   "knee"
+  ]
+ },
+ {
+  "id": "split-squat",
+  "name": "Split Squat",
+  "pattern": "lunge",
+  "equipment": [],
+  "primary": [
+   "quads",
+   "glutes"
+  ],
+  "secondary": [
+   "hamstrings"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0.85,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Long stance, back heel up",
+   "Drop your back knee straight down",
+   "Push through the front foot to rise"
+  ],
+  "mistakes": [
+   "Front knee caving in",
+   "Stance too short"
+  ],
+  "unilateral": true,
+  "avoid": [
+   "knee"
+  ]
+ },
+ {
+  "id": "bulgarian-split-squat",
+  "name": "Bulgarian Split Squat",
+  "pattern": "lunge",
+  "equipment": [],
+  "primary": [
+   "quads",
+   "glutes"
+  ],
+  "secondary": [
+   "hamstrings",
+   "core"
+  ],
+  "difficulty": 3,
+  "bwFactor": 0.85,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Back foot on a bench or chair, front foot well forward",
+   "Lower until the back knee nearly touches the floor",
+   "Drive up through the front heel; add dumbbells to progress"
+  ],
+  "mistakes": [
+   "Front foot too close to the bench",
+   "Bouncing off the back leg"
+  ],
+  "unilateral": true,
+  "avoid": [
+   "knee"
+  ]
+ },
+ {
+  "id": "pistol-squat",
+  "name": "Pistol Squat",
+  "pattern": "squat",
+  "equipment": [],
+  "primary": [
+   "quads",
+   "glutes"
+  ],
+  "secondary": [
+   "core",
+   "hamstrings"
+  ],
+  "difficulty": 5,
+  "bwFactor": 0.85,
+  "restType": "mainCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Stand on one leg, other leg straight in front",
+   "Sit down slowly as low as you can control",
+   "Stand back up without letting the knee cave"
+  ],
+  "mistakes": [
+   "Heel lifting",
+   "Collapsing at the bottom"
+  ],
+  "unilateral": true,
+  "avoid": [
+   "knee"
+  ],
+  "progression": "bodyweight-squat>split-squat>bulgarian-split-squat>pistol-squat"
+ },
+ {
+  "id": "jump-squat",
+  "name": "Jump Squat",
+  "pattern": "plyo",
+  "equipment": [],
+  "primary": [
+   "quads",
+   "glutes"
+  ],
+  "secondary": [
+   "calves"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0.85,
+  "restType": "accessory",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Quarter to half squat, arms back",
+   "Explode up as high as you can",
+   "Land softly and go straight into the next rep"
+  ],
+  "mistakes": [
+   "Landing stiff-legged",
+   "Knees caving on landing"
+  ],
+  "avoid": [
+   "knee",
+   "ankle"
+  ]
+ },
+ {
+  "id": "wall-sit",
+  "name": "Wall Sit",
+  "pattern": "squat_iso",
+  "equipment": [],
+  "primary": [
+   "quads"
+  ],
+  "secondary": [
+   "glutes"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "time",
+  "loadType": "bodyweight",
+  "cues": [
+   "Back flat on the wall, thighs parallel to the floor",
+   "Knees over ankles",
+   "Breathe steadily and hold"
+  ],
+  "mistakes": [
+   "Hands pushing on the thighs",
+   "Hips too high"
+  ],
+  "avoid": [
+   "knee"
+  ],
+  "timed": true
+ },
+ {
+  "id": "glute-bridge",
+  "name": "Glute Bridge",
+  "pattern": "hip_thrust",
+  "equipment": [],
+  "primary": [
+   "glutes"
+  ],
+  "secondary": [
+   "hamstrings"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0.5,
+  "restType": "accessory",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Lie on your back, feet flat near your hips",
+   "Drive through your heels to lift the hips",
+   "Squeeze glutes hard at the top for a second"
+  ],
+  "mistakes": [
+   "Arching the lower back instead of using the glutes",
+   "Feet too far away"
+  ]
+ },
+ {
+  "id": "single-leg-glute-bridge",
+  "name": "Single-Leg Glute Bridge",
+  "pattern": "hip_thrust",
+  "equipment": [],
+  "primary": [
+   "glutes"
+  ],
+  "secondary": [
+   "hamstrings"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0.5,
+  "restType": "accessory",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "One foot planted, the other leg extended",
+   "Lift the hips level, without twisting",
+   "Pause at the top"
+  ],
+  "mistakes": [
+   "Hips rotating",
+   "Pushing through the toes"
+  ],
+  "unilateral": true
+ },
+ {
+  "id": "hip-thrust",
+  "name": "Barbell Hip Thrust",
+  "pattern": "hip_thrust",
+  "equipment": [
+   "barbell",
+   "bench"
+  ],
+  "primary": [
+   "glutes"
+  ],
+  "secondary": [
+   "hamstrings"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "barbell",
+  "cues": [
+   "Upper back on the bench, bar padded over your hips",
+   "Drive the hips up until your torso is parallel to the floor",
+   "Chin tucked, ribs down, squeeze at the top"
+  ],
+  "mistakes": [
+   "Hyperextending the lower back",
+   "Pushing through the toes"
+  ],
+  "avoid": [
+   "lower_back"
+  ]
+ },
+ {
+  "id": "single-leg-rdl",
+  "name": "Single-Leg Romanian Deadlift",
+  "pattern": "hinge",
+  "equipment": [],
+  "primary": [
+   "hamstrings",
+   "glutes"
+  ],
+  "secondary": [
+   "core"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0.5,
+  "restType": "accessory",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Stand on one leg, soft knee",
+   "Hinge forward as the back leg rises behind you",
+   "Return by squeezing the glute of the standing leg"
+  ],
+  "mistakes": [
+   "Rounding the back",
+   "Hips opening up toward the ceiling"
+  ],
+  "unilateral": true
+ },
+ {
+  "id": "db-romanian-deadlift",
+  "name": "Dumbbell Romanian Deadlift",
+  "pattern": "hinge",
+  "equipment": [
+   "dumbbells"
+  ],
+  "primary": [
+   "hamstrings",
+   "glutes"
+  ],
+  "secondary": [
+   "lower_back"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "dumbbell",
+  "cues": [
+   "Dumbbells in front of your thighs, soft knees",
+   "Push hips back, sliding the weights down your legs",
+   "Stop at a strong hamstring stretch, then drive hips forward"
+  ],
+  "mistakes": [
+   "Rounding the back",
+   "Turning it into a squat"
+  ],
+  "avoid": [
+   "lower_back"
+  ]
+ },
+ {
+  "id": "romanian-deadlift",
+  "name": "Barbell Romanian Deadlift",
+  "pattern": "hinge",
+  "equipment": [
+   "barbell"
+  ],
+  "primary": [
+   "hamstrings",
+   "glutes"
+  ],
+  "secondary": [
+   "lower_back"
+  ],
+  "difficulty": 3,
+  "bwFactor": 0,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "barbell",
+  "cues": [
+   "Start standing, bar against your thighs",
+   "Push hips back with a flat back, bar close to your legs",
+   "Stand tall by driving hips forward"
+  ],
+  "mistakes": [
+   "Rounding the back",
+   "Bar drifting away from the legs"
+  ],
+  "avoid": [
+   "lower_back"
+  ]
+ },
+ {
+  "id": "deadlift",
+  "name": "Conventional Deadlift",
+  "pattern": "hinge",
+  "equipment": [
+   "barbell"
+  ],
+  "primary": [
+   "glutes",
+   "hamstrings",
+   "lower_back"
+  ],
+  "secondary": [
+   "traps",
+   "forearms",
+   "quads"
+  ],
+  "difficulty": 4,
+  "bwFactor": 0,
+  "restType": "mainCompound",
+  "kind": "reps",
+  "loadType": "barbell",
+  "cues": [
+   "Bar over mid-foot, shins touch the bar",
+   "Flat back, brace, push the floor away",
+   "Lock out with glutes, not by leaning back"
+  ],
+  "mistakes": [
+   "Rounding the lower back",
+   "Jerking the bar off the floor",
+   "Bar drifting forward"
+  ],
+  "avoid": [
+   "lower_back"
+  ]
+ },
+ {
+  "id": "kettlebell-swing",
+  "name": "Kettlebell Swing",
+  "pattern": "hinge",
+  "equipment": [
+   "kettlebell"
+  ],
+  "primary": [
+   "glutes",
+   "hamstrings"
+  ],
+  "secondary": [
+   "core",
+   "upper_back"
+  ],
+  "difficulty": 3,
+  "bwFactor": 0,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "kettlebell",
+  "cues": [
+   "Hike the bell back between your legs",
+   "Snap your hips forward to float it to chest height",
+   "Let it fall back and hinge again"
+  ],
+  "mistakes": [
+   "Squatting instead of hinging",
+   "Lifting the bell with the arms"
+  ],
+  "avoid": [
+   "lower_back"
+  ]
+ },
+ {
+  "id": "leg-curl",
+  "name": "Lying Leg Curl",
+  "pattern": "knee_flexion",
+  "equipment": [
+   "machines"
+  ],
+  "primary": [
+   "hamstrings"
+  ],
+  "secondary": [],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "reps",
+  "loadType": "machine",
+  "cues": [
+   "Knees just off the pad edge",
+   "Curl your heels toward your glutes",
+   "Lower slowly over 2–3 seconds"
+  ],
+  "mistakes": [
+   "Hips lifting off the pad",
+   "Using momentum"
+  ]
+ },
+ {
+  "id": "reverse-lunge",
+  "name": "Reverse Lunge",
+  "pattern": "lunge",
+  "equipment": [],
+  "primary": [
+   "quads",
+   "glutes"
+  ],
+  "secondary": [
+   "hamstrings"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0.85,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Step one foot back and lower the back knee toward the floor",
+   "Front shin stays nearly vertical",
+   "Push through the front foot to return"
+  ],
+  "mistakes": [
+   "Short steps that overload the front knee",
+   "Torso collapsing forward"
+  ],
+  "unilateral": true,
+  "avoid": [
+   "knee"
+  ]
+ },
+ {
+  "id": "walking-lunge",
+  "name": "Walking Lunge",
+  "pattern": "lunge",
+  "equipment": [],
+  "primary": [
+   "quads",
+   "glutes"
+  ],
+  "secondary": [
+   "hamstrings",
+   "core"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0.85,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Long step forward, both knees to about 90°",
+   "Push off the front foot into the next step",
+   "Stay tall; add dumbbells to progress"
+  ],
+  "mistakes": [
+   "Knee caving in",
+   "Rushing the steps"
+  ],
+  "unilateral": true,
+  "avoid": [
+   "knee"
+  ]
+ },
+ {
+  "id": "step-up",
+  "name": "Step-up",
+  "pattern": "lunge",
+  "equipment": [],
+  "primary": [
+   "quads",
+   "glutes"
+  ],
+  "secondary": [
+   "hamstrings"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0.85,
+  "restType": "secondaryCompound",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Whole foot on a sturdy box, bench or stair",
+   "Drive through that heel to stand on top",
+   "Lower slowly; don't push off the back foot"
+  ],
+  "mistakes": [
+   "Pushing off the trailing leg",
+   "Box too high"
+  ],
+  "unilateral": true,
+  "avoid": [
+   "knee"
+  ]
+ },
+ {
+  "id": "standing-calf-raise",
+  "name": "Standing Calf Raise",
+  "pattern": "calf",
+  "equipment": [],
+  "primary": [
+   "calves"
+  ],
+  "secondary": [],
+  "difficulty": 1,
+  "bwFactor": 0.9,
+  "restType": "isolation",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Balls of the feet on a step, heels hanging",
+   "Rise as high as you can and pause",
+   "Lower slowly to a deep stretch"
+  ],
+  "mistakes": [
+   "Bouncing",
+   "Bending the knees"
+  ],
+  "avoid": [
+   "ankle"
+  ]
+ },
+ {
+  "id": "db-curl",
+  "name": "Dumbbell Curl",
+  "pattern": "elbow_flexion",
+  "equipment": [
+   "dumbbells"
+  ],
+  "primary": [
+   "biceps"
+  ],
+  "secondary": [
+   "forearms"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "reps",
+  "loadType": "dumbbell",
+  "cues": [
+   "Elbows pinned to your sides",
+   "Curl up while turning your palms up",
+   "Lower slowly to full extension"
+  ],
+  "mistakes": [
+   "Swinging the torso",
+   "Elbows drifting forward"
+  ],
+  "avoid": [
+   "elbow"
+  ]
+ },
+ {
+  "id": "band-curl",
+  "name": "Band Curl",
+  "pattern": "elbow_flexion",
+  "equipment": [
+   "bands"
+  ],
+  "primary": [
+   "biceps"
+  ],
+  "secondary": [
+   "forearms"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "reps",
+  "loadType": "band",
+  "cues": [
+   "Stand on the band",
+   "Curl up with elbows fixed",
+   "Control the return"
+  ],
+  "mistakes": [
+   "Swinging"
+  ],
+  "avoid": [
+   "elbow"
+  ]
+ },
+ {
+  "id": "triceps-pushdown",
+  "name": "Cable Triceps Pushdown",
+  "pattern": "elbow_extension",
+  "equipment": [
+   "cable"
+  ],
+  "primary": [
+   "triceps"
+  ],
+  "secondary": [],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "reps",
+  "loadType": "machine",
+  "cues": [
+   "Elbows pinned at your sides",
+   "Push down to full lockout",
+   "Return until forearms are just above parallel"
+  ],
+  "mistakes": [
+   "Elbows flaring forward",
+   "Leaning over the bar"
+  ],
+  "avoid": [
+   "elbow"
+  ]
+ },
+ {
+  "id": "overhead-triceps-extension",
+  "name": "Overhead Dumbbell Triceps Extension",
+  "pattern": "elbow_extension",
+  "equipment": [
+   "dumbbells"
+  ],
+  "primary": [
+   "triceps"
+  ],
+  "secondary": [],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "reps",
+  "loadType": "dumbbell",
+  "cues": [
+   "Hold one dumbbell overhead with both hands",
+   "Lower it behind your head, elbows pointing up",
+   "Extend back to the top"
+  ],
+  "mistakes": [
+   "Elbows flaring wide",
+   "Arching the back"
+  ],
+  "avoid": [
+   "elbow",
+   "shoulder"
+  ]
+ },
+ {
+  "id": "db-lateral-raise",
+  "name": "Dumbbell Lateral Raise",
+  "pattern": "shoulder_abduction",
+  "equipment": [
+   "dumbbells"
+  ],
+  "primary": [
+   "side_delts"
+  ],
+  "secondary": [],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "reps",
+  "loadType": "dumbbell",
+  "cues": [
+   "Slight lean forward, soft elbows",
+   "Raise the dumbbells out to shoulder height",
+   "Lower slowly over 2 seconds"
+  ],
+  "mistakes": [
+   "Shrugging",
+   "Swinging the weights up"
+  ],
+  "avoid": [
+   "shoulder"
+  ]
+ },
+ {
+  "id": "prone-ytw",
+  "name": "Prone Y-T-W Raise",
+  "pattern": "rear_delt",
+  "equipment": [],
+  "primary": [
+   "upper_back",
+   "rear_delts"
+  ],
+  "secondary": [
+   "lower_back"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Lie face down, forehead on a towel, thumbs up",
+   "Lift your arms into a Y, then a T, then a W — that is one rep",
+   "Squeeze your shoulder blades; keep your neck long"
+  ],
+  "mistakes": [
+   "Lifting the head and chest instead of the arms",
+   "Shrugging toward the ears"
+  ]
+ },
+ {
+  "id": "band-pull-apart",
+  "name": "Band Pull-Apart",
+  "pattern": "rear_delt",
+  "equipment": [
+   "bands"
+  ],
+  "primary": [
+   "rear_delts",
+   "upper_back"
+  ],
+  "secondary": [],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "reps",
+  "loadType": "band",
+  "cues": [
+   "Arms straight in front at shoulder height",
+   "Pull the band apart until it touches your chest",
+   "Return slowly"
+  ],
+  "mistakes": [
+   "Shrugging",
+   "Bending the elbows a lot"
+  ]
+ },
+ {
+  "id": "face-pull",
+  "name": "Face Pull",
+  "pattern": "rear_delt",
+  "equipment": [],
+  "primary": [
+   "rear_delts",
+   "upper_back"
+  ],
+  "secondary": [
+   "rotator_cuff"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "reps",
+  "loadType": "machine",
+  "cues": [
+   "Rope or band at face height",
+   "Pull toward your eyes, hands ending beside your ears",
+   "Pause, then return slowly"
+  ],
+  "mistakes": [
+   "Pulling to the chest",
+   "Leaning back"
+  ],
+  "anyOf": [
+   "cable",
+   "bands"
+  ]
+ },
+ {
+  "id": "plank",
+  "name": "Plank",
+  "pattern": "core_anti_extension",
+  "equipment": [],
+  "primary": [
+   "core"
+  ],
+  "secondary": [
+   "front_delts",
+   "glutes"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "time",
+  "loadType": "bodyweight",
+  "cues": [
+   "Forearms under shoulders, body in one straight line",
+   "Squeeze glutes and brace like you're about to be poked",
+   "Breathe steadily"
+  ],
+  "mistakes": [
+   "Hips sagging",
+   "Hips piked high"
+  ],
+  "avoid": [
+   "shoulder"
+  ],
+  "timed": true
+ },
+ {
+  "id": "side-plank",
+  "name": "Side Plank",
+  "pattern": "core_anti_lateral",
+  "equipment": [],
+  "primary": [
+   "obliques"
+  ],
+  "secondary": [
+   "glutes",
+   "core"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "time",
+  "loadType": "bodyweight",
+  "cues": [
+   "Elbow under shoulder, feet stacked",
+   "Lift hips into a straight line",
+   "Hold, then switch sides"
+  ],
+  "mistakes": [
+   "Hips sagging",
+   "Rolling forward"
+  ],
+  "unilateral": true,
+  "avoid": [
+   "shoulder"
+  ],
+  "timed": true
+ },
+ {
+  "id": "dead-bug",
+  "name": "Dead Bug",
+  "pattern": "core_anti_extension",
+  "equipment": [],
+  "primary": [
+   "core"
+  ],
+  "secondary": [],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Lie on your back, arms up, knees at 90°",
+   "Lower opposite arm and leg while pressing your lower back into the floor",
+   "Return and switch sides"
+  ],
+  "mistakes": [
+   "Lower back arching off the floor",
+   "Moving too fast"
+  ]
+ },
+ {
+  "id": "bird-dog",
+  "name": "Bird Dog",
+  "pattern": "core_anti_rotation",
+  "equipment": [],
+  "primary": [
+   "core",
+   "glutes"
+  ],
+  "secondary": [
+   "lower_back"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "On hands and knees, back flat",
+   "Reach one arm and the opposite leg out long",
+   "Pause without letting the hips rotate, then switch"
+  ],
+  "mistakes": [
+   "Arching the back",
+   "Rotating the hips"
+  ]
+ },
+ {
+  "id": "hollow-hold",
+  "name": "Hollow Body Hold",
+  "pattern": "core_anti_extension",
+  "equipment": [],
+  "primary": [
+   "core"
+  ],
+  "secondary": [
+   "hip_flexors"
+  ],
+  "difficulty": 3,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "time",
+  "loadType": "bodyweight",
+  "cues": [
+   "Lower back pressed into the floor",
+   "Arms overhead, legs straight and low",
+   "Hold the banana shape and breathe"
+  ],
+  "mistakes": [
+   "Lower back lifting off the floor"
+  ],
+  "avoid": [
+   "lower_back"
+  ],
+  "timed": true,
+  "progression": "dead-bug>plank>hollow-hold"
+ },
+ {
+  "id": "pallof-press",
+  "name": "Pallof Press",
+  "pattern": "core_anti_rotation",
+  "equipment": [],
+  "primary": [
+   "obliques",
+   "core"
+  ],
+  "secondary": [],
+  "difficulty": 2,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "reps",
+  "loadType": "band",
+  "cues": [
+   "Stand side-on to the anchor, band at chest",
+   "Press straight out and resist the rotation",
+   "Bring it back slowly"
+  ],
+  "mistakes": [
+   "Twisting toward the anchor",
+   "Standing too close"
+  ],
+  "anyOf": [
+   "bands",
+   "cable"
+  ]
+ },
+ {
+  "id": "hanging-knee-raise",
+  "name": "Hanging Knee Raise",
+  "pattern": "core_flexion",
+  "equipment": [
+   "pull_up_bar"
+  ],
+  "primary": [
+   "core",
+   "hip_flexors"
+  ],
+  "secondary": [
+   "forearms"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Dead hang, shoulders engaged",
+   "Bring your knees toward your chest, curling the pelvis",
+   "Lower slowly without swinging"
+  ],
+  "mistakes": [
+   "Swinging for momentum"
+  ],
+  "avoid": [
+   "shoulder"
+  ]
+ },
+ {
+  "id": "hanging-leg-raise",
+  "name": "Hanging Leg Raise",
+  "pattern": "core_flexion",
+  "equipment": [
+   "pull_up_bar"
+  ],
+  "primary": [
+   "core",
+   "hip_flexors"
+  ],
+  "secondary": [
+   "forearms"
+  ],
+  "difficulty": 4,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "reps",
+  "loadType": "bodyweight",
+  "cues": [
+   "Dead hang with straight legs",
+   "Raise your legs to hip height or higher",
+   "Lower under control"
+  ],
+  "mistakes": [
+   "Swinging",
+   "Bending the knees to cheat"
+  ],
+  "avoid": [
+   "shoulder",
+   "lower_back"
+  ],
+  "progression": "hanging-knee-raise>hanging-leg-raise"
+ },
+ {
+  "id": "farmer-carry",
+  "name": "Farmer Carry",
+  "pattern": "carry",
+  "equipment": [],
+  "primary": [
+   "forearms",
+   "traps",
+   "core"
+  ],
+  "secondary": [
+   "glutes"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0,
+  "restType": "accessory",
+  "kind": "time",
+  "loadType": "dumbbell",
+  "cues": [
+   "Heavy weight in each hand, stand tall",
+   "Walk with short, quick steps",
+   "Keep shoulders down and ribs stacked"
+  ],
+  "mistakes": [
+   "Leaning to one side",
+   "Shrugging"
+  ],
+  "anyOf": [
+   "dumbbells",
+   "kettlebell"
+  ],
+  "avoid": [
+   "lower_back"
+  ],
+  "timed": true
+ },
+ {
+  "id": "jumping-jack",
+  "name": "Jumping Jack",
+  "pattern": "conditioning",
+  "equipment": [],
+  "primary": [
+   "full_body"
+  ],
+  "secondary": [],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "accessory",
+  "kind": "time",
+  "loadType": "none",
+  "cues": [
+   "Jump feet out as arms go overhead",
+   "Land softly on the balls of your feet",
+   "Keep a steady rhythm"
+  ],
+  "mistakes": [
+   "Landing heavy"
+  ],
+  "avoid": [
+   "ankle"
+  ],
+  "timed": true
+ },
+ {
+  "id": "high-knees",
+  "name": "High Knees",
+  "pattern": "conditioning",
+  "equipment": [],
+  "primary": [
+   "full_body"
+  ],
+  "secondary": [
+   "hip_flexors"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0,
+  "restType": "accessory",
+  "kind": "time",
+  "loadType": "none",
+  "cues": [
+   "Run in place driving knees to hip height",
+   "Stay on the balls of your feet",
+   "Pump your arms"
+  ],
+  "mistakes": [
+   "Leaning back"
+  ],
+  "avoid": [
+   "knee",
+   "ankle"
+  ],
+  "timed": true
+ },
+ {
+  "id": "mountain-climber",
+  "name": "Mountain Climber",
+  "pattern": "conditioning",
+  "equipment": [],
+  "primary": [
+   "core",
+   "full_body"
+  ],
+  "secondary": [
+   "front_delts"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0,
+  "restType": "accessory",
+  "kind": "time",
+  "loadType": "none",
+  "cues": [
+   "High plank, hands under shoulders",
+   "Drive knees toward your chest one at a time",
+   "Keep hips level"
+  ],
+  "mistakes": [
+   "Hips bouncing up",
+   "Hands drifting forward"
+  ],
+  "avoid": [
+   "wrist",
+   "shoulder"
+  ],
+  "timed": true
+ },
+ {
+  "id": "skater-hop",
+  "name": "Skater Hop",
+  "pattern": "conditioning",
+  "equipment": [],
+  "primary": [
+   "glutes",
+   "quads"
+  ],
+  "secondary": [
+   "calves"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0,
+  "restType": "accessory",
+  "kind": "time",
+  "loadType": "none",
+  "cues": [
+   "Leap sideways onto one leg",
+   "Land softly with a bent knee",
+   "Leap back to the other side"
+  ],
+  "mistakes": [
+   "Landing with a straight knee"
+  ],
+  "avoid": [
+   "knee",
+   "ankle"
+  ],
+  "timed": true
+ },
+ {
+  "id": "burpee",
+  "name": "Burpee",
+  "pattern": "conditioning",
+  "equipment": [],
+  "primary": [
+   "full_body"
+  ],
+  "secondary": [
+   "chest",
+   "quads"
+  ],
+  "difficulty": 3,
+  "bwFactor": 0,
+  "restType": "accessory",
+  "kind": "time",
+  "loadType": "none",
+  "cues": [
+   "Squat down, hands on the floor",
+   "Jump feet back to a plank, then forward again",
+   "Stand and jump with arms overhead"
+  ],
+  "mistakes": [
+   "Sagging hips in the plank",
+   "Landing stiff"
+  ],
+  "avoid": [
+   "wrist",
+   "knee",
+   "lower_back"
+  ],
+  "timed": true
+ },
+ {
+  "id": "brisk-walk",
+  "name": "Brisk Walk",
+  "pattern": "cardio",
+  "equipment": [],
+  "primary": [
+   "full_body"
+  ],
+  "secondary": [],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "accessory",
+  "kind": "time",
+  "loadType": "none",
+  "cues": [
+   "Walk fast enough to breathe harder but still talk",
+   "Swing your arms",
+   "Stand tall"
+  ],
+  "mistakes": [
+   "Walking too slowly to raise the heart rate"
+  ],
+  "timed": true
+ },
+ {
+  "id": "easy-run",
+  "name": "Easy Run",
+  "pattern": "cardio",
+  "equipment": [],
+  "primary": [
+   "full_body"
+  ],
+  "secondary": [
+   "calves"
+  ],
+  "difficulty": 2,
+  "bwFactor": 0,
+  "restType": "accessory",
+  "kind": "time",
+  "loadType": "none",
+  "cues": [
+   "Conversational pace (you can speak in sentences)",
+   "Short, light steps",
+   "Relaxed shoulders"
+  ],
+  "mistakes": [
+   "Running too fast for Zone 2"
+  ],
+  "avoid": [
+   "knee",
+   "ankle"
+  ],
+  "timed": true
+ },
+ {
+  "id": "cat-cow",
+  "name": "Cat-Cow",
+  "pattern": "mobility",
+  "equipment": [],
+  "primary": [
+   "spine"
+  ],
+  "secondary": [],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "time",
+  "loadType": "none",
+  "cues": [
+   "On hands and knees",
+   "Round your back up, then let it sink while lifting your chest",
+   "Move slowly with your breath"
+  ],
+  "mistakes": [
+   "Rushing"
+  ],
+  "timed": true
+ },
+ {
+  "id": "worlds-greatest-stretch",
+  "name": "World's Greatest Stretch",
+  "pattern": "mobility",
+  "equipment": [],
+  "primary": [
+   "hips",
+   "spine"
+  ],
+  "secondary": [
+   "hamstrings"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "time",
+  "loadType": "none",
+  "cues": [
+   "Lunge forward, same-side hand down inside the foot",
+   "Rotate and reach the other arm to the ceiling",
+   "Switch sides"
+  ],
+  "mistakes": [
+   "Letting the back knee collapse"
+  ],
+  "unilateral": true,
+  "timed": true
+ },
+ {
+  "id": "hip-flexor-stretch",
+  "name": "Half-Kneeling Hip Flexor Stretch",
+  "pattern": "mobility",
+  "equipment": [],
+  "primary": [
+   "hip_flexors"
+  ],
+  "secondary": [],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "time",
+  "loadType": "none",
+  "cues": [
+   "Half-kneel, squeeze the back-leg glute",
+   "Shift your hips forward gently",
+   "Keep ribs down"
+  ],
+  "mistakes": [
+   "Arching the lower back"
+  ],
+  "unilateral": true,
+  "avoid": [
+   "knee"
+  ],
+  "timed": true
+ },
+ {
+  "id": "thoracic-open-book",
+  "name": "Open Book Rotation",
+  "pattern": "mobility",
+  "equipment": [],
+  "primary": [
+   "spine"
+  ],
+  "secondary": [
+   "chest"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "time",
+  "loadType": "none",
+  "cues": [
+   "Lie on your side, knees bent",
+   "Open the top arm across to the other side, following it with your eyes",
+   "Return slowly"
+  ],
+  "mistakes": [
+   "Knees lifting apart"
+  ],
+  "unilateral": true,
+  "timed": true
+ },
+ {
+  "id": "childs-pose",
+  "name": "Child's Pose",
+  "pattern": "mobility",
+  "equipment": [],
+  "primary": [
+   "lats",
+   "spine"
+  ],
+  "secondary": [],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "time",
+  "loadType": "none",
+  "cues": [
+   "Knees wide, sit back on your heels",
+   "Reach your arms long in front",
+   "Breathe into your back"
+  ],
+  "mistakes": [],
+  "avoid": [
+   "knee"
+  ],
+  "timed": true
+ },
+ {
+  "id": "ninety-ninety",
+  "name": "90/90 Hip Switch",
+  "pattern": "mobility",
+  "equipment": [],
+  "primary": [
+   "hips"
+  ],
+  "secondary": [],
+  "difficulty": 2,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "time",
+  "loadType": "none",
+  "cues": [
+   "Sit with both knees bent at 90°",
+   "Rotate both knees to the other side",
+   "Stay tall through the spine"
+  ],
+  "mistakes": [
+   "Collapsing backward"
+  ],
+  "avoid": [
+   "knee"
+  ],
+  "timed": true
+ },
+ {
+  "id": "deep-squat-hold",
+  "name": "Deep Squat Hold",
+  "pattern": "mobility",
+  "equipment": [],
+  "primary": [
+   "hips",
+   "ankles"
+  ],
+  "secondary": [],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "time",
+  "loadType": "none",
+  "cues": [
+   "Sit into your deepest comfortable squat",
+   "Push knees out with your elbows",
+   "Breathe and relax into it"
+  ],
+  "mistakes": [
+   "Heels lifting (hold onto something)"
+  ],
+  "avoid": [
+   "knee"
+  ],
+  "timed": true
+ },
+ {
+  "id": "downward-dog",
+  "name": "Downward Dog",
+  "pattern": "mobility",
+  "equipment": [],
+  "primary": [
+   "hamstrings",
+   "calves",
+   "shoulders"
+  ],
+  "secondary": [],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "time",
+  "loadType": "none",
+  "cues": [
+   "Hands and feet down, hips high",
+   "Press the chest toward your thighs",
+   "Pedal the heels gently"
+  ],
+  "mistakes": [
+   "Rounding the back"
+  ],
+  "avoid": [
+   "wrist",
+   "shoulder"
+  ],
+  "timed": true
+ },
+ {
+  "id": "shoulder-dislocate",
+  "name": "Band Shoulder Pass-Through",
+  "pattern": "mobility",
+  "equipment": [
+   "bands"
+  ],
+  "primary": [
+   "shoulders"
+  ],
+  "secondary": [
+   "chest"
+  ],
+  "difficulty": 1,
+  "bwFactor": 0,
+  "restType": "isolation",
+  "kind": "reps",
+  "loadType": "band",
+  "cues": [
+   "Wide grip on a band",
+   "Lift it overhead and behind you with straight arms",
+   "Bring it back in front"
+  ],
+  "mistakes": [
+   "Grip too narrow, forcing the shoulders"
+  ],
+  "avoid": [
+   "shoulder"
+  ]
+ }
+]

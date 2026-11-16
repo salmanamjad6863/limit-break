@@ -1,0 +1,39 @@
+{
+  "id": "upper-lower-builder", "name": "Upper/Lower Builder", "typeId": "hypertrophy",
+  "summary": "Four days, each muscle twice a week. A heavier and a higher-rep day for each half.",
+  "levels": ["intermediate", "advanced"], "locations": ["GYM"], "goals": ["bulk", "recomp", "maintain", "cut"], "daysPerWeek": [4],
+  "blockWeeks": 5, "deloadEvery": 5,
+  "days": [
+    { "id": "upper-a", "name": "Upper A · Heavy", "focus": "upper", "slots": [
+      { "pattern": "horizontal_push", "role": "main", "sets": 4, "reps": [5, 8], "rir": 2, "prefer": ["bench-press"] },
+      { "pattern": "horizontal_pull", "role": "main", "sets": 4, "reps": [6, 10], "rir": 2, "prefer": ["barbell-row", "chest-supported-row"] },
+      { "pattern": "vertical_push", "role": "secondary", "sets": 3, "reps": [8, 12], "rir": 2, "prefer": ["db-shoulder-press"] },
+      { "pattern": "vertical_pull", "role": "secondary", "sets": 3, "reps": [8, 12], "rir": 2, "prefer": ["lat-pulldown", "pull-up"] },
+      { "pattern": "elbow_flexion", "role": "accessory", "sets": 2, "reps": [10, 15], "rir": 1, "prefer": ["db-curl"] },
+      { "pattern": "elbow_extension", "role": "accessory", "sets": 2, "reps": [10, 15], "rir": 1, "prefer": ["triceps-pushdown"] }
+    ]},
+    { "id": "lower-a", "name": "Lower A · Heavy", "focus": "lower", "slots": [
+      { "pattern": "squat", "role": "main", "sets": 4, "reps": [5, 8], "rir": 2, "prefer": ["back-squat", "front-squat"] },
+      { "pattern": "hinge", "role": "secondary", "sets": 3, "reps": [8, 10], "rir": 2, "prefer": ["romanian-deadlift"] },
+      { "pattern": "lunge", "role": "secondary", "sets": 3, "reps": [8, 12], "rir": 2, "prefer": ["bulgarian-split-squat"] },
+      { "pattern": "knee_flexion", "role": "accessory", "sets": 3, "reps": [10, 15], "rir": 1, "prefer": ["leg-curl"] },
+      { "pattern": "calf", "role": "accessory", "sets": 3, "reps": [10, 15], "rir": 1 },
+      { "pattern": "core_anti_extension", "role": "core", "sets": 3, "seconds": [30, 45], "rir": 2, "prefer": ["plank"] }
+    ]},
+    { "id": "upper-b", "name": "Upper B · Volume", "focus": "upper", "slots": [
+      { "pattern": "horizontal_push", "role": "main", "sets": 4, "reps": [8, 12], "rir": 2, "prefer": ["incline-db-press"] },
+      { "pattern": "vertical_pull", "role": "main", "sets": 4, "reps": [6, 10], "rir": 2, "prefer": ["pull-up", "lat-pulldown"] },
+      { "pattern": "horizontal_pull", "role": "secondary", "sets": 3, "reps": [10, 12], "rir": 2, "prefer": ["seated-cable-row"] },
+      { "pattern": "shoulder_abduction", "role": "accessory", "sets": 3, "reps": [12, 20], "rir": 1, "prefer": ["db-lateral-raise"] },
+      { "pattern": "rear_delt", "role": "accessory", "sets": 2, "reps": [15, 20], "rir": 1, "prefer": ["face-pull", "band-pull-apart"] },
+      { "pattern": "elbow_extension", "role": "accessory", "sets": 2, "reps": [10, 15], "rir": 1, "prefer": ["overhead-triceps-extension"] }
+    ]},
+    { "id": "lower-b", "name": "Lower B · Volume", "focus": "lower", "slots": [
+      { "pattern": "hinge", "role": "main", "sets": 3, "reps": [4, 6], "rir": 2, "prefer": ["deadlift", "romanian-deadlift"] },
+      { "pattern": "squat", "role": "secondary", "sets": 3, "reps": [10, 15], "rir": 2, "prefer": ["leg-press", "goblet-squat"] },
+      { "pattern": "lunge", "role": "secondary", "sets": 3, "reps": [10, 12], "rir": 2, "prefer": ["walking-lunge"] },
+      { "pattern": "hip_thrust", "role": "accessory", "sets": 3, "reps": [8, 12], "rir": 1, "prefer": ["hip-thrust"] },
+      { "pattern": "core_flexion", "role": "core", "sets": 3, "reps": [8, 12], "rir": 2, "prefer": ["hanging-leg-raise", "hanging-knee-raise"], "fallback": ["core_anti_extension"] }
+    ]}
+  ]
+}

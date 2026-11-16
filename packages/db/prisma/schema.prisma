@@ -1,0 +1,340 @@
+// LIMITBREAK schema v1 — Sprint 0. Spec: ARCHITECTURE.md §8, SYSTEMS.md.
+// Schema changes ONLY via `pnpm db:migrate`. Never edit tables in the Supabase dashboard.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Rank {
+  E
+  D
+  C
+  B
+  A
+  S
+  SOVEREIGN
+}
+
+enum HeroClass {
+  HYBRID
+  FIGHTER
+  ASSASSIN
+  JUGGERNAUT
+  RANGER
+  MONK
+}
+
+enum TrainingLocation {
+  HOME
+  GYM
+  HYBRID
+}
+
+enum QuestKind {
+  DAILY
+  MAIN
+  SIDE
+  BOSS
+  TRIAL
+  EVENT
+  HIDDEN
+  PENALTY
+}
+
+enum QuestStatus {
+  ACTIVE
+  COMPLETED
+  FAILED
+  EXPIRED
+}
+
+/// id = auth.users.id. Row is created by the on_auth_user_created trigger; onboarding fills the rest.
+model Profile {
+  id                 String            @id @db.Uuid
+  hunterName         String?
+  heroId             String?
+  heroClass          HeroClass?
+  sex                String?
+  birthDate          DateTime?         @db.Date
+  heightCm           Float?
+  goal               String?
+  experience         String?
+  location           TrainingLocation?
+  equipment          String[]          @default([])
+  injuries           String[]          @default([])
+  lifestyle          String?
+  nutritionMode      String            @default("full")
+  fatPreference      String            @default("balanced")
+  daysPerWeek        Int?
+  sessionMinutes     Int?
+  questTime          String?
+  timezone           String            @default("UTC")
+  /// Awakening Assessment results — Daily Quest scaling baselines (SYSTEMS.md §4.6)
+  baselines          Json?
+  notificationsOptIn Boolean           @default(false)
+  onboardedAt        DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  state        HunterState?
+  events       Event[]
+  workouts     WorkoutSession[]
+  records      PersonalRecord[]
+  quests       QuestInstance[]
+  foodLogs     FoodLog[]
+  bodyMetrics  BodyMetric[]
+  tdee         TdeeEstimate[]
+  targets      NutritionTarget[]
+  entitlements Entitlement[]
+  pushTokens   PushToken[]
+}
+
+model HunterState {
+  userId    String   @id @db.Uuid
+  level     Int      @default(1)
+  xp        Int      @default(0)
+  rank      Rank     @default(E)
+  apUnspent Int      @default(0)
+  streak    Int      @default(0)
+  longest   Int      @default(0)
+  shields   Int      @default(2)
+  str       Float    @default(10)
+  agi       Float    @default(10)
+  end       Float    @default(10)
+  vit       Float    @default(10)
+  spi       Float    @default(10)
+  updatedAt DateTime @updatedAt
+  profile   Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Append-only source of truth. id is client-generated = idempotency key.
+model Event {
+  id        String     @id @db.Uuid
+  userId    String     @db.Uuid
+  type      String
+  payload   Json
+  localDate String
+  clientTs  DateTime
+  serverTs  DateTime   @default(now())
+  flagged   Boolean    @default(false)
+  xp        XpLedger[]
+  profile   Profile    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, serverTs])
+  @@index([userId, localDate])
+}
+
+/// Written by the server reward calculator only.
+model XpLedger {
+  id        Int      @id @default(autoincrement())
+  eventId   String   @db.Uuid
+  userId    String   @db.Uuid
+  localDate String
+  amount    Int
+  reason    String
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([userId, localDate])
+}
+
+model Exercise {
+  id         String         @id
+  name       String
+  pattern    String
+  equipment  String[]
+  primary    String[]
+  secondary  String[]
+  difficulty Int
+  bwFactor   Float          @default(0)
+  restType   String
+  mediaKey   String?
+  linksFrom  ExerciseLink[] @relation("from")
+  linksTo    ExerciseLink[] @relation("to")
+}
+
+model ExerciseLink {
+  fromId String
+  toId   String
+  kind   String // SUBSTITUTE | PROGRESSION | REGRESSION
+  from   Exercise @relation("from", fields: [fromId], references: [id], onDelete: Cascade)
+  to     Exercise @relation("to", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@id([fromId, toId, kind])
+}
+
+model WorkoutSession {
+  id               String       @id @db.Uuid
+  userId           String       @db.Uuid
+  plannedWorkoutId String?
+  localDate        String
+  startedAt        DateTime
+  finishedAt       DateTime?
+  plannedHardSets  Int          @default(0)
+  sets             WorkoutSet[]
+  profile          Profile      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, localDate])
+}
+
+model WorkoutSet {
+  id          String         @id @db.Uuid
+  sessionId   String         @db.Uuid
+  exerciseId  String
+  order       Int
+  reps        Int?
+  weightKg    Float?
+  rir         Int?
+  rpe         Float?
+  durationS   Int?
+  distanceM   Float?
+  isWarmup    Boolean        @default(false)
+  completedAt DateTime
+  session     WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+model PersonalRecord {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  exerciseId String
+  e1rmKg     Float
+  setId      String   @db.Uuid
+  confirmed  Boolean  @default(true)
+  achievedAt DateTime
+  profile    Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, exerciseId, achievedAt])
+}
+
+model QuestInstance {
+  id          String      @id @db.Uuid
+  userId      String      @db.Uuid
+  templateId  String
+  kind        QuestKind
+  localDate   String
+  targets     Json
+  progress    Json        @default("{}")
+  status      QuestStatus @default(ACTIVE)
+  dueAt       DateTime
+  completedAt DateTime?
+  profile     Profile     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status, dueAt])
+}
+
+model Food {
+  id       String    @id
+  source   String // curated | usda | off | fatsecret | user
+  sourceId String?
+  name     String
+  brand    String?
+  barcode  String?   @unique
+  kcal100  Float
+  p100     Float
+  c100     Float
+  f100     Float
+  alc100   Float     @default(0)
+  fiber100 Float?
+  density  Float?
+  verified Boolean   @default(false)
+  ownerId  String?   @db.Uuid // user-created foods stay private
+  logs     FoodLog[]
+
+  @@index([name])
+}
+
+model FoodLog {
+  id        String   @id @db.Uuid
+  userId    String   @db.Uuid
+  foodId    String
+  grams     Float
+  meal      String
+  localDate String
+  loggedAt  DateTime
+  food      Food     @relation(fields: [foodId], references: [id])
+  profile   Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, localDate])
+}
+
+model NutritionDay {
+  userId         String   @db.Uuid
+  localDate      String
+  markedComplete Boolean  @default(false)
+  lowDayConfirm  Boolean  @default(false)
+  updatedAt      DateTime @updatedAt
+
+  @@id([userId, localDate])
+}
+
+model BodyMetric {
+  id         String   @id @db.Uuid
+  userId     String   @db.Uuid
+  localDate  String
+  measuredAt DateTime
+  weightKg   Float?
+  bodyFatPct Float?
+  waistCm    Float?
+  neckCm     Float?
+  hipCm      Float?
+  source     String   @default("manual")
+  profile    Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, localDate])
+}
+
+model TdeeEstimate {
+  userId     String  @db.Uuid
+  localDate  String
+  trendKg    Float?
+  tdee       Float
+  observed   Float?
+  confidence Float
+  profile    Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, localDate])
+}
+
+model NutritionTarget {
+  id            String  @id @default(uuid()) @db.Uuid
+  userId        String  @db.Uuid
+  effectiveFrom String
+  kcal          Float
+  proteinG      Float
+  fatG          Float
+  carbsG        Float
+  fiberG        Float
+  goal          String
+  ratePerWeek   Float
+  profile       Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, effectiveFrom])
+}
+
+/// SYSTEMS.md §7.1 — premium access, whatever its source.
+model Entitlement {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  key       String // "premium"
+  source    String // dev | revenuecat | promo | founder
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  profile   Profile   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key, source])
+}
+
+model PushToken {
+  token     String   @id
+  userId    String   @db.Uuid
+  platform  String
+  updatedAt DateTime @updatedAt
+  profile   Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
