@@ -393,6 +393,14 @@ Every stat comes from a **percentile against norm tables** (by sex and age band)
 | **VIT** | 14-day weighted mean: sleep 0.35 (`100 × clamp(1 − |avgSleep − 8| / 3, 0, 1)` around a 7–9 h band) · protein adherence 0.35 · hydration 0.15 · resting-HR percentile 0.15 (renormalized for missing inputs) |
 | **SPI** | 28-day: `100 × (0.5 × quest completion rate + 0.3 × sessions done / planned + 0.2 × nutrition logging rate)` (logging dropped and renormalized if nutrition is off) |
 
+**Implementation notes (Sprint 4):**
+- Tests feeding END/STR/AGI = the onboarding assessment, overridden field-by-field by the latest Rank Trial results.
+- Volume score target (whole body, weekly hard sets): beginner 30 · novice 40 · intermediate 50 · advanced 60.
+- Calisthenics level = highest position reached in a progression chain with a logged working set of ≥ 5 reps in the last 90 days.
+- Until sleep/nutrition data exist, VIT shows 30 and AGI shows 20 (both marked "Estimated" in the UI); SPI uses training adherence only until quests ship.
+- Gym trials don't require a max-out: the STR event uses the best logged e1RM ratio from the last 90 days (squat, bench, deadlift, OHP). With no lift history, push-ups are used.
+- Interval/quick sessions earn XP only for real active time (pauses and skips don't count) and get no completion bonus (§4.1).
+
 **Detraining decay:** STR, AGI and END hold for 4 weeks without new data, then drop 1% per week, never below 50% of the peak. A new test or PR restores them instantly.
 
 **Power Level** (the shareable number): `round((STR + AGI + END + VIT + SPI) × 10 × (1 + level / 100))`.

@@ -12,7 +12,8 @@ import linearStrength from './data/programs/linear-strength.json';
 import shinobiPath from './data/programs/shinobi-path.json';
 import upperLowerBuilder from './data/programs/upper-lower-builder.json';
 import quickSessionsJson from './data/quick-sessions.json';
-import { AssessmentNorms, Exercise, FeatureMatrix, Hero, Notifications, ProgramTemplate, QuickSession, WorkoutType } from './schemas';
+import trialsJson from './data/trials.json';
+import { AssessmentNorms, Exercise, FeatureMatrix, Hero, Notifications, ProgramTemplate, QuickSession, TrialsConfig, WorkoutType } from './schemas';
 
 export * from './schemas';
 
@@ -32,6 +33,7 @@ export const programs = z
   .parse([foundation, shinobiPath, burnProtocol, ironFoundation, linearStrength, upperLowerBuilder]);
 export const programById = new Map(programs.map((p) => [p.id, p]));
 export const quickSessions = z.array(QuickSession).parse(quickSessionsJson);
+export const trials = TrialsConfig.parse(trialsJson);
 
 export const exerciseById = new Map(exercises.map((e) => [e.id, e]));
 

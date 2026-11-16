@@ -1,0 +1,21 @@
+{
+  "restBetweenEventsSec": 180,
+  "events": [
+    { "id": "pushups", "name": "Max push-ups", "stat": "STR", "input": "count", "unit": "reps", "settings": ["HOME"],
+      "how": "One set, as many clean push-ups as you can.",
+      "standards": ["Chest comes within a fist of the floor", "Arms fully straight at the top", "Body stays in one straight line", "Resting more than 2 seconds ends the set"] },
+    { "id": "lift", "name": "Best lift", "stat": "STR", "input": "history", "unit": "× bodyweight", "settings": ["GYM"],
+      "how": "Uses your best estimated 1-rep max from the last 90 days on back squat, bench press, deadlift or overhead press. No max-out needed.",
+      "standards": ["Only sets logged with 1–12 reps to failure count", "Bodyweight is your latest weigh-in"] },
+    { "id": "plankSec", "name": "Plank hold", "stat": "END", "input": "stopwatch", "unit": "seconds", "settings": ["HOME", "GYM"],
+      "how": "Forearm plank held as long as you can with good form.",
+      "standards": ["Elbows under shoulders", "Hips stay level, no sagging or piking", "Stop the timer as soon as form breaks"] },
+    { "id": "squats60", "name": "Squats in 60 seconds", "stat": "END", "input": "countdown60", "unit": "reps", "settings": ["HOME", "GYM"],
+      "how": "As many bodyweight squats as you can in one minute.",
+      "standards": ["Hips reach knee height or lower", "Stand fully upright between reps", "Heels stay down"] },
+    { "id": "run2400Sec", "name": "2.4 km run", "stat": "AGI", "input": "time", "unit": "mm:ss", "settings": ["HOME", "GYM"],
+      "optionalBelow": "B",
+      "how": "Run 2.4 km (1.5 miles) on a track or flat route as fast as you can, then enter your time. Optional below B-Rank.",
+      "standards": ["Warm up for 5–10 minutes first", "Flat, measured route", "Stop if you feel unwell"] }
+  ]
+}

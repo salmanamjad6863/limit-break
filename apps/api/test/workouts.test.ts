@@ -1,42 +1,8 @@
 import type { PrismaClient } from '@lb/db';
 import { describe, expect, it } from 'vitest';
 import { createApp } from '../src/app';
+import { fakeDb, USER, uuid } from './fakeDb';
 
-const USER = '00000000-0000-4000-8000-000000000001';
-
-/** Minimal in-memory Prisma double covering what finishWorkout uses. */
-function fakeDb() {
-  const db = {
-    events: new Map<string, any>(),
-    sessions: [] as any[],
-    sets: [] as any[],
-    ledger: [] as any[],
-    records: [{ exerciseId: 'bench-press', e1rmKg: 90 }] as any[],
-    state: { userId: USER, xp: 0, level: 1, apUnspent: 0 },
-  };
-  const tx = {
-    event: { findUnique: async ({ where }: any) => db.events.get(where.id) ?? null, create: async ({ data }: any) => db.events.set(data.id, data) },
-    profile: { findUnique: async () => ({ timezone: 'UTC' }) },
-    hunterState: {
-      findUnique: async () => db.state,
-      update: async ({ data }: any) => {
-        db.state = { ...db.state, xp: data.xp, level: data.level, apUnspent: db.state.apUnspent + data.apUnspent.increment };
-      },
-    },
-    bodyMetric: { findFirst: async () => ({ weightKg: 80 }) },
-    personalRecord: { findMany: async () => db.records, createMany: async ({ data }: any) => db.records.push(...data) },
-    xpLedger: {
-      aggregate: async () => ({ _sum: { amount: db.ledger.reduce((s, l) => s + l.amount, 0) } }),
-      create: async ({ data }: any) => db.ledger.push(data),
-    },
-    workoutSession: { create: async ({ data }: any) => db.sessions.push(data) },
-    workoutSet: { createMany: async ({ data }: any) => db.sets.push(...data) },
-  };
-  const prisma = { ...tx, $transaction: async (fn: any) => fn(tx), entitlement: { findFirst: async () => null } } as unknown as PrismaClient;
-  return { db, prisma };
-}
-
-const uuid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const set = (n: number, o: Record<string, unknown> = {}) => ({
   id: uuid(100 + n), exerciseId: 'bench-press', order: n, reps: 5, weightKg: 100, rir: 2, rpe: null,
   durationS: null, distanceM: null, isWarmup: false, completedAt: '2026-11-17T10:00:00Z', ...o,
@@ -63,6 +29,8 @@ describe('POST /workouts/finish', () => {
     expect(db.ledger[0].amount).toBe(105);
     expect(db.sets.length).toBe(3);
     expect(db.state.xp).toBe(105);
+    // stats recomputed from real data after the workout
+    expect(db.state.str).toBeGreaterThan(10);
   });
 
   it('is idempotent: the same workout id never pays twice', async () => {

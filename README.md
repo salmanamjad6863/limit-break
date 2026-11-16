@@ -84,6 +84,7 @@ All motion respects the system Reduce Motion setting. Durations and springs come
 | Programs / quick sessions | `packages/content/src/data/programs/*.json`, `quick-sessions.json` |
 | Generator, schedule, set coaching | `packages/engine/src/training/generator.ts` |
 | Workout rewards (XP, PRs, level) | `packages/engine/src/progression/workout.ts`, shared by the app and `POST /workouts/finish` |
+| Progression (stats, trials) | `packages/engine/src/progression/stats.ts`, API `apps/api/src/modules/progression`, app `src/app/profile.tsx`, `src/app/trial.tsx` |
 | App flow | `apps/mobile/src/app/workout/*` (preview → session → debrief, `quick/[id]`), `programs.tsx`, `exercises.tsx`, `exercise/[id].tsx` |
 
 ## Rules

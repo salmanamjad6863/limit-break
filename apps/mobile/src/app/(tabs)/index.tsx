@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useCelebrations } from '@/features/celebrations';
-import { useLocalHunter, useMe } from '@/features/progression';
+import { useLocalHunter, useMe, useProgression } from '@/features/progression';
 import { useSession } from '@/features/session';
 import { useToday, useTraining, useTrainingProfile, useWorkoutSession } from '@/features/training';
 import { greeting, useQuestDeadline } from '@/lib/time';
@@ -29,6 +29,7 @@ export default function HomeScreen() {
   const enqueue = useCelebrations((s) => s.enqueue);
   const resetLocal = useLocalHunter((s) => s.reset);
   const { data: me, isLoading, error } = useMe();
+  const { data: prog } = useProgression();
   const deadline = useQuestDeadline();
   const [quest, setQuest] = useState(DEMO_QUEST);
   const today = useToday();
@@ -42,13 +43,24 @@ export default function HomeScreen() {
   const state = me.state;
   const hero = heroes.find((h) => h.id === me.heroId) ?? heroes[0]!;
   const xp = state?.xp ?? 0;
-  const prog = levelProgress(xp);
+  const lp = levelProgress(xp);
   const rank = state?.rank ?? 'E';
-  const stats = state?.stats ?? { STR: 100, AGI: 100, END: 100, VIT: 100, SPI: 100 };
+  const raw = prog?.stats as Record<'STR' | 'AGI' | 'END' | 'VIT' | 'SPI', number> | undefined;
+  // Display ×10 (SYSTEMS §4.3); fall back to the server's stored state while progression loads
+  const stats = raw
+    ? { STR: Math.round(raw.STR * 10), AGI: Math.round(raw.AGI * 10), END: Math.round(raw.END * 10), VIT: Math.round(raw.VIT * 10), SPI: Math.round(raw.SPI * 10) }
+    : (state?.stats ?? { STR: 100, AGI: 100, END: 100, VIT: 100, SPI: 100 });
   const power = powerLevel(
     { STR: stats.STR / 10, AGI: stats.AGI / 10, END: stats.END / 10, VIT: stats.VIT / 10, SPI: stats.SPI / 10 },
-    prog.level,
+    lp.level,
   );
+  const trialHint = (() => {
+    const t = prog?.trial;
+    if (!t?.target) return null;
+    if (t.eligible) return { target: t.target, text: `${t.target}-Rank Trial unlocked. Tap to attempt.` };
+    if (t.reason === 'level') return { target: t.target, text: `${t.target}-Rank Trial unlocks at level ${t.levelRequired}` };
+    return null;
+  })();
   const questRatio = quest.reduce((s, q) => s + Math.min(1, q.done / q.target), 0) / quest.length;
   const questDone = questRatio >= 1;
   const type = workoutTypes.find((t) => t.id === today.program.typeId)!;
@@ -59,7 +71,7 @@ export default function HomeScreen() {
 
   const completeQuest = () => {
     setQuest((qs) => qs.map((q) => ({ ...q, done: q.target })));
-    enqueue([{ type: 'levelUp', from: prog.level, to: prog.level + 1, ap: 1 }]);
+    enqueue([{ type: 'levelUp', from: lp.level, to: lp.level + 1, ap: 1 }]);
   };
 
   return (
@@ -75,6 +87,7 @@ export default function HomeScreen() {
 
       {/* Hunter card */}
       <Appear index={1}>
+        <PressableScale haptic="tap" scaleTo={0.98} onPress={() => router.push('/profile')} accessibilityRole="button" accessibilityLabel="Open hunter profile">
         <Card tint={hero.accent}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
             <HeroEmblem size={104} color={hero.accent} initial={(me.hunterName ?? hero.name).charAt(0).toUpperCase()} />
@@ -82,7 +95,7 @@ export default function HomeScreen() {
               <Text variant="label" color={hero.accent}>{hero.epithet}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: spacing[2] }}>
                 <Text variant="caption" dim>Level</Text>
-                <CountUp variant="stat" value={prog.level} />
+                <CountUp variant="stat" value={lp.level} />
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Icon name="flash" size={13} color={c.accentGlow} />
@@ -95,12 +108,19 @@ export default function HomeScreen() {
               <Text variant="micro" color={rankColor[rank]}>{`${rank}-Rank`}</Text>
             </View>
           </View>
-          <Bar ratio={prog.ratio} height={6} color={c.accent} delayMs={250} />
+          <Bar ratio={lp.ratio} height={6} color={c.accent} delayMs={250} />
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text variant="caption" muted>{`${prog.intoLevel.toLocaleString()} / ${prog.needed.toLocaleString()} XP`}</Text>
-            <Text variant="caption" dim>{`${(prog.needed - prog.intoLevel).toLocaleString()} XP to level ${prog.level + 1}`}</Text>
+            <Text variant="caption" muted>{`${lp.intoLevel.toLocaleString()} / ${lp.needed.toLocaleString()} XP`}</Text>
+            <Text variant="caption" dim>{`${(lp.needed - lp.intoLevel).toLocaleString()} XP to level ${lp.level + 1}`}</Text>
           </View>
+          {trialHint ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Icon name="shield-checkmark" size={14} color={rankColor[trialHint.target]} />
+              <Text variant="caption" color={rankColor[trialHint.target]}>{trialHint.text}</Text>
+            </View>
+          ) : null}
         </Card>
+        </PressableScale>
       </Appear>
 
       {/* Today rings */}

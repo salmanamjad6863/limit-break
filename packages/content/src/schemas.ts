@@ -41,15 +41,44 @@ export type Hero = z.infer<typeof Hero>;
 export const Notifications = z.record(z.string(), z.string());
 export { FeatureMatrix };
 
-const Anchors = z.object({
-  anchors: z
-    .array(z.object({ percentile: z.number().min(0).max(100), value: z.number() }))
-    .min(2)
-    .refine((a) => a.every((x, i) => i === 0 || (x.percentile > a[i - 1]!.percentile && x.value >= a[i - 1]!.value)), 'anchors must ascend'),
-  lowerIsBetter: z.boolean().optional(),
-});
+const Anchors = z
+  .object({
+    anchors: z.array(z.object({ percentile: z.number().min(0).max(100), value: z.number() })).min(2),
+    lowerIsBetter: z.boolean().optional(),
+  })
+  .refine(
+    (n) =>
+      n.anchors.every(
+        (x, i) =>
+          i === 0 ||
+          (x.percentile > n.anchors[i - 1]!.percentile &&
+            (n.lowerIsBetter ? x.value <= n.anchors[i - 1]!.value : x.value >= n.anchors[i - 1]!.value)),
+      ),
+    'percentiles must ascend; values must ascend (or descend when lowerIsBetter)',
+  );
 const BySex = z.object({ male: Anchors, female: Anchors });
-export const AssessmentNorms = z.object({ pushups: BySex, plankSec: BySex, squats60: BySex });
+export const AssessmentNorms = z.object({
+  pushups: BySex,
+  plankSec: BySex,
+  squats60: BySex,
+  run2400Sec: BySex,
+  strengthRatio: z.record(z.string(), BySex),
+  calisthenicsLevel: Anchors,
+});
+
+export const TrialEventDef = z.object({
+  id: z.enum(['pushups', 'lift', 'plankSec', 'squats60', 'run2400Sec']),
+  name: z.string(),
+  stat: z.enum(['STR', 'END', 'AGI']),
+  input: z.enum(['count', 'history', 'stopwatch', 'countdown60', 'time']),
+  unit: z.string(),
+  settings: z.array(z.enum(['HOME', 'GYM'])).min(1),
+  optionalBelow: z.enum(['D', 'C', 'B', 'A', 'S']).optional(),
+  how: z.string(),
+  standards: z.array(z.string()).min(1),
+});
+export type TrialEventDef = z.infer<typeof TrialEventDef>;
+export const TrialsConfig = z.object({ restBetweenEventsSec: z.number().int(), events: z.array(TrialEventDef).min(3) });
 
 export const WorkoutType = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),

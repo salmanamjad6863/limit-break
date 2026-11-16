@@ -2,7 +2,7 @@ import { assessmentNorms } from '@lb/content';
 import { OnboardingInput, type MeResponse } from '@lb/contracts';
 import { displayStat, initialStats, levelFromXp } from '@lb/engine';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { progressionKeys, useLocalHunter } from '@/features/progression';
+import { progressionKeys, useLocalHunter, useProgress } from '@/features/progression';
 import { useSession } from '@/features/session';
 import { api, unwrap } from '@/lib/api';
 import { scheduleDailyQuestReminder } from '@/lib/notifications';
@@ -46,6 +46,7 @@ export function useCompleteOnboarding() {
     mutationFn: async (input: OnboardingInput): Promise<MeResponse> => {
       const me = status === 'demo' ? previewMe(input) : await unwrap<MeResponse>(await api.me.onboarding.$post({ json: input }));
       if (input.notificationsOptIn) await scheduleDailyQuestReminder(input.questTime, input.hunterName);
+      if (input.assessment) useProgress.getState().mergeTests(input.assessment);
       return me;
     },
     onSuccess: (me) => {

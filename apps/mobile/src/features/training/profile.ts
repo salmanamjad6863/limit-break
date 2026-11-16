@@ -1,5 +1,5 @@
 import type { TrainingProfile } from '@lb/contracts';
-import { useMe } from '@/features/progression';
+import { useMe } from '@/features/progression/api';
 
 /** Sensible defaults when a profile is missing (older demo data). */
 export const DEFAULT_PROFILE: TrainingProfile = {

@@ -2,6 +2,7 @@ import { exerciseById } from '@lb/content';
 import type { FinishWorkoutInput, FinishWorkoutResponse } from '@lb/contracts';
 import type { PrismaClient } from '@lb/db';
 import { computeWorkoutRewards, gameDate, rpeZone, type FinishedSet } from '@lb/engine';
+import { recomputeStats } from '../progression/service';
 
 /** SYSTEMS.md §4.8 — sets that fail plausibility are stored but earn nothing. */
 export function isPlausibleSet(s: FinishWorkoutInput['sets'][number], bodyweightKg: number): boolean {
@@ -93,6 +94,7 @@ export async function finishWorkout(prisma: PrismaClient, userId: string, input:
       where: { userId },
       data: { xp: r.newXp, level: r.levelTo, apUnspent: { increment: r.apGained } },
     });
+    await recomputeStats(tx, userId);
     return response;
   });
 }

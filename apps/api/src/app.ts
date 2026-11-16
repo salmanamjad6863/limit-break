@@ -5,6 +5,7 @@ import { requestId } from 'hono/request-id';
 import type { AppEnv, Deps } from './lib/types';
 import { featureRoutes } from './modules/features/routes';
 import { profileRoutes } from './modules/profile/routes';
+import { progressionRoutes } from './modules/progression/routes';
 import { trainingRoutes } from './modules/training/routes';
 import { workoutRoutes } from './modules/workouts/routes';
 
@@ -20,7 +21,8 @@ export function createApp(deps: Deps) {
     .route('/me', profileRoutes)
     .route('/features', featureRoutes)
     .route('/training', trainingRoutes)
-    .route('/workouts', workoutRoutes);
+    .route('/workouts', workoutRoutes)
+    .route('/progression', progressionRoutes);
 
   app.onError((err, c) => {
     if (err instanceof HTTPException) return c.json({ error: err.message }, err.status);

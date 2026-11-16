@@ -5,7 +5,7 @@ import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
 import { haptics } from '@/lib/haptics';
 import { useTheme } from '@/theme';
 import { Text } from '@/ui';
-import { ParticleBurst } from '@/ui/fx';
+import { ParticleBurst, RankBadge } from '@/ui/fx';
 import { CountUp, GlitchText, TypewriterText } from '@/ui/motion';
 import { useCelebrations, type Celebration } from './store';
 
@@ -52,6 +52,7 @@ export function CinematicOverlay() {
         style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing[6] }}>
         <ParticleBurst width={width} height={height} color={color} trigger={burst} />
         <Animated.View entering={ZoomIn.springify().damping(12).stiffness(140)} style={{ alignItems: 'center', gap: spacing[3] }}>
+          {current.type === 'rankUp' ? <RankBadge rank={current.to} size={150} /> : null}
           <Text variant="label" color={c.textDim}>{copy.kicker}</Text>
           <GlitchText variant="display" color={color} repeatEveryMs={2600} style={{ textAlign: 'center', textShadowColor: color, textShadowRadius: 24 }}>
             {copy.headline}

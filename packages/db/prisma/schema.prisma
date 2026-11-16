@@ -92,6 +92,7 @@ model Profile {
   targets      NutritionTarget[]
   entitlements Entitlement[]
   pushTokens   PushToken[]
+  trials       TrialAttempt[]
 }
 
 model HunterState {
@@ -337,4 +338,21 @@ model PushToken {
   platform  String
   updatedAt DateTime @updatedAt
   profile   Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// SYSTEMS.md §4.4 — every Rank Trial attempt (pass or fail), for cooldowns, history and verification.
+model TrialAttempt {
+  id         String   @id @db.Uuid
+  userId     String   @db.Uuid
+  targetRank Rank
+  setting    String
+  results    Json
+  events     Json
+  composite  Float
+  passed     Boolean
+  verified   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  profile    Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }

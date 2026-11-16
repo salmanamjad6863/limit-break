@@ -2,7 +2,7 @@ import type { FinishWorkoutInput, FinishWorkoutResponse, Reward } from '@lb/cont
 import { computeWorkoutRewards, gameDate, levelFromXp, rpeZone, type FinishedSet } from '@lb/engine';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCelebrations } from '@/features/celebrations';
-import { progressionKeys, useLocalHunter, useMe } from '@/features/progression';
+import { chainLevelsFrom, progressionKeys, useLocalHunter, useMe, useProgress } from '@/features/progression';
 import { useSession as useAuthSession } from '@/features/session';
 import { api, unwrap } from '@/lib/api';
 import { exerciseById } from './catalog';
@@ -92,6 +92,8 @@ export function useFinishWorkout() {
         minutes, workingSets: working.length, volumeKg, xp: granted, prs,
       };
       t.recordWorkout(record, { bestE1rm: local.bestE1rm, lastSet, lastUsed }, session.kind === 'program');
+      useProgress.getState().bumpCalLevels(chainLevelsFrom(working.filter((s) => (s.reps ?? 0) >= 5).map((s) => s.exerciseId)));
+      qc.invalidateQueries({ queryKey: progressionKeys.all });
       t.addXp(date, granted);
 
       enqueue(rewards as Reward[]);

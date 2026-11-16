@@ -479,10 +479,10 @@ A tuning script (`pnpm engine:simulate`) simulates 1,000 synthetic users over 36
 | **1** | Design system + **motion primitives** (§5.3), theme, Status screen with mock data, `HeroSprite`, `SystemWindow` | All of `src/ui` |
 | **2** | Awakening onboarding (14 steps, data-driven), profile creation, Awakening Assessment, notifications primer | Form + Zod patterns |
 | **3** | **Real-trainer training system** (detailed below): program templates, workout generator, session player and logger, on-demand sessions, exercise detail | Offline mutation pattern, content-driven programs |
-| **4** | Progression: engine XP/levels/ranks/stats, server reward calculator, celebration queue, level-up cinematic | Event → reward pipeline |
+| **4** ✅ | Progression made real: True Stats from data (lifts, calisthenics levels, tests, volume, adherence, decay), **Rank Trials pulled forward** (home/gym variants, server-scored, 7-day cooldown, rank-up cinematic), Hunter Profile (rank ladder, stat breakdown, XP history, PRs, trial history), `GET /progression`, `POST /progression/trials` | Stats recompute after every workout and trial |
 | **5** | Quests: daily generation (cron), side quests, streaks, shields, Penalty Zone, local notification scheduler | Job runner pattern |
 | **6** | Nutrition: barcode (OFF), search (USDA + cache), diary, macro bars (Mana), static targets. HealthKit / Health Connect | Provider adapter pattern |
-| **7** (hardening) | Rank Trials E→C, feature-gate layer (`useFeature` / `requireFeature`, kept **open**), analytics, Sentry, perf pass on a low-end Android device, store assets → **soft launch (free)** | Feature matrix (SYSTEMS.md §7.1) |
+| **7** (hardening) | Rank Trial verification (video/HR for A–S), feature-gate layer (`useFeature` / `requireFeature`, kept **open**), analytics, Sentry, perf pass on a low-end Android device, store assets → **soft launch (free)** | Feature matrix (SYSTEMS.md §7.1) |
 | **S** (after the full app: post-MVP phases + community) | Subscriptions: store products, RevenueCat, paywall, webhook → Entitlement, Founder transition (SYSTEMS.md §7.3–7.7) | — |
 
 ### Sprint 3 in detail: Train like a real coach (2 weeks)
