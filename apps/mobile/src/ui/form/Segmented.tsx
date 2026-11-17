@@ -24,6 +24,7 @@ export function Segmented<T extends string>({
             onPress={() => onChange(o.value)}
             accessibilityRole="radio"
             accessibilityState={{ selected: on }}
+            accessibilityLabel={o.label}
             style={{
               flex: 1, alignItems: 'center', paddingVertical: spacing[2], borderRadius: radius.md - 3,
               backgroundColor: on ? c.accent : 'transparent', 

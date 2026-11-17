@@ -1,10 +1,8 @@
 import { assessmentNorms, exercises } from '@lb/content';
 import type { FitnessTests, ProgressionResponse, TrialAttemptInput, TrialAttemptResponse } from '@lb/contracts';
 import type { PrismaClient } from '@lb/db';
-import {
-  applyDailyCap, apBetween, computeTrueStats, evaluateTrial, gameDate, levelFromXp, RANK_REQUIREMENTS, scoreTrialEvents,
-  trialStatus, XP, type HeroClass, type Rank,
-} from '@lb/engine';
+import { computeTrueStats, evaluateTrial, gameDate, RANK_REQUIREMENTS, scoreTrialEvents, trialStatus, XP, type HeroClass, type Rank } from '@lb/engine';
+import { grantXp } from './xp';
 
 type Tx = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'>;
 
@@ -145,17 +143,10 @@ export async function attemptTrial(prisma: PrismaClient, userId: string, input: 
     // The event is the idempotency key and the XP ledger's parent; its payload is filled in below.
     await tx.event.create({ data: { id: input.id, userId, type: 'trial.attempt', localDate, clientTs: now, payload: {} } });
     const rewards: unknown[] = [];
-    let newXp = state.xp;
     if (evalr.passed) {
-      const today = await tx.xpLedger.aggregate({ where: { userId, localDate }, _sum: { amount: true } });
-      const cap = applyDailyCap(today._sum.amount ?? 0, XP.rankTrialPass);
-      newXp = state.xp + cap.granted;
-      const from = levelFromXp(state.xp);
-      const to = levelFromXp(newXp);
-      rewards.push({ type: 'rankUp', from: rank, to: target }, { type: 'xp', amount: cap.granted, reason: 'rankTrial' });
-      if (to > from) rewards.push({ type: 'levelUp', from, to, ap: apBetween(from, to) });
-      await tx.hunterState.update({ where: { userId }, data: { rank: target, xp: newXp, level: to, apUnspent: { increment: apBetween(from, to) } } });
-      if (cap.granted > 0) await tx.xpLedger.create({ data: { eventId: input.id, userId, localDate, amount: cap.granted, reason: 'rankTrial' } });
+      await tx.hunterState.update({ where: { userId }, data: { rank: target } });
+      rewards.push({ type: 'rankUp', from: rank, to: target });
+      rewards.push(...(await grantXp(tx, { userId, eventId: input.id, localDate, amount: XP.rankTrialPass, reason: 'rankTrial' })));
     }
     await tx.trialAttempt.create({
       data: {

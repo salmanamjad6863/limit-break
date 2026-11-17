@@ -2,6 +2,7 @@ import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { canPerform } from '@lb/engine';
 import { View } from 'react-native';
 import { catalog, exerciseById, muscleLabel, patternLabel, useTraining, useTrainingProfile } from '@/features/training';
+import { ExerciseMedia, hasDemo, MuscleMap } from '@/features/visuals';
 import { useTheme } from '@/theme';
 import { Appear, Card, Icon, Page, Pill, PressableScale, ScreenHeader, SectionHeader, Text } from '@/ui';
 
@@ -35,11 +36,12 @@ export default function ExerciseDetail() {
         </View>
       </Appear>
 
-      <Appear index={1}>
-        <View style={{ height: 180, borderRadius: radius.lg, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, alignItems: 'center', justifyContent: 'center', gap: spacing[2] }}>
-          <Icon name="film-outline" size={30} color={c.textMuted} />
-          <Text variant="caption" muted>Animated demo coming with the hero art pipeline</Text>
-        </View>
+      <Appear index={1} style={{ gap: spacing[3] }}>
+        {hasDemo(ex.id) ? <ExerciseMedia exerciseId={ex.id} variant="hero" /> : null}
+        <Card style={{ alignItems: 'center' }}>
+          <Text variant="label" muted style={{ alignSelf: 'flex-start' }}>Muscles worked</Text>
+          <MuscleMap primary={ex.primary} secondary={ex.secondary} width={240} />
+        </Card>
       </Appear>
 
       {avoided ? (

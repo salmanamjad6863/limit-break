@@ -16,6 +16,8 @@ export interface LoggedEntry {
   rir: number | null;
   durationS: number | null;
   isWarmup: boolean;
+  /** drop set or taken to failure (SYSTEMS.md §3.11) */
+  setType?: 'normal' | 'drop' | 'failure';
   completedAt: string;
 }
 
@@ -33,6 +35,8 @@ export interface ActiveSession {
   restTotal: number;
   /** short coach note after auto-adjust, e.g. "Felt easy — +2.5 kg next set" */
   coachNote: string | null;
+  /** session note typed by the user (debrief) */
+  notes?: string | null;
 }
 
 interface SessionState {

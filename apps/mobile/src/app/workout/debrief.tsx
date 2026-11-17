@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { exerciseName, toFinishInput, useFinishWorkout, useWorkoutSession, type FinishSummary } from '@/features/training';
 import { useTheme } from '@/theme';
+import { TextField } from '@/ui/form';
 import { Appear, Button, Card, CountUp, Icon, Page, PressableScale, ScreenHeader, Text } from '@/ui';
 
 const RPE = [
@@ -20,6 +21,7 @@ export default function Debrief() {
   const end = useWorkoutSession((s) => s.end);
   const finish = useFinishWorkout();
   const [rpe, setRpe] = useState<number | null>(null);
+  const [notes, setNotes] = useState('');
   const [result, setResult] = useState<FinishSummary | null>(null);
 
   const stats = useMemo(() => {
@@ -96,7 +98,10 @@ export default function Debrief() {
             icon="checkmark"
             loading={finish.isPending}
             disabled={!stats || stats.sets === 0}
-            onPress={() => active && finish.mutate({ session: active, input: toFinishInput(active, rpe) }, { onSuccess: setResult })}
+            onPress={() => active && finish.mutate({ session: active, input: toFinishInput({ ...active, notes }, rpe) }, {
+              // end the live session as soon as it's saved, so leaving the results screen can never re-save it
+              onSuccess: (r) => { setResult(r); end(); },
+            })}
           />
           {stats?.sets === 0 ? <Text variant="caption" muted style={{ textAlign: 'center' }}>Log at least one working set to save.</Text> : null}
         </>
@@ -126,6 +131,7 @@ export default function Debrief() {
         </View>
         <Text variant="caption" muted>Session RPE helps the coach spot fatigue and plan deloads.</Text>
       </Card>
+        <TextField label="Notes (optional)" placeholder="How it felt, what to change next time" value={notes} onChangeText={setNotes} multiline maxLength={1000} />
     </Page>
   );
 }

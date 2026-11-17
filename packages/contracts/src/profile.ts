@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import { NutritionSettings } from './nutrition';
+
+export const NutritionProfile = NutritionSettings.extend({ birthDate: z.iso.date() });
+export type NutritionProfile = z.infer<typeof NutritionProfile>;
 import {
   Experience, FatPreference, Goal, HeroClass, Lifestyle, NutritionMode, Rank, Sex, TrainingLocation,
 } from './common';
@@ -63,6 +67,9 @@ export const TrainingProfile = z.object({
   heightCm: z.number(),
   weightKg: z.number(),
   timezone: z.string(),
+  /** picked training weekdays (0 = Sunday); absent for older profiles → default for daysPerWeek */
+  weekdays: z.array(z.number().int().min(0).max(6)).optional(),
+  workoutTime: z.string().nullable().optional(),
 });
 export type TrainingProfile = z.infer<typeof TrainingProfile>;
 
@@ -74,5 +81,7 @@ export const MeResponse = z.object({
   heroClass: HeroClass.nullable(),
   state: HunterState.nullable(),
   profile: TrainingProfile.nullable().optional(),
+  /** nutrition settings + birth date (needed for BMR) */
+  nutrition: NutritionProfile.nullable().optional(),
 });
 export type MeResponse = z.infer<typeof MeResponse>;

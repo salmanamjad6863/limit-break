@@ -1,7 +1,7 @@
 # LIMITBREAK — Architecture & Build Blueprint (v2)
 
 > Companion to [PLAN.md](PLAN.md). PLAN.md describes **what** we build (game design, training, nutrition, roadmap). This file describes **how** we build it: stack, repo layout, reusable layers, the animation system, the low-budget asset pipeline and the build order.
-> Where the two disagree, this file wins on tech and assets. Every formula, the community rules and the subscription setup live in [SYSTEMS.md](SYSTEMS.md).
+> Where the two disagree, this file wins on tech and assets. Workout visuals, follow-along, naming and the Avatar Forge: [VISUALS.md](VISUALS.md). Every formula, the community rules and the subscription setup live in [SYSTEMS.md](SYSTEMS.md).
 
 ---
 
@@ -112,7 +112,7 @@ limitbreak/
 | Hero (placeholder name) | Fantasy it taps | Class / training style | Signature look (must stay original) |
 |---|---|---|---|
 | **Ren Kurogane**, the Shadow Hunter | Weakest-to-strongest, shadow summoner | Hybrid / all-rounder (default hero) | Long dark coat, violet eye-glow, shadow wisps |
-| **Jin Sakai**, the Ronin | Wandering master swordsman | Fighter (strength) | Haori over armour, one katana + a broken blade, scar across the knuckles |
+| **Tetsu Hayami**, the Ronin | Wandering master swordsman | Fighter (strength) | Sleeveless training gi with taped forearms, a wooden bokken across the back, scar across the knuckles |
 | **Kaze**, the Shinobi | Underdog ninja who never quits | Assassin (calisthenics / agility) | Mask scarf, wrapped forearms, wind-swirl motif |
 | **Gora**, the Iron Titan | Giant powerhouse | Juggernaut (hypertrophy) | Huge frame, chain-wrapped gauntlets |
 | **Aiko Tsubasa**, the Wind Ranger | Fast archer / runner | Ranger (cardio / endurance) | Short cape, wing hair clips, light armour |
@@ -128,18 +128,19 @@ VRoid Studio (free, by pixiv)         → design anime 3D characters, export VRM
    ↓
 Blender (free) + VRM add-on           → cel-shaded / toon render setup, rank outfits, auras
    ↓
-Mixamo (free, royalty-free in your app) → idle, victory, power-up, punch AND exercise
-                                         animations (push-up, air squat, burpee, sit-up,
-                                         jumping jack, plank, lunges…)
+Motion (all free):  Mixamo (common moves, embedded use only)
+                    + coach video → Rokoko Vision free plan (gym/skill moves)
+                    + hand-keyed in Blender (bench, cables, props)
    ↓
-Render transparent frames → encode  → animated WebP (alpha) for character loops
+Render transparent frames → encode  → animated WebP (alpha) for character and exercise loops
+                                      (the aura is a live Skia layer behind them, not baked in)
                                       MP4 for full-screen cinematics (rank-up)
                                       PNG portraits/busts for UI, story panels
    ↓
 apps/mobile/assets  or  Supabase Storage (downloaded on demand, cached)
 ```
 - **One pipeline produces both the characters and the exercise demos.** Exercise videos are the biggest content cost in PLAN.md, and this cuts it to almost nothing: a neutral "trainer" model performs Mixamo motions, all in a consistent anime style.
-- Exercises Mixamo doesn't cover: use the photos in **free-exercise-db** (open-source, ~800 exercises, public domain) as a temporary fallback, then animate them in Blender over time.
+- Exercises Mixamo doesn't cover come from **coach video → free mocap** or hand-keying in Blender. The full $0 pipeline, licence checks, live aura states, pilot gate and time estimate are in **VISUALS.md §3**. Ready Player Me is **not** an option (shut down in Jan 2026).
 - **Optional small spend** (largest impact per dollar): one VGen/Skeb artist to paint the six hero **key-art portraits and the app icon** from your VRoid renders. Everything else stays in the pipeline.
 - **AI image tools:** use them only for backgrounds and concepting, never as final hero art (the anime audience pushes back hard on AI-generated art).
 
@@ -200,7 +201,7 @@ Each primitive is built once and used everywhere:
 | `<TypewriterText>` / `<GlitchText>` | System messages, onboarding, notifications in-app |
 | `<CountUp>` | XP, stats, macros ticking up |
 | `<ProgressBar variant="xp" \| "hp" \| "mana" \| "gate">` | XP bar, macro bars, Gate HP |
-| `<AuraBackdrop rank="S">` | Skia shader aura behind the avatar; colour by rank |
+| `<AuraLayer state rank>` | Skia shader aura behind the trainer/avatar; 7 effort states, colour by rank (VISUALS.md §3.4) |
 | `<ParticleBurst>` | PR, quest complete |
 | `<HeroSprite hero state>` | Animated WebP character with state (idle/cheer/sad/power-up) |
 | `<RiveBadge>` | Rank badges, XP orb |
@@ -480,10 +481,36 @@ A tuning script (`pnpm engine:simulate`) simulates 1,000 synthetic users over 36
 | **2** | Awakening onboarding (14 steps, data-driven), profile creation, Awakening Assessment, notifications primer | Form + Zod patterns |
 | **3** | **Real-trainer training system** (detailed below): program templates, workout generator, session player and logger, on-demand sessions, exercise detail | Offline mutation pattern, content-driven programs |
 | **4** ✅ | Progression made real: True Stats from data (lifts, calisthenics levels, tests, volume, adherence, decay), **Rank Trials pulled forward** (home/gym variants, server-scored, 7-day cooldown, rank-up cinematic), Hunter Profile (rank ladder, stat breakdown, XP history, PRs, trial history), `GET /progression`, `POST /progression/trials` | Stats recompute after every workout and trial |
-| **5** | Quests: daily generation (cron), side quests, streaks, shields, Penalty Zone, local notification scheduler | Job runner pattern |
-| **6** | Nutrition: barcode (OFF), search (USDA + cache), diary, macro bars (Mana), static targets. HealthKit / Health Connect | Provider adapter pattern |
+| **5** ✅ | Quests: Daily Quest generated from tests (injury swaps, training-day factor, 12-min time box, Rest Ritual), streak resolver (shields, Penalty Zone, Sick Mode, milestones, quest-scale tuning), side quests (manual + auto-verified), Shadow-Self boss (+150 XP claim), `/quests/*` API, local reminders (daily drop, 21:00 streak-at-risk, Penalty Zone) | One `grantXp` path for all non-workout XP |
+| **5.5** ✅ | **Training completeness** (SYSTEMS.md §3.10–3.12) — built (engine schedule rules, `PUT /me/training`, `/workouts` list/detail/edit/delete/manual/notes, migration 0007; HealthKit still open): user-picked weekdays + preferred time + reminders, Training settings screen (edit everything), missed-workout shift and rest-day flow, workout history + detail, edit/delete within 7 days with XP diff, manual log (unverified), session and exercise notes, supersets in the player, 5 new programs (PPL, U/L/F, Powerbuilding, Lower & Glutes, Dumbbell Only) | Schedule model, edit-with-diff event pattern |
+| **6** ✅ | **Real nutrition** (SYSTEMS.md §2) — built: engine plan/TDEE replay/check-in/search; 53 USDA foods (all 53 verified against USDA FoodData Central, with fdcId) + 9 recipe dishes computed from them; OFF barcode; diary, portions, quick add, custom foods, copy, water, weigh-ins + trend, settings; API `/nutrition/*` + migration 0006. Not yet: HealthKit / Health Connect, live USDA text search on the server (key is in place). Spec: USDA + Open Food Facts + curated regional foods, barcode, diary with meals/quick add/copy, recipes and custom foods, weigh-ins → trend → adaptive TDEE, weekly check-in, nutrition settings, water, offline sync, HealthKit / Health Connect | Provider adapter pattern, food cache |
+| **V1–V2** (before launch) ✅ engineering done; clips pending | **Visuals:** muscle map, media manifest + `ExerciseMedia` fallback chain, follow-along player (timed + rep-based), voice cues with captions, guided warm-up/cool-down; Tier-1 demo clips (~40) produced in parallel (VISUALS.md §9) | Media pipeline, follow-along player |
+| **V2.5** (before launch) ✅ engineering; pilot clips pending | **Trainer + aura:** `<AuraLayer>` Skia shader (7 effort states), bundled Tier-1 clips, batch render scripts; 5-exercise pilot gate, then Tier-1 production (VISUALS.md §3) | Media pipeline |
 | **7** (hardening) | Rank Trial verification (video/HR for A–S), feature-gate layer (`useFeature` / `requireFeature`, kept **open**), analytics, Sentry, perf pass on a low-end Android device, store assets → **soft launch (free)** | Feature matrix (SYSTEMS.md §7.1) |
+| **V3–V5** (soon after launch) | Signature Gates, Avatar Forge (Essence, cosmetics, layered avatar), Tier-2 clips, weekly muscle-volume map | Cosmetics + layered avatar renderer |
 | **S** (after the full app: post-MVP phases + community) | Subscriptions: store products, RevenueCat, paywall, webhook → Entitlement, Founder transition (SYSTEMS.md §7.3–7.7) | — |
+
+### Sprint 5.5 in detail: Train like a real gym (1–1.5 weeks)
+| # | Deliverable | Done when |
+|---|---|---|
+| 1 | `Schedule` model (contracts + Prisma `TrainingSchedule`) and a migration from `daysPerWeek` | Existing users get weekdays derived from their current template, nothing lost |
+| 2 | **Training settings** screen: program, weekdays, time, session length, location/equipment, injuries, goal, plates/bar, warm-up/cool-down defaults, voice | Every onboarding answer is editable; changes apply from the next game day |
+| 3 | Rotation pointer + **missed-workout shift**, rest-day card, "Train today instead", "Train anyway" (recovery/Zone 2) | Engine tests for the 48 h rule and the 2-make-ups cap |
+| 4 | Workout reminders at preferred time − 30 min, training days only | Rescheduled whenever the schedule changes |
+| 5 | **History**: calendar + list + workout detail; per-exercise e1RM chart | Every finished session is visible with all its sets |
+| 6 | **Edit / delete within 7 days**, server XP/PR/stat recompute as a diff; manual log (unverified) | API tests: edit up and down, delete, locked after 7 days, manual log excluded from boards |
+| 7 | Notes (session + sticky exercise notes), set types (drop, failure), supersets shown as A1/A2 with shared rest | Logged and shown next time |
+| 8 | 5 new programs as content JSON + content tests | All slots resolve for every location/equipment combination they claim |
+
+### Sprint 6 in detail: Real nutrition (2 weeks)
+| # | Deliverable | Done when |
+|---|---|---|
+| 1 | Food model + cache (Prisma `Food`, `FoodLog`, `Recipe`, `WeighIn`), USDA + OFF adapters, curated food pack | Search returns USDA, OFF, curated and personal results ranked by §2.7 |
+| 2 | Diary UI: meals, add by search / barcode / recent / quick add, portion picker with live macros, copy meal/day | Repeat foods take ≤ 3 taps |
+| 3 | Targets from the real profile (birth date, sex, height, weight, activity, goal, rate) replacing demo data | Matches the §2.6 fixture exactly |
+| 4 | Weigh-ins → EWMA trend → nightly adaptive TDEE → weekly check-in | Engine tests for convergence and the ±150 kcal smoothing |
+| 5 | Nutrition settings (goal/rate, macro preference, manual override, protein-only, hide calories, check-in day), water | Safety rails (§2.4, §2.8) cannot be bypassed |
+| 6 | Offline diary + sync, HealthKit / Health Connect (weight + steps in, workouts out) | Works in airplane mode; no duplicate logs after sync |
 
 ### Sprint 3 in detail: Train like a real coach (2 weeks)
 | # | Deliverable | Notes |

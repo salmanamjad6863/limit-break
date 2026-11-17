@@ -7,6 +7,7 @@ export interface Per100g {
   carbs: number;
   fat: number;
   alcohol?: number;
+  fiber?: number;
 }
 
 export interface Nutrients extends Per100g {}
@@ -19,6 +20,7 @@ export function nutrientsForGrams(per100: Per100g, grams: number): Nutrients {
     carbs: per100.carbs * f,
     fat: per100.fat * f,
     alcohol: (per100.alcohol ?? 0) * f,
+    fiber: (per100.fiber ?? 0) * f,
   };
 }
 
@@ -43,8 +45,9 @@ export function sumNutrients(items: readonly Nutrients[]): Nutrients {
       carbs: acc.carbs + n.carbs,
       fat: acc.fat + n.fat,
       alcohol: (acc.alcohol ?? 0) + (n.alcohol ?? 0),
+      fiber: (acc.fiber ?? 0) + (n.fiber ?? 0),
     }),
-    { kcal: 0, protein: 0, carbs: 0, fat: 0, alcohol: 0 },
+    { kcal: 0, protein: 0, carbs: 0, fat: 0, alcohol: 0, fiber: 0 },
   );
 }
 
@@ -58,6 +61,7 @@ export function recipePer100gCooked(ingredients: readonly Nutrients[], cookedWei
       carbs: (total.carbs / cookedWeightG) * 100,
       fat: (total.fat / cookedWeightG) * 100,
       alcohol: ((total.alcohol ?? 0) / cookedWeightG) * 100,
+      fiber: ((total.fiber ?? 0) / cookedWeightG) * 100,
     },
     100,
   );

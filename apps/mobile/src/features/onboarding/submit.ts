@@ -1,5 +1,5 @@
 import { assessmentNorms } from '@lb/content';
-import { OnboardingInput, type MeResponse } from '@lb/contracts';
+import { defaultRate, OnboardingInput, type MeResponse } from '@lb/contracts';
 import { displayStat, initialStats, levelFromXp } from '@lb/engine';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { progressionKeys, useLocalHunter, useProgress } from '@/features/progression';
@@ -30,6 +30,11 @@ export function previewMe(input: OnboardingInput): MeResponse {
       goal: input.goal, experience: input.experience, location: input.location, equipment: input.equipment,
       injuries: input.injuries, daysPerWeek: input.daysPerWeek, sessionMinutes: input.sessionMinutes, sex: input.sex,
       heightCm: input.heightCm, weightKg: input.weightKg, timezone: input.timezone,
+    },
+    nutrition: {
+      birthDate: input.birthDate, goal: input.goal, ratePerWeek: defaultRate(input.goal), fatPreference: input.fatPreference,
+      lifestyle: input.lifestyle, nutritionMode: input.nutritionMode, bodyFatPct: input.bodyFatPct, checkInDay: 1,
+      hideCalories: false, proteinOverrideG: null, fatOverrideG: null,
     },
     state: {
       level: levelFromXp(start.xp), xp: start.xp, rank: 'E', apUnspent: 0, streak: 0, shields: 2,

@@ -2,9 +2,11 @@ import { heroes, workoutTypes } from '@lb/content';
 import { gameDate, levelProgress, powerLevel } from '@lb/engine';
 import { dataColors, rankColor, statColors } from '@lb/tokens';
 import { router } from 'expo-router';
-import { useState } from 'react';
 import { View } from 'react-native';
-import { useCelebrations } from '@/features/celebrations';
+import { activeSlots, questRatio as questRatioOf } from '@lb/contracts';
+import { useGameDate, useNutritionDay } from '@/features/nutrition';
+import { useQuestActions, useQuests } from '@/features/quests';
+import { SlotRow } from '@/features/quests/SlotRow';
 import { useLocalHunter, useMe, useProgression } from '@/features/progression';
 import { useSession } from '@/features/session';
 import { useToday, useTraining, useTrainingProfile, useWorkoutSession } from '@/features/training';
@@ -15,23 +17,18 @@ import { HeroEmblem, RankBadge, Ring } from '@/ui/fx';
 
 const STAT_KEYS = ['STR', 'AGI', 'END', 'VIT', 'SPI'] as const;
 
-// Placeholder until the quest engine (Sprint 5) lands.
-const DEMO_QUEST = [
-  { id: 'push', label: 'Push-ups', done: 12, target: 20 },
-  { id: 'legs', label: 'Squats', done: 40, target: 40 },
-  { id: 'core', label: 'Plank', unit: 's', done: 30, target: 60 },
-];
-const DEMO_PROTEIN = { eaten: 112, target: 160 };
 
 export default function HomeScreen() {
   const { c, spacing } = useTheme();
   const sessionStatus = useSession((s) => s.status);
-  const enqueue = useCelebrations((s) => s.enqueue);
   const resetLocal = useLocalHunter((s) => s.reset);
   const { data: me, isLoading, error } = useMe();
+  const { data: food } = useNutritionDay(useGameDate());
+  const protein = { eaten: Math.round(food?.totals.protein ?? 0), target: food?.plan.proteinG ?? 0 };
   const { data: prog } = useProgression();
   const deadline = useQuestDeadline();
-  const [quest, setQuest] = useState(DEMO_QUEST);
+  const { data: quests } = useQuests();
+  const { progress: questProgress } = useQuestActions();
   const today = useToday();
   const profile = useTrainingProfile();
   const history = useTraining((s) => s.history);
@@ -61,18 +58,15 @@ export default function HomeScreen() {
     if (t.reason === 'level') return { target: t.target, text: `${t.target}-Rank Trial unlocks at level ${t.levelRequired}` };
     return null;
   })();
-  const questRatio = quest.reduce((s, q) => s + Math.min(1, q.done / q.target), 0) / quest.length;
-  const questDone = questRatio >= 1;
+  const daily = quests?.daily;
+  const questRatio = daily ? questRatioOf(daily) : 0;
+  const questDone = daily?.status === 'COMPLETED';
+  const penaltyActive = !!quests?.penalty && quests.penalty.status !== 'COMPLETED';
   const type = workoutTypes.find((t) => t.id === today.program.typeId)!;
   const todayIso = gameDate(new Date(), profile.timezone || 'UTC');
   const workoutsToday = history.filter((h) => h.date === todayIso).length;
   const programDoneToday = history.some((h) => h.date === todayIso && h.kind === 'program');
   const state_: 'active' | 'done' | 'train' | 'rest' = activeWorkout ? 'active' : programDoneToday ? 'done' : today.isTrainingDay ? 'train' : 'rest';
-
-  const completeQuest = () => {
-    setQuest((qs) => qs.map((q) => ({ ...q, done: q.target })));
-    enqueue([{ type: 'levelUp', from: lp.level, to: lp.level + 1, ap: 1 }]);
-  };
 
   return (
     <Screen accent={hero.accent}>
@@ -82,7 +76,7 @@ export default function HomeScreen() {
           <Text variant="callout" dim>{greeting()}</Text>
           <Text variant="title">{me.hunterName ?? 'Hunter'}</Text>
         </View>
-        <Pill icon="flame" label={`${state?.streak ?? 0} day streak`} color={c.warning} />
+        <Pill icon="flame" label={`${quests?.streak.current ?? state?.streak ?? 0} day streak`} color={penaltyActive ? c.danger : c.warning} />
       </Appear>
 
       {/* Hunter card */}
@@ -130,7 +124,7 @@ export default function HomeScreen() {
             {[
               { label: 'Workout', value: `${Math.min(workoutsToday, 1)} / 1`, ratio: Math.min(1, workoutsToday), color: dataColors.workout, icon: 'barbell' as const },
               { label: 'Daily Quest', value: `${Math.round(questRatio * 100)}%`, ratio: questRatio, color: dataColors.quest, icon: 'flag' as const },
-              { label: 'Protein', value: `${DEMO_PROTEIN.eaten}g`, ratio: DEMO_PROTEIN.eaten / DEMO_PROTEIN.target, color: dataColors.protein, icon: 'water' as const },
+              { label: 'Protein', value: `${protein.eaten}g`, ratio: protein.target ? protein.eaten / protein.target : 0, color: dataColors.protein, icon: 'water' as const },
             ].map((r, i) => (
               <View key={r.label} style={{ alignItems: 'center', gap: spacing[2] }}>
                 <Ring ratio={r.ratio} size={76} stroke={8} color={r.color} delayMs={200 + i * 120}>
@@ -181,35 +175,24 @@ export default function HomeScreen() {
       </Appear>
 
       {/* Daily Quest — the System's voice */}
-      <Appear index={4}>
-        <SystemWindow
-          title="Daily Quest"
-          accent={c.danger}
-          typeDelayMs={400}
-          right={<Pill icon={questDone ? 'checkmark-circle' : 'time-outline'} label={questDone ? 'Cleared' : deadline} color={questDone ? c.success : c.textDim} />}>
-          {quest.map((q) => {
-            const done = q.done >= q.target;
-            return (
-              <PressableScale
-                key={q.id}
-                haptic="tap"
-                accessibilityRole="button"
-                accessibilityLabel={`${q.label}, ${q.done} of ${q.target}`}
-                onPress={() => setQuest((qs) => qs.map((x) => (x.id === q.id ? { ...x, done: Math.min(x.target, x.done + Math.ceil(x.target / 4)) } : x)))}
-                style={{ gap: spacing[2] }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
-                  <Icon name={done ? 'checkmark-circle' : 'ellipse-outline'} size={18} color={done ? c.success : c.textMuted} />
-                  <Text variant="callout" style={{ flex: 1 }}>{q.label}</Text>
-                  <Text variant="callout" dim>{`${q.done}${q.unit ?? ''} / ${q.target}${q.unit ?? ''}`}</Text>
-                </View>
-                <Bar ratio={q.done / q.target} height={4} color={done ? c.success : c.danger} />
-              </PressableScale>
-            );
-          })}
-          <Text variant="caption" muted>Failure to complete will result in an appropriate penalty.</Text>
-          <Button label={questDone ? 'Quest cleared' : 'Complete quest'} variant={questDone ? 'secondary' : 'primary'} onPress={completeQuest} disabled={questDone} />
-        </SystemWindow>
-      </Appear>
+      {daily ? (
+        <Appear index={4}>
+          <SystemWindow
+            title={penaltyActive ? 'Penalty Zone' : daily.progress.option === 1 ? 'Rest Ritual' : 'Daily Quest'}
+            accent={c.danger}
+            typeDelayMs={400}
+            right={<Pill icon={questDone ? 'checkmark-circle' : 'time-outline'} label={questDone ? 'Cleared' : deadline} color={questDone ? c.success : c.textDim} />}>
+            {penaltyActive ? (
+              <Text variant="callout" color={c.danger}>You missed a day. Clear the penalty in Quests and finish today’s quest to save your streak.</Text>
+            ) : null}
+            {activeSlots(daily).map((s, i) => (
+              <SlotRow key={`${s.exerciseId}-${i}`} slot={s} done={daily.progress[String(i)] ?? 0} color={c.danger} locked={questDone || quests?.streak.sickToday}
+                onSet={(v) => questProgress.mutate({ quest: daily, progress: { [String(i)]: v } })} />
+            ))}
+            <Button variant={penaltyActive ? 'primary' : 'secondary'} size="md" label={penaltyActive ? 'Open Penalty Zone' : 'All quests'} onPress={() => router.push('/quests')} />
+          </SystemWindow>
+        </Appear>
+      ) : null}
 
       {/* True Stats */}
       <Appear index={5} style={{ gap: spacing[3] }}>

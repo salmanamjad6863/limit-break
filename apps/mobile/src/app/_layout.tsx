@@ -51,6 +51,9 @@ function Bootstrap() {
           <Stack.Screen name="workout" options={{ animation: 'slide_from_bottom', gestureEnabled: false }} />
           <Stack.Screen name="profile" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="trial" options={{ animation: 'slide_from_bottom', gestureEnabled: false }} />
+          <Stack.Screen name="diary" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="training-settings" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="history" options={{ animation: 'slide_from_right' }} />
         </Stack.Protected>
         <Stack.Protected guard={!onboarded}>
           <Stack.Screen name="awakening" />

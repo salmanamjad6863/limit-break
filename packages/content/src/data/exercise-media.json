@@ -1,0 +1,263 @@
+{
+ "incline-push-up": {
+  "tier": 1
+ },
+ "knee-push-up": {
+  "tier": 1
+ },
+ "push-up": {
+  "tier": 1
+ },
+ "decline-push-up": {
+  "tier": 1
+ },
+ "diamond-push-up": {
+  "tier": 1
+ },
+ "archer-push-up": {
+  "tier": 2
+ },
+ "db-floor-press": {
+  "tier": 1
+ },
+ "db-bench-press": {
+  "tier": 1
+ },
+ "incline-db-press": {
+  "tier": 1
+ },
+ "bench-press": {
+  "tier": 1
+ },
+ "machine-chest-press": {
+  "tier": 1
+ },
+ "dip": {
+  "tier": 2
+ },
+ "pike-push-up": {
+  "tier": 1
+ },
+ "wall-handstand-push-up": {
+  "tier": 1
+ },
+ "band-overhead-press": {
+  "tier": 1
+ },
+ "db-shoulder-press": {
+  "tier": 1
+ },
+ "overhead-press": {
+  "tier": 1
+ },
+ "machine-shoulder-press": {
+  "tier": 1
+ },
+ "doorframe-row": {
+  "tier": 2
+ },
+ "band-row": {
+  "tier": 1
+ },
+ "inverted-row": {
+  "tier": 1
+ },
+ "db-row": {
+  "tier": 1
+ },
+ "chest-supported-row": {
+  "tier": 1
+ },
+ "barbell-row": {
+  "tier": 1
+ },
+ "seated-cable-row": {
+  "tier": 1
+ },
+ "band-pulldown": {
+  "tier": 2
+ },
+ "lat-pulldown": {
+  "tier": 1
+ },
+ "band-assisted-pull-up": {
+  "tier": 1
+ },
+ "negative-pull-up": {
+  "tier": 1
+ },
+ "pull-up": {
+  "tier": 1
+ },
+ "chin-up": {
+  "tier": 1
+ },
+ "bodyweight-squat": {
+  "tier": 1
+ },
+ "goblet-squat": {
+  "tier": 1
+ },
+ "back-squat": {
+  "tier": 1
+ },
+ "front-squat": {
+  "tier": 1
+ },
+ "leg-press": {
+  "tier": 1
+ },
+ "split-squat": {
+  "tier": 1
+ },
+ "bulgarian-split-squat": {
+  "tier": 1
+ },
+ "pistol-squat": {
+  "tier": 1
+ },
+ "jump-squat": {
+  "tier": 1
+ },
+ "wall-sit": {
+  "tier": 1
+ },
+ "glute-bridge": {
+  "tier": 1
+ },
+ "single-leg-glute-bridge": {
+  "tier": 2
+ },
+ "hip-thrust": {
+  "tier": 1
+ },
+ "single-leg-rdl": {
+  "tier": 2
+ },
+ "db-romanian-deadlift": {
+  "tier": 1
+ },
+ "romanian-deadlift": {
+  "tier": 1
+ },
+ "deadlift": {
+  "tier": 1
+ },
+ "kettlebell-swing": {
+  "tier": 2
+ },
+ "leg-curl": {
+  "tier": 2
+ },
+ "reverse-lunge": {
+  "tier": 1
+ },
+ "walking-lunge": {
+  "tier": 1
+ },
+ "step-up": {
+  "tier": 1
+ },
+ "standing-calf-raise": {
+  "tier": 2
+ },
+ "db-curl": {
+  "tier": 2
+ },
+ "band-curl": {
+  "tier": 2
+ },
+ "triceps-pushdown": {
+  "tier": 2
+ },
+ "overhead-triceps-extension": {
+  "tier": 2
+ },
+ "db-lateral-raise": {
+  "tier": 2
+ },
+ "prone-ytw": {
+  "tier": 2
+ },
+ "band-pull-apart": {
+  "tier": 1
+ },
+ "face-pull": {
+  "tier": 2
+ },
+ "plank": {
+  "tier": 1
+ },
+ "side-plank": {
+  "tier": 1
+ },
+ "dead-bug": {
+  "tier": 1
+ },
+ "bird-dog": {
+  "tier": 1
+ },
+ "hollow-hold": {
+  "tier": 2
+ },
+ "pallof-press": {
+  "tier": 2
+ },
+ "hanging-knee-raise": {
+  "tier": 2
+ },
+ "hanging-leg-raise": {
+  "tier": 2
+ },
+ "farmer-carry": {
+  "tier": 2
+ },
+ "jumping-jack": {
+  "tier": 1
+ },
+ "high-knees": {
+  "tier": 1
+ },
+ "mountain-climber": {
+  "tier": 1
+ },
+ "skater-hop": {
+  "tier": 1
+ },
+ "burpee": {
+  "tier": 1
+ },
+ "brisk-walk": {
+  "tier": 1
+ },
+ "easy-run": {
+  "tier": 1
+ },
+ "cat-cow": {
+  "tier": 1
+ },
+ "worlds-greatest-stretch": {
+  "tier": 1
+ },
+ "hip-flexor-stretch": {
+  "tier": 1
+ },
+ "thoracic-open-book": {
+  "tier": 1
+ },
+ "childs-pose": {
+  "tier": 1
+ },
+ "ninety-ninety": {
+  "tier": 1
+ },
+ "deep-squat-hold": {
+  "tier": 1
+ },
+ "downward-dog": {
+  "tier": 1
+ },
+ "shoulder-dislocate": {
+  "tier": 2
+ }
+}

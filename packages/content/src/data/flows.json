@@ -1,0 +1,43 @@
+{
+  "warmup": {
+    "upper": [
+      { "exerciseId": "jumping-jack", "seconds": 45 },
+      { "exerciseId": "cat-cow", "seconds": 45 },
+      { "exerciseId": "thoracic-open-book", "seconds": 45, "perSide": true },
+      { "exerciseId": "band-pull-apart", "seconds": 45, "optional": true },
+      { "exerciseId": "downward-dog", "seconds": 45 }
+    ],
+    "lower": [
+      { "exerciseId": "high-knees", "seconds": 45 },
+      { "exerciseId": "worlds-greatest-stretch", "seconds": 45, "perSide": true },
+      { "exerciseId": "bodyweight-squat", "seconds": 45 },
+      { "exerciseId": "glute-bridge", "seconds": 45 },
+      { "exerciseId": "hip-flexor-stretch", "seconds": 30, "perSide": true }
+    ],
+    "full": [
+      { "exerciseId": "jumping-jack", "seconds": 45 },
+      { "exerciseId": "worlds-greatest-stretch", "seconds": 45, "perSide": true },
+      { "exerciseId": "bodyweight-squat", "seconds": 45 },
+      { "exerciseId": "downward-dog", "seconds": 45 },
+      { "exerciseId": "glute-bridge", "seconds": 45 }
+    ]
+  },
+  "cooldown": {
+    "upper": [
+      { "exerciseId": "childs-pose", "seconds": 45 },
+      { "exerciseId": "thoracic-open-book", "seconds": 30, "perSide": true },
+      { "exerciseId": "downward-dog", "seconds": 30 }
+    ],
+    "lower": [
+      { "exerciseId": "ninety-ninety", "seconds": 45 },
+      { "exerciseId": "hip-flexor-stretch", "seconds": 30, "perSide": true },
+      { "exerciseId": "deep-squat-hold", "seconds": 30 }
+    ],
+    "full": [
+      { "exerciseId": "childs-pose", "seconds": 45 },
+      { "exerciseId": "ninety-ninety", "seconds": 45 },
+      { "exerciseId": "downward-dog", "seconds": 30 }
+    ]
+  },
+  "safeSwaps": ["cat-cow", "childs-pose", "brisk-walk", "dead-bug", "bird-dog"]
+}

@@ -1,0 +1,9 @@
+[
+  { "id": "train-today", "title": "Complete today's workout", "icon": "barbell", "color": "#7C5CFF", "verify": "auto:program-workout" },
+  { "id": "mobility-10", "title": "10 minutes of mobility", "icon": "leaf", "color": "#7BE8B8", "verify": "auto:quick:mobility-10" },
+  { "id": "protein", "title": "Hit your protein target", "icon": "water", "color": "#38C6F4", "verify": "manual", "upgrade": "auto with food logging (Sprint 6)" },
+  { "id": "steps-8k", "title": "Walk 8,000 steps", "icon": "walk", "color": "#3DDC97", "verify": "manual", "upgrade": "auto with Apple Health / Health Connect" },
+  { "id": "water-2l", "title": "Drink 2 L of water", "icon": "beaker", "color": "#7DD8F7", "verify": "manual" },
+  { "id": "sleep-7h", "title": "Sleep 7+ hours", "icon": "moon", "color": "#A893FF", "verify": "manual", "upgrade": "auto with Apple Health / Health Connect" },
+  { "id": "zone2-20", "title": "20 minutes of easy cardio", "icon": "heart", "color": "#FF4D6D", "verify": "manual" }
+]

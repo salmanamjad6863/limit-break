@@ -1,7 +1,7 @@
-import type { MeResponse, OnboardingInput, TrainingProfile } from '@lb/contracts';
+import { defaultRate, type MeResponse, type NutritionProfile, type OnboardingInput, type TrainingProfile, type TrainingSettingsInput } from '@lb/contracts';
 import type { PrismaClient } from '@lb/db';
 import { assessmentNorms } from '@lb/content';
-import { displayStat, gameDate, initialStats, levelFromXp } from '@lb/engine';
+import { defaultWeekdays, displayStat, gameDate, initialStats, levelFromXp } from '@lb/engine';
 
 export async function getMe(prisma: PrismaClient, userId: string): Promise<MeResponse> {
   const p = await prisma.profile.findUnique({ where: { id: userId }, include: { state: true } });
@@ -23,6 +23,27 @@ export async function getMe(prisma: PrismaClient, userId: string): Promise<MeRes
           heightCm: p.heightCm,
           weightKg: weight?.weightKg ?? 75,
           timezone: p.timezone,
+          weekdays: p.trainingWeekdays?.length ? p.trainingWeekdays : defaultWeekdays(p.daysPerWeek ?? 3),
+          workoutTime: p.workoutTime,
+        }
+      : null;
+  const bf = p?.onboardedAt
+    ? await prisma.bodyMetric.findFirst({ where: { userId, bodyFatPct: { not: null } }, orderBy: { measuredAt: 'desc' }, select: { bodyFatPct: true } })
+    : null;
+  const nutrition: NutritionProfile | null =
+    p?.onboardedAt && p.birthDate && p.goal
+      ? {
+          birthDate: p.birthDate.toISOString().slice(0, 10),
+          goal: p.goal as NutritionProfile['goal'],
+          ratePerWeek: p.ratePerWeek,
+          fatPreference: p.fatPreference as NutritionProfile['fatPreference'],
+          lifestyle: (p.lifestyle ?? 'light') as NutritionProfile['lifestyle'],
+          nutritionMode: p.nutritionMode as NutritionProfile['nutritionMode'],
+          bodyFatPct: bf?.bodyFatPct ?? null,
+          checkInDay: p.checkInDay,
+          hideCalories: p.hideCalories,
+          proteinOverrideG: p.proteinOverrideG,
+          fatOverrideG: p.fatOverrideG,
         }
       : null;
   return {
@@ -39,6 +60,7 @@ export async function getMe(prisma: PrismaClient, userId: string): Promise<MeRes
         }
       : null,
     profile,
+    nutrition,
   };
 }
 
@@ -59,7 +81,8 @@ export async function completeOnboarding(prisma: PrismaClient, userId: string, i
     birthDate: new Date(`${input.birthDate}T00:00:00Z`), heightCm: input.heightCm, goal: input.goal,
     experience: input.experience, location: input.location, equipment: input.equipment,
     injuries: input.injuries, lifestyle: input.lifestyle, nutritionMode: input.nutritionMode,
-    fatPreference: input.fatPreference, daysPerWeek: input.daysPerWeek,
+    fatPreference: input.fatPreference, ratePerWeek: defaultRate(input.goal), daysPerWeek: input.daysPerWeek,
+    trainingWeekdays: defaultWeekdays(input.daysPerWeek),
     sessionMinutes: input.sessionMinutes, questTime: input.questTime, timezone: input.timezone,
     baselines: input.assessment ?? undefined,
     notificationsOptIn: input.notificationsOptIn,
@@ -88,5 +111,20 @@ export async function completeOnboarding(prisma: PrismaClient, userId: string, i
       },
     }),
   ]);
+  return getMe(prisma, userId);
+}
+
+/** Training settings, editable any time (SYSTEMS.md §3.10). Days/week follows the picked weekdays. */
+export async function updateTraining(prisma: PrismaClient, userId: string, input: TrainingSettingsInput) {
+  const p = await prisma.profile.findUnique({ where: { id: userId }, select: { onboardedAt: true } });
+  if (!p?.onboardedAt) throw new Error('profile not onboarded');
+  const weekdays = [...new Set(input.weekdays)].sort((a, b) => a - b);
+  await prisma.profile.update({
+    where: { id: userId },
+    data: {
+      experience: input.experience, location: input.location, equipment: input.equipment, injuries: input.injuries,
+      sessionMinutes: input.sessionMinutes, trainingWeekdays: weekdays, daysPerWeek: weekdays.length, workoutTime: input.workoutTime,
+    },
+  });
   return getMe(prisma, userId);
 }

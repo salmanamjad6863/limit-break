@@ -1,0 +1,11 @@
+{
+  "$comment": "One entry per exercise to render (VISUALS.md §3.3, §3.5). motion = FBX on the Mixamo skeleton in assets-src/motions/. frames = the clean loop range (inclusive) — first and last pose must match. thumbFrame = the hardest position. source is logged for the licence record (§10).",
+  "defaults": { "fps": 24, "size": 640, "angles": ["front"], "trainers": ["a"] },
+  "exercises": {
+    "push-up":          { "motion": "push-up.fbx",          "source": "mixamo", "frames": [1, 96],  "thumbFrame": 48, "angles": ["front", "side"] },
+    "bodyweight-squat": { "motion": "bodyweight-squat.fbx", "source": "mixamo", "frames": [1, 96],  "thumbFrame": 48, "angles": ["front", "side"] },
+    "plank":            { "motion": "plank.fbx",            "source": "mixamo", "frames": [1, 72],  "thumbFrame": 1,  "angles": ["side"] },
+    "pull-up":          { "motion": "pull-up.fbx",          "source": "rokoko-vision", "frames": [1, 120], "thumbFrame": 60, "angles": ["front", "side"] },
+    "glute-bridge":     { "motion": "glute-bridge.fbx",     "source": "rokoko-vision", "frames": [1, 96],  "thumbFrame": 48, "angles": ["side"] }
+  }
+}

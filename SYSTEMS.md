@@ -224,6 +224,26 @@ else:
   message = template(goal, observedRate vs goalRate, adherence) → optional AI rewrite in the System voice
 ```
 
+### 2.10 Food data and the diary (real, $0 data sources)
+| Source | What it gives | Cost and terms |
+|---|---|---|
+| **USDA FoodData Central** (Foundation + SR Legacy) | Accurate whole foods (rice, chicken breast, eggs, oats…) | Free API key; data is public domain. Cache every food we use in our own DB |
+| **Open Food Facts** | Barcoded packaged foods worldwide | Free; ODbL: show attribution, and changes to *their* data stay open |
+| **Curated LIMITBREAK foods** | Common home-cooked and regional dishes the big databases cover badly (rice and curry plates, roti/flatbreads, lentil dishes, wraps, shakes) with real portion presets (1 roti, 1 cup cooked rice, 1 plate) | Our own data, coach-reviewed; values sourced from USDA ingredients via the recipe math (§2.7) |
+| **Your foods** | Custom foods, recipes (by serving or cooked weight), favourites and history | Yours; private by default |
+
+**Diary features (must-have for launch):**
+- Meals: breakfast · lunch · dinner · snacks (renamable), each with a time.
+- Add by search (ranked as in §2.7), **barcode scan** (expo-camera, on device), recent/favourites, **quick add** (kcal + macros) and **copy a meal or a whole day**.
+- Portions in grams, servings or household units, with a live macro preview before saving.
+- Top of the screen: kcal remaining ring, then **Protein (Mana) first**, carbs, fat, fiber; per-meal totals; water tracker.
+- Weigh-ins (trend line, §1.4) feed the **adaptive TDEE** (§2.3) nightly and the **weekly check-in** (§2.9) adjusts targets with a clear explanation.
+- **Nutrition settings:** goal and rate, macro preference (lower-fat · balanced · higher-fat), manual macro override (§2.5), protein-only mode, hide calories, units, check-in day.
+- Offline-first: the diary works with no signal and syncs later. Logging any food takes ≤ 3 taps from the Nutrition tab for repeat foods.
+- Health: HealthKit / Health Connect for weight and steps in, workouts out.
+
+**Not at launch:** AI photo logging (it costs money per photo; premium, later), meal plans, restaurant databases (paid licences).
+
 ---
 
 ## 3. Training Engine
@@ -339,6 +359,56 @@ Warm-up sets never count as hard sets and earn no XP (§4.1).
 6. No program yet → workout of the day = an on-demand session matched to goal + location + level.
 ```
 
+### 3.10 Weekly schedule, rest days and editing
+```
+Schedule = { programId, weekdays[] (user-picked, e.g. Mon·Wed·Fri), preferredTime (HH:mm), sessionMinutes, location, equipment }
+Rotation  = program.days in order; each completed workout advances the pointer (missed days never skip a workout).
+Rest day  = any weekday not in weekdays[].
+
+Validation when the user edits weekdays:
+  count must be in program.daysPerWeek (else suggest the closest program variant)
+  warn if > 2 training days in a row for the same muscle group (full-body programs: no 3 days in a row)
+Missed a scheduled day:
+  next training day runs the missed workout (rotation pointer did not advance)
+  "Train today instead" is offered on a rest day if yesterday was missed and the 48 h rule holds (§3.9)
+  never more than 2 make-ups in one week; extra misses roll forward (no cramming)
+Changes take effect from the next game day; a mid-block program switch keeps history, PRs and e1RM.
+Reminder: local notification at preferredTime − 30 min on training days; none on rest days.
+```
+**Rest days are real days.** Home shows a Rest Day card (Rest Ritual quest, 3-min mobility, steps/Zone 2 suggestion, the next workout preview) and an honest "Train anyway" option that picks a recovery or Zone 2 session, not the next hard workout.
+
+**Training settings screen** (Profile → Training): program · weekdays · preferred time · session length · location and equipment · injuries · goal · units · plates and bar weight · warm-up and cool-down defaults · voice coach. Every field is editable at any time, never only in onboarding.
+
+### 3.11 Workout log and history
+| Feature | Rule |
+|---|---|
+| **History** | Calendar (training, rest, missed) and a list. Workout detail shows every set, volume, duration, PRs, RPE and notes |
+| **Per-set entry** | Weight, reps, RIR (or time for holds). Set types: warm-up · working · drop set · failure. The previous performance is shown inline ("Last: 60 kg × 8") |
+| **Notes** | One note per session and a sticky note per exercise ("seat 4", "use the EZ bar") that shows next time |
+| **Edit after finishing** | Allowed for 7 days: fix weight or reps, add or delete a set. The server recomputes PRs, stats and XP **as a diff** (idempotent event `workout_edit:{id}:{version}`). After 7 days the log is locked for rewards (leaderboard integrity), but notes stay editable |
+| **Delete a workout** | Within 7 days. XP is reversed and it is removed from boards. A confirmation shows exactly what will change |
+| **Manual log** | "Log a workout" for training done without the app (gym class, sport, run): type, duration, RPE and an optional distance. XP uses the real-minutes rule (§4.1). It is marked **unverified**, which counts for personal XP and streaks but **not** for monthly leaderboards |
+| **Body log** | Weigh-ins (feed the trend, §1.4), optional waist/hip/chest measurements and optional progress photos (private, on device by default) |
+| **Exercise history** | Per-exercise chart of e1RM and best set over time, plus the PR list |
+
+### 3.12 Program library (target before launch)
+| Program | Where | Level | Days/week | Split | Block |
+|---|---|---|---|---|---|
+| Foundation ✅ | Home | Beginner | 3 | Full body | 6 wk + deload |
+| Iron Foundation ✅ | Gym | Beginner | 3 | Full body | 6 wk + deload |
+| Linear Strength ✅ | Gym | Novice | 3 | A/B barbell | 6 wk + deload |
+| Shinobi Path ✅ | Home | Novice–Intermediate | 4 | Upper/Lower calisthenics | 5 wk + deload |
+| Upper/Lower Builder ✅ | Gym | Intermediate–Advanced | 4 | Upper/Lower | 5 wk + deload |
+| Burn Protocol ✅ | Any | Beginner–Intermediate | 3–5 | Conditioning circuits | 6 wk + deload |
+| Push / Pull / Legs ✅ | Gym | Intermediate–Advanced | 6 (or 3 = one rotation a week) | PPL | 5 wk + deload |
+| Upper / Lower / Full ✅ | Gym | Novice–Intermediate | 3 | U/L/F, for busy lifters | 6 wk + deload |
+| Powerbuilding ✅ | Gym | Intermediate–Advanced | 4 | Heavy main lift + hypertrophy accessories | 6 wk + deload |
+| Lower Body & Glutes ✅ | Gym or Hybrid | Beginner–Intermediate | 4 | 2 lower-focus + 2 upper | 6 wk + deload |
+| Dumbbell Only ✅ | Home gym | Beginner–Intermediate | 3 | Full body (bodyweight swaps if no dumbbells) | 6 wk + deload |
+
+Every program shows **"Week 3 of 6 · Build"** and a **deload week** automatically (§3.4). Each new program passes the existing content tests (slot patterns, fallbacks, equipment coverage) before it ships.
+
+
 ## 4. Progression System (XP, Levels, Ranks, Stats)
 
 ### 4.1 XP sources (targets about 4 XP per minute of real work)
@@ -446,6 +516,13 @@ Each week with ≥ 5/7 completions: f += 0.02 (max 1.00)
 Two failed days in a row: f −= 0.10 (min 0.40)
 Time box: if the estimated duration is over 12 minutes, scale every slot down proportionally
 ```
+
+**Implementation notes (Sprint 5):**
+- Quests are one row per template per game day (`daily`, `penalty`, side ids, `sick`, `boss`), unique on (user, date, template). Streaks resolve lazily and idempotently on the first request of a new game day.
+- The Daily Quest carries the Rest Ritual as an alternative on rest days (`progress.option = 1`). The Penalty Quest offers two injury-safe options (burpees / wall sit / plank).
+- Progress is capped at 3× each target (plausibility). Completion XP is granted exactly once, through the same daily cap as workouts.
+- Side quests: `auto:*` ones (today's program workout, the mobility quick session) can only be claimed once verified from logged data. Manual ones are honest check-offs until nutrition and Health data verify them (Sprint 6).
+- The boss is claimed (+150 XP, title progress) once it's defeated, at most once per week.
 
 ### 4.7 Shadow-Self weekly boss
 ```

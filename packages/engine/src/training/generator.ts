@@ -77,6 +77,8 @@ export interface PlannedExercise {
   sets: PlannedSet[];
   /** other valid picks for the Swap sheet, best first */
   alternatives: string[];
+  /** superset pairing from the time-squeeze: exercises sharing a letter alternate sets (A1/A2) */
+  supersetGroup?: string;
 }
 
 export interface GeneratedWorkout {
@@ -205,8 +207,18 @@ function squeeze(list: PlannedExercise[], slots: readonly TemplateSlot[], minute
     for (let i = list.length - 1; i >= 0 && over(); i--) if (list[i]!.role === r) list.splice(i, 1);
   // 4. secondary then main down to 2 working sets (never below 2 for compounds)
   for (const r of ['secondary', 'core', 'main'] as SlotRole[]) for (const p of byRole(r)) while (over() && dropWorkingSet(p, 2));
-  // 5. superset everything except the main lifts (rest × 0.6)
-  if (over()) for (const p of list) if (p.role !== 'main') p.restSeconds = Math.round(p.restSeconds * 0.6);
+  // 5. pair the non-main exercises into supersets (A1/A2 alternate; rest × 0.6)
+  if (over()) {
+    const rest = list.filter((p) => p.role !== 'main');
+    for (let i = 0; i + 1 < rest.length; i += 2) {
+      const g = String.fromCharCode(65 + i / 2);
+      for (const p of [rest[i]!, rest[i + 1]!]) {
+        p.supersetGroup = g;
+        p.restSeconds = Math.round(p.restSeconds * 0.6);
+      }
+    }
+    if (rest.length % 2 === 1) rest.at(-1)!.restSeconds = Math.round(rest.at(-1)!.restSeconds * 0.6);
+  }
   // 6. drop core, then secondary work from the end
   for (const r of ['core', 'secondary'] as SlotRole[])
     for (let i = list.length - 1; i >= 0 && over(); i--) if (list[i]!.role === r) list.splice(i, 1);

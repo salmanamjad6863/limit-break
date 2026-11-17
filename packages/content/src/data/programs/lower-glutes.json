@@ -1,0 +1,336 @@
+{
+  "id": "lower-glutes",
+  "name": "Lower Body & Glutes",
+  "typeId": "hypertrophy",
+  "summary": "Four days with extra lower-body and glute volume: two lower days built around hip thrusts and squats, two balanced upper days.",
+  "levels": [
+    "beginner",
+    "novice",
+    "intermediate"
+  ],
+  "locations": [
+    "GYM",
+    "HYBRID"
+  ],
+  "goals": [
+    "recomp",
+    "maintain",
+    "cut",
+    "bulk"
+  ],
+  "daysPerWeek": [
+    4
+  ],
+  "blockWeeks": 6,
+  "deloadEvery": 6,
+  "days": [
+    {
+      "id": "lower-a",
+      "name": "Lower A · Glutes",
+      "focus": "lower",
+      "slots": [
+        {
+          "pattern": "hip_thrust",
+          "role": "main",
+          "sets": 4,
+          "rir": 2,
+          "reps": [
+            6,
+            10
+          ],
+          "prefer": [
+            "hip-thrust"
+          ]
+        },
+        {
+          "pattern": "hinge",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            10
+          ],
+          "prefer": [
+            "romanian-deadlift",
+            "db-romanian-deadlift"
+          ]
+        },
+        {
+          "pattern": "lunge",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "bulgarian-split-squat"
+          ]
+        },
+        {
+          "pattern": "knee_flexion",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "leg-curl"
+          ]
+        },
+        {
+          "pattern": "core_anti_lateral",
+          "role": "core",
+          "sets": 2,
+          "rir": 2,
+          "seconds": [
+            20,
+            40
+          ],
+          "prefer": [
+            "side-plank"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "upper-a",
+      "name": "Upper A",
+      "focus": "upper",
+      "slots": [
+        {
+          "pattern": "horizontal_push",
+          "role": "main",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "incline-db-press",
+            "db-bench-press"
+          ]
+        },
+        {
+          "pattern": "vertical_pull",
+          "role": "main",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "lat-pulldown"
+          ]
+        },
+        {
+          "pattern": "vertical_push",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "db-shoulder-press"
+          ]
+        },
+        {
+          "pattern": "horizontal_pull",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            10,
+            12
+          ],
+          "prefer": [
+            "seated-cable-row"
+          ]
+        },
+        {
+          "pattern": "shoulder_abduction",
+          "role": "accessory",
+          "sets": 2,
+          "rir": 1,
+          "reps": [
+            12,
+            20
+          ],
+          "prefer": [
+            "db-lateral-raise"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lower-b",
+      "name": "Lower B · Quads & Glutes",
+      "focus": "lower",
+      "slots": [
+        {
+          "pattern": "squat",
+          "role": "main",
+          "sets": 4,
+          "rir": 2,
+          "reps": [
+            6,
+            10
+          ],
+          "prefer": [
+            "back-squat",
+            "goblet-squat"
+          ]
+        },
+        {
+          "pattern": "hip_thrust",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "single-leg-glute-bridge",
+            "hip-thrust"
+          ]
+        },
+        {
+          "pattern": "lunge",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            10,
+            12
+          ],
+          "prefer": [
+            "step-up"
+          ]
+        },
+        {
+          "pattern": "hinge",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "kettlebell-swing",
+            "db-romanian-deadlift"
+          ]
+        },
+        {
+          "pattern": "calf",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "standing-calf-raise"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "upper-b",
+      "name": "Upper B",
+      "focus": "upper",
+      "slots": [
+        {
+          "pattern": "horizontal_pull",
+          "role": "main",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "chest-supported-row"
+          ]
+        },
+        {
+          "pattern": "horizontal_push",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "machine-chest-press",
+            "push-up"
+          ]
+        },
+        {
+          "pattern": "vertical_pull",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            6,
+            10
+          ],
+          "prefer": [
+            "pull-up",
+            "lat-pulldown"
+          ]
+        },
+        {
+          "pattern": "rear_delt",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            12,
+            20
+          ],
+          "prefer": [
+            "face-pull"
+          ]
+        },
+        {
+          "pattern": "elbow_extension",
+          "role": "accessory",
+          "sets": 2,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "triceps-pushdown"
+          ]
+        },
+        {
+          "pattern": "elbow_flexion",
+          "role": "accessory",
+          "sets": 2,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "db-curl"
+          ]
+        }
+      ]
+    }
+  ]
+}

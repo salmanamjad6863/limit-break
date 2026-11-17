@@ -1,0 +1,316 @@
+{
+  "id": "powerbuilding",
+  "name": "Powerbuilding",
+  "typeId": "strength",
+  "summary": "Four days built on the big four lifts: a heavy main lift for strength, then hypertrophy work to build around it.",
+  "levels": [
+    "intermediate",
+    "advanced"
+  ],
+  "locations": [
+    "GYM"
+  ],
+  "goals": [
+    "bulk",
+    "recomp",
+    "maintain"
+  ],
+  "daysPerWeek": [
+    4
+  ],
+  "blockWeeks": 6,
+  "deloadEvery": 6,
+  "days": [
+    {
+      "id": "squat",
+      "name": "Squat Day",
+      "focus": "lower",
+      "slots": [
+        {
+          "pattern": "squat",
+          "role": "main",
+          "sets": 5,
+          "rir": 2,
+          "reps": [
+            3,
+            5
+          ],
+          "prefer": [
+            "back-squat"
+          ]
+        },
+        {
+          "pattern": "squat",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "leg-press"
+          ]
+        },
+        {
+          "pattern": "hinge",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            10
+          ],
+          "prefer": [
+            "romanian-deadlift"
+          ]
+        },
+        {
+          "pattern": "knee_flexion",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "leg-curl"
+          ]
+        },
+        {
+          "pattern": "calf",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "standing-calf-raise"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bench",
+      "name": "Bench Day",
+      "focus": "upper",
+      "slots": [
+        {
+          "pattern": "horizontal_push",
+          "role": "main",
+          "sets": 5,
+          "rir": 2,
+          "reps": [
+            3,
+            5
+          ],
+          "prefer": [
+            "bench-press"
+          ]
+        },
+        {
+          "pattern": "horizontal_push",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "incline-db-press"
+          ]
+        },
+        {
+          "pattern": "horizontal_pull",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "seated-cable-row",
+            "chest-supported-row"
+          ]
+        },
+        {
+          "pattern": "shoulder_abduction",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            12,
+            20
+          ],
+          "prefer": [
+            "db-lateral-raise"
+          ]
+        },
+        {
+          "pattern": "elbow_extension",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "triceps-pushdown"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "deadlift",
+      "name": "Deadlift Day",
+      "focus": "lower",
+      "slots": [
+        {
+          "pattern": "hinge",
+          "role": "main",
+          "sets": 4,
+          "rir": 2,
+          "reps": [
+            2,
+            5
+          ],
+          "prefer": [
+            "deadlift"
+          ]
+        },
+        {
+          "pattern": "squat",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            5,
+            8
+          ],
+          "prefer": [
+            "front-squat"
+          ]
+        },
+        {
+          "pattern": "hip_thrust",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "hip-thrust"
+          ]
+        },
+        {
+          "pattern": "lunge",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            10,
+            12
+          ],
+          "prefer": [
+            "walking-lunge"
+          ]
+        },
+        {
+          "pattern": "core_flexion",
+          "role": "core",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "hanging-leg-raise",
+            "hanging-knee-raise"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "press",
+      "name": "Press Day",
+      "focus": "upper",
+      "slots": [
+        {
+          "pattern": "vertical_push",
+          "role": "main",
+          "sets": 5,
+          "rir": 2,
+          "reps": [
+            3,
+            5
+          ],
+          "prefer": [
+            "overhead-press"
+          ]
+        },
+        {
+          "pattern": "vertical_pull",
+          "role": "main",
+          "sets": 4,
+          "rir": 2,
+          "reps": [
+            5,
+            8
+          ],
+          "prefer": [
+            "pull-up",
+            "lat-pulldown"
+          ]
+        },
+        {
+          "pattern": "horizontal_push",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "db-bench-press"
+          ]
+        },
+        {
+          "pattern": "rear_delt",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            12,
+            20
+          ],
+          "prefer": [
+            "face-pull"
+          ]
+        },
+        {
+          "pattern": "elbow_flexion",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "db-curl"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -24,13 +24,14 @@ export function toFinishInput(a: ActiveSession, sessionRpe: number | null, cardi
   const sets = Object.entries(a.logs).flatMap(([exIndex, entries]) =>
     entries.map((e, order) => ({
       id: e.id, exerciseId: a.exercises[Number(exIndex)]!.exerciseId, order, reps: e.reps, weightKg: e.loadKg, rir: e.rir,
-      rpe: null, durationS: e.durationS, distanceM: null, isWarmup: e.isWarmup, completedAt: e.completedAt,
+      rpe: null, durationS: e.durationS, distanceM: null, isWarmup: e.isWarmup, setType: e.setType ?? 'normal', completedAt: e.completedAt,
     })),
   );
   const plannedHardSets = a.exercises.reduce((n, pe) => n + pe.sets.filter((s) => s.kind === 'working').length, 0);
   return {
     id: a.id, plannedWorkoutId: null, programId: a.programId, dayId: a.dayId, sessionRpe, cardio,
     startedAt: a.startedAt, finishedAt: new Date().toISOString(), plannedHardSets, sets,
+    kind: a.kind, name: a.name, notes: a.notes?.trim() || null,
   };
 }
 
@@ -90,6 +91,11 @@ export function useFinishWorkout() {
       const record: CompletedWorkout = {
         id: input.id, date, name: session.name, kind: session.kind, programId: session.programId, dayId: session.dayId,
         minutes, workingSets: working.length, volumeKg, xp: granted, prs,
+        source: 'app', notes: input.notes, sessionRpe: input.sessionRpe, plannedHardSets: input.plannedHardSets,
+        cardioMinutes: input.cardio.reduce((m, c) => m + c.minutes, 0),
+        sets: input.sets.map((s) => ({
+          id: s.id, exerciseId: s.exerciseId, reps: s.reps, loadKg: s.weightKg, rir: s.rir, durationS: s.durationS, isWarmup: s.isWarmup, setType: s.setType,
+        })),
       };
       t.recordWorkout(record, { bestE1rm: local.bestE1rm, lastSet, lastUsed }, session.kind === 'program');
       useProgress.getState().bumpCalLevels(chainLevelsFrom(working.filter((s) => (s.reps ?? 0) >= 5).map((s) => s.exerciseId)));

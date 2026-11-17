@@ -56,14 +56,27 @@ export default function TrainScreen() {
             <Text variant="caption" muted numberOfLines={2}>{w.exercises.map((e) => exerciseName(e.exerciseId)).join(' · ')}</Text>
             <Button label="Start workout" icon="play" onPress={() => router.push('/workout/preview')} />
           </Card>
+        ) : doneToday ? (
+          <Card tint={c.success}>
+            <Text variant="headline">Great work today.</Text>
+            <Text variant="callout" dim>Muscles grow while you rest. A short mobility flow helps you recover.</Text>
+            <Button variant="secondary" icon="leaf-outline" label="10-minute mobility" onPress={() => router.push('/workout/quick/mobility-10')} />
+          </Card>
         ) : (
           <Card tint={c.mana}>
-            <Text variant="headline">{doneToday ? 'Great work today.' : 'Recovery is part of the plan.'}</Text>
-            <Text variant="callout" dim>
-              {doneToday ? 'Muscles grow while you rest. A short mobility session helps.' : 'A 10-minute mobility flow keeps your streak and your joints happy.'}
-            </Text>
+            <Text variant="headline">Rest day: recovery is part of the plan.</Text>
+            {today.schedule.canTrainInstead ? (
+              <>
+                <Text variant="callout" dim>{`You missed ${today.schedule.missedThisWeek === 1 ? 'a session' : `${today.schedule.missedThisWeek} sessions`} this week. You can make it up today. The plan just continues where you left off.`}</Text>
+                <Button label={`Train today instead: ${w.name}`} icon="play" onPress={() => router.push('/workout/preview')} />
+              </>
+            ) : (
+              <Text variant="callout" dim>{`Next up: ${w.name}. Do your Rest Ritual quest and move a little: walks and mobility speed up recovery.`}</Text>
+            )}
             <Button variant="secondary" icon="leaf-outline" label="10-minute mobility" onPress={() => router.push('/workout/quick/mobility-10')} />
-            {!doneToday ? <Button variant="ghost" size="md" label={`Train anyway: ${w.name}`} onPress={() => router.push('/workout/preview')} /> : null}
+            {!today.schedule.canTrainInstead ? (
+              <Button variant="ghost" size="md" label="Train anyway (light recovery session)" onPress={() => router.push('/workout/quick/core-12')} />
+            ) : null}
           </Card>
         )}
       </Appear>
@@ -72,26 +85,33 @@ export default function TrainScreen() {
       <Appear index={3} style={{ gap: spacing[3] }}>
         <SectionHeader title="This week" />
         <Card padded={false}>
-          {today.week.map((d, i) => (
-            <View
-              key={d.weekday}
-              style={{
-                flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingHorizontal: spacing[4], paddingVertical: spacing[3],
-                borderTopWidth: i ? 1 : 0, borderColor: c.border, backgroundColor: d.isToday ? `${c.accent}14` : 'transparent',
-              }}>
-              <Text variant="label" color={d.isToday ? c.accentGlow : c.textMuted} style={{ width: 36 }}>{d.weekday}</Text>
-              <Icon
-                name={d.done ? 'checkmark-circle' : d.dayName ? 'barbell-outline' : d.past ? 'remove-outline' : 'moon-outline'}
-                size={16}
-                color={d.done ? c.success : d.dayName && !d.past ? c.textDim : c.textMuted}
-              />
-              <Text variant="callout" style={{ flex: 1 }} color={d.dayName && !d.past ? c.text : d.done ? c.textDim : c.textMuted}>
-                {d.dayName ?? (d.past ? '—' : 'Rest')}
-              </Text>
-              {d.isToday ? <Pill label="Today" color={c.accentGlow} /> : null}
-            </View>
-          ))}
+          {today.week.map((d, i) => {
+            const name = d.doneName ?? d.plannedName;
+            return (
+              <View
+                key={d.date}
+                style={{
+                  flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingHorizontal: spacing[4], paddingVertical: spacing[3],
+                  borderTopWidth: i ? 1 : 0, borderColor: c.border, backgroundColor: d.isToday ? `${c.accent}14` : 'transparent',
+                }}>
+                <Text variant="label" color={d.isToday ? c.accentGlow : c.textMuted} style={{ width: 36 }}>{d.label}</Text>
+                <Icon
+                  name={d.doneName ? 'checkmark-circle' : d.missed ? 'close-circle-outline' : d.plannedName ? 'barbell-outline' : 'moon-outline'}
+                  size={16}
+                  color={d.doneName ? c.success : d.missed ? c.warning : d.plannedName ? c.textDim : c.textMuted}
+                />
+                <Text variant="callout" style={{ flex: 1 }} color={d.plannedName ? c.text : d.doneName ? c.textDim : c.textMuted}>
+                  {name ?? (d.missed ? 'Missed (it moves to your next day)' : 'Rest')}
+                </Text>
+                {d.isToday ? <Pill label="Today" color={c.accentGlow} /> : null}
+              </View>
+            );
+          })}
         </Card>
+      </Appear>
+
+      <Appear index={3}>
+        <Button variant="ghost" size="md" icon="calendar-outline" label="Edit days, time & training settings" onPress={() => router.push('/training-settings')} />
       </Appear>
 
       {/* Quick sessions */}
@@ -121,19 +141,27 @@ export default function TrainScreen() {
           <SectionHeader title="Recent" />
           <Card padded={false}>
             {history.slice(0, 4).map((h, i) => (
-              <View key={h.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[3], paddingHorizontal: spacing[4], borderTopWidth: i ? 1 : 0, borderColor: c.border }}>
-                <Icon name={h.kind === 'quick' ? 'flash-outline' : 'barbell-outline'} size={18} />
+              <PressableScale key={h.id} haptic="tap" onPress={() => router.push(`/history/${h.id}`)} accessibilityRole="button" accessibilityLabel={h.name}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[3], paddingHorizontal: spacing[4], borderTopWidth: i ? 1 : 0, borderColor: c.border }}>
+                <Icon name={h.kind === 'manual' ? 'create-outline' : h.kind === 'quick' ? 'flash-outline' : 'barbell-outline'} size={18} />
                 <View style={{ flex: 1 }}>
                   <Text variant="callout">{h.name}</Text>
                   <Text variant="caption" muted>{`${h.date} · ${h.minutes} min${h.workingSets ? ` · ${h.workingSets} sets` : ''}${h.prs.length ? ` · ${h.prs.length} PR` : ''}`}</Text>
                 </View>
                 <Text variant="callout" color={c.accentGlow}>{`+${h.xp} XP`}</Text>
               </View>
+              </PressableScale>
             ))}
           </Card>
+          <Button variant="ghost" size="md" icon="calendar-outline" label="Full history & log a workout" onPress={() => router.push('/history')} />
         </Appear>
       ) : null}
 
+      {!history.length ? (
+        <Appear index={5}>
+          <Button variant="ghost" size="md" icon="create-outline" label="Log a workout done without the app" onPress={() => router.push('/history/log')} />
+        </Appear>
+      ) : null}
       <Appear index={6}>
         <Button variant="secondary" icon="library-outline" label="Exercise library" onPress={() => router.push('/exercises')} />
       </Appear>

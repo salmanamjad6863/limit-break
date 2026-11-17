@@ -27,6 +27,7 @@ export function Chips<T extends string>({
             onPress={() => onToggle(o.value)}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: on }}
+            accessibilityLabel={o.label}
             style={{
               paddingHorizontal: spacing[3], paddingVertical: spacing[2], borderRadius: radius.pill,
               borderWidth: 1, borderColor: on ? tint : c.border, backgroundColor: on ? `${tint}2A` : c.surface,

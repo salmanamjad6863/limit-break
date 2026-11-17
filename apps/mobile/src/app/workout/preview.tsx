@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { exerciseById, useToday, useWorkoutSession } from '@/features/training';
+import { ExerciseMedia, MuscleMap } from '@/features/visuals';
 import { range, ROLE_LABEL } from '@/features/training/format';
 import { useTheme } from '@/theme';
 import { Appear, Button, Card, Icon, Page, Pill, PressableScale, ScreenHeader, SectionHeader, Text } from '@/ui';
@@ -17,6 +18,7 @@ const READINESS = [
 export default function WorkoutPreview() {
   const { c, spacing, radius } = useTheme();
   const [readiness, setReadiness] = useState<number | null>(null);
+  const [guided, setGuided] = useState(true);
   const today = useToday(readiness);
   const start = useWorkoutSession((s) => s.start);
   const w = today.workout;
@@ -33,7 +35,7 @@ export default function WorkoutPreview() {
           icon="play"
           onPress={() => {
             start(w, { programId: today.program.id, dayId: w.dayId });
-            router.replace('/workout/session');
+            router.replace(guided ? '/workout/flow?kind=warmup' : '/workout/session');
           }}
         />
       }>
@@ -45,6 +47,17 @@ export default function WorkoutPreview() {
           <Meta icon="list-outline" text={`${w.exercises.length} exercises`} />
           <Meta icon="layers-outline" text={`${sets} working sets`} />
         </View>
+      </Appear>
+
+      <Appear index={1}>
+        <Card style={{ alignItems: 'center' }}>
+          <Text variant="label" muted style={{ alignSelf: 'flex-start' }}>Muscles today</Text>
+          <MuscleMap
+            primary={[...new Set(w.exercises.filter((pe) => pe.role !== 'core').flatMap((pe) => exerciseById.get(pe.exerciseId)?.primary ?? []))].filter((m) => m !== 'full_body')}
+            secondary={[...new Set(w.exercises.flatMap((pe) => { const e = exerciseById.get(pe.exerciseId); return [...(e?.secondary ?? []), ...(e?.primary.includes('full_body') ? ['full_body'] : [])]; }))]}
+            width={240}
+          />
+        </Card>
       </Appear>
 
       <Appear index={1}>
@@ -82,7 +95,16 @@ export default function WorkoutPreview() {
       <Appear index={2} style={{ gap: spacing[3] }}>
         <SectionHeader title="The plan" />
         <Card padded={false}>
-          <Row icon="body-outline" title="Warm-up" detail="5 min · general movement + ramp-up sets" first />
+          <PressableScale haptic="tap" onPress={() => setGuided((g) => !g)} accessibilityRole="switch" accessibilityState={{ checked: guided }} accessibilityLabel="Guided warm-up">
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[3], paddingHorizontal: spacing[4] }}>
+              <Icon name="body-outline" size={18} color={guided ? c.warning : c.textMuted} />
+              <View style={{ flex: 1 }}>
+                <Text variant="callout">Guided warm-up</Text>
+                <Text variant="caption" muted>{guided ? 'About 5 min, follow along · then ramp-up sets' : 'Off · ramp-up sets only'}</Text>
+              </View>
+              <Icon name={guided ? 'toggle' : 'toggle-outline'} size={28} color={guided ? c.warning : c.textMuted} />
+            </View>
+          </PressableScale>
           {w.exercises.map((pe) => {
             const e = exerciseById.get(pe.exerciseId)!;
             const working = pe.sets.filter((s) => s.kind === 'working');
@@ -91,6 +113,7 @@ export default function WorkoutPreview() {
             return (
               <PressableScale key={pe.slotIndex} haptic="tap" onPress={() => router.push(`/exercise/${e.id}`)} accessibilityRole="button" accessibilityLabel={e.name}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[3], paddingHorizontal: spacing[4], borderTopWidth: 1, borderColor: c.border }}>
+                  <ExerciseMedia exerciseId={e.id} variant="thumb" height={44} />
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text variant="callout">{e.name}</Text>
                     <Text variant="caption" muted>{`${ROLE_LABEL[pe.role]} · ${working.length} × ${target}${s0.loadKg != null ? ` · ${s0.loadKg} kg` : ''}`}</Text>
@@ -100,7 +123,7 @@ export default function WorkoutPreview() {
               </PressableScale>
             );
           })}
-          <Row icon="leaf-outline" title="Cool-down" detail="3 min · mobility for the muscles trained" />
+          <Row icon="leaf-outline" title="Cool-down" detail="About 4 min, follow along · offered when you finish" />
         </Card>
         {w.unfilled.length ? (
           <Text variant="caption" color={c.warning}>{`Skipped ${w.unfilled.length} slot(s) that need equipment you don't have.`}</Text>

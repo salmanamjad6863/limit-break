@@ -1,0 +1,289 @@
+{
+  "id": "dumbbell-only",
+  "name": "Dumbbell Only",
+  "typeId": "hypertrophy",
+  "summary": "Three full-body days with just a pair of dumbbells (and a bench if you have one). Bodyweight swaps fill any gaps.",
+  "levels": [
+    "beginner",
+    "novice",
+    "intermediate"
+  ],
+  "locations": [
+    "HOME",
+    "HYBRID"
+  ],
+  "goals": [
+    "recomp",
+    "maintain",
+    "cut",
+    "bulk"
+  ],
+  "daysPerWeek": [
+    3
+  ],
+  "blockWeeks": 6,
+  "deloadEvery": 6,
+  "days": [
+    {
+      "id": "full-a",
+      "name": "Full Body A",
+      "focus": "full",
+      "slots": [
+        {
+          "pattern": "squat",
+          "role": "main",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "goblet-squat"
+          ]
+        },
+        {
+          "pattern": "horizontal_push",
+          "role": "main",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "db-bench-press",
+            "db-floor-press"
+          ]
+        },
+        {
+          "pattern": "horizontal_pull",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "db-row"
+          ]
+        },
+        {
+          "pattern": "hinge",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "db-romanian-deadlift"
+          ]
+        },
+        {
+          "pattern": "shoulder_abduction",
+          "role": "accessory",
+          "sets": 2,
+          "rir": 1,
+          "reps": [
+            12,
+            20
+          ],
+          "prefer": [
+            "db-lateral-raise"
+          ],
+          "optional": true
+        },
+        {
+          "pattern": "core_anti_extension",
+          "role": "core",
+          "sets": 2,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "dead-bug"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "full-b",
+      "name": "Full Body B",
+      "focus": "full",
+      "slots": [
+        {
+          "pattern": "hinge",
+          "role": "main",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "db-romanian-deadlift"
+          ]
+        },
+        {
+          "pattern": "vertical_push",
+          "role": "main",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "db-shoulder-press"
+          ]
+        },
+        {
+          "pattern": "lunge",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "reverse-lunge"
+          ]
+        },
+        {
+          "pattern": "horizontal_pull",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "chest-supported-row",
+            "db-row"
+          ]
+        },
+        {
+          "pattern": "elbow_flexion",
+          "role": "accessory",
+          "sets": 2,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "db-curl"
+          ],
+          "optional": true
+        },
+        {
+          "pattern": "core_anti_extension",
+          "role": "core",
+          "sets": 2,
+          "rir": 2,
+          "seconds": [
+            30,
+            60
+          ],
+          "prefer": [
+            "plank"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "full-c",
+      "name": "Full Body C",
+      "focus": "full",
+      "slots": [
+        {
+          "pattern": "lunge",
+          "role": "main",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "bulgarian-split-squat"
+          ]
+        },
+        {
+          "pattern": "horizontal_push",
+          "role": "main",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "incline-db-press",
+            "db-floor-press"
+          ]
+        },
+        {
+          "pattern": "horizontal_pull",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            10,
+            12
+          ],
+          "prefer": [
+            "db-row"
+          ]
+        },
+        {
+          "pattern": "hip_thrust",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "single-leg-glute-bridge"
+          ]
+        },
+        {
+          "pattern": "elbow_extension",
+          "role": "accessory",
+          "sets": 2,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "overhead-triceps-extension"
+          ],
+          "optional": true
+        },
+        {
+          "pattern": "core_anti_lateral",
+          "role": "core",
+          "sets": 2,
+          "rir": 2,
+          "seconds": [
+            20,
+            40
+          ],
+          "prefer": [
+            "side-plank"
+          ]
+        }
+      ]
+    }
+  ]
+}

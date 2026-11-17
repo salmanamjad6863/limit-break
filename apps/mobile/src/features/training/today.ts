@@ -1,4 +1,6 @@
-import { gameDate, generateWorkout, isTrainingDay, nextDayIndex, TRAINING_WEEKDAYS, type GeneratedWorkout } from '@lb/engine';
+import {
+  defaultWeekdays, gameDate, generateWorkout, nextDayIndex, scheduleToday, weekCells, type GeneratedWorkout, type ScheduleToday, type WeekCell,
+} from '@lb/engine';
 import type { ProgramTemplate } from '@lb/content';
 import { useMemo } from 'react';
 import { catalog, programById } from './catalog';
@@ -8,19 +10,19 @@ import { useTraining } from './store';
 
 export interface Today {
   program: ProgramTemplate;
+  /** today is one of the picked weekdays */
   isTrainingDay: boolean;
   dayIndex: number;
   workout: GeneratedWorkout;
-  /**
-   * Monday-first. Past days show what was actually done (or nothing); today and later show the
-   * upcoming program days in rotation from the user's current position.
-   */
-  week: { weekday: string; dayName: string | null; isToday: boolean; past: boolean; done: boolean }[];
+  weekdays: number[];
+  schedule: ScheduleToday;
+  /** Monday-first; past = done / missed / rest, today and later = rotation */
+  week: (WeekCell & { label: string })[];
 }
 
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const LABEL = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-/** Today's planned session from the active (or recommended) program — SYSTEMS.md §3.9. */
+/** Today's planned session from the active (or recommended) program on the user's weekdays — SYSTEMS.md §3.9–3.10. */
 export function useToday(readiness: number | null = null): Today {
   const profile = useTrainingProfile();
   const activeId = useTraining((s) => s.activeProgramId);
@@ -32,37 +34,17 @@ export function useToday(readiness: number | null = null): Today {
 
   return useMemo(() => {
     const program = programById.get(activeId ?? recommendedProgramId(profile)) ?? programById.get('foundation')!;
-    const daysPerWeek = program.daysPerWeek.includes(profile.daysPerWeek)
-      ? profile.daysPerWeek
-      : program.daysPerWeek.reduce((a, b) => (Math.abs(b - profile.daysPerWeek) < Math.abs(a - profile.daysPerWeek) ? b : a));
+    const weekdays = profile.weekdays?.length ? profile.weekdays : defaultWeekdays(profile.daysPerWeek);
     // The training day follows the game day (03:00 rollover, SYSTEMS.md §0), not the calendar.
     const todayIso = gameDate(new Date(), profile.timezone || 'UTC');
-    const todayDate = new Date(`${todayIso}T12:00:00`);
-    const weekday = todayDate.getDay();
     const dayIndex = nextDayIndex(program.days.length, completed);
     const workout = generateWorkout(program.days[dayIndex]!, catalog, {
       equipment: profile.equipment, injuries: profile.injuries, experience: profile.experience,
       sessionMinutes: profile.sessionMinutes, bodyweightKg: profile.weightKg, bestE1rm, lastUsed, avoidExercises: avoid, readiness,
     });
-    const train = TRAINING_WEEKDAYS[daysPerWeek] ?? TRAINING_WEEKDAYS[3]!;
-    const todayPos = (weekday + 6) % 7;
-    const monday = new Date(todayDate);
-    monday.setDate(monday.getDate() - todayPos);
-    const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    let k = dayIndex;
-    const week = WEEKDAYS.map((label, i) => {
-      const date = new Date(monday);
-      date.setDate(monday.getDate() + i);
-      const jsDay = (i + 1) % 7;
-      if (i < todayPos) {
-        const did = history.find((h) => h.date === iso(date) && h.kind === 'program');
-        return { weekday: label, dayName: did?.name ?? null, isToday: false, past: true, done: !!did };
-      }
-      const doneToday = i === todayPos ? history.find((h) => h.date === iso(date) && h.kind === 'program') : undefined;
-      if (doneToday) return { weekday: label, dayName: doneToday.name, isToday: true, past: false, done: true };
-      const planned = train.includes(jsDay) ? program.days[k++ % program.days.length]!.name : null;
-      return { weekday: label, dayName: planned, isToday: i === todayPos, past: false, done: false };
-    });
-    return { program, isTrainingDay: isTrainingDay(daysPerWeek, weekday), dayIndex, workout, week };
-  }, [profile, activeId, completed, bestE1rm, lastUsed, avoid, readiness, history]);
+    const done = history.map((h) => ({ date: h.date, kind: h.kind, name: h.name }));
+    const schedule = scheduleToday(weekdays, todayIso, done);
+    const week = weekCells(weekdays, todayIso, done, program.days.map((d) => d.name), dayIndex).map((c) => ({ ...c, label: LABEL[c.weekday]! }));
+    return { program, isTrainingDay: schedule.scheduled, dayIndex, workout, weekdays, schedule, week };
+  }, [profile, activeId, completed, bestE1rm, lastUsed, avoid, history, readiness]);
 }

@@ -4,6 +4,8 @@
 >
 > **v3 update (design + training):** the app is **a professional fitness app first, anime RPG second**. See §18 Design Principles and the expanded real-trainer training system in §5.6–5.9. Tab names are now plain: Home · Train · Quests · Nutrition · Community. The community is **global** (monthly Top Hunters boards, a public progress feed, comments) as well as friends and guilds; see [SYSTEMS.md §5](SYSTEMS.md).
 >
+> **v4 update (visuals):** exercise demos, the follow-along trainer, guided warm-ups/cool-downs, the naming system, Signature Gates and the points-built Avatar Forge are planned in [VISUALS.md](VISUALS.md).
+>
 > Working title only. Run a trademark check before you lock the name. Every name, character and term in this doc is a placeholder for **original IP**.
 
 ---

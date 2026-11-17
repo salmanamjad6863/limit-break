@@ -11,6 +11,8 @@ export const LoggedSetInput = z.object({
   durationS: z.number().int().min(0).nullable(),
   distanceM: z.number().min(0).nullable(),
   isWarmup: z.boolean(),
+  /** SYSTEMS.md §3.11: drop sets and sets taken to failure are logged as such */
+  setType: z.enum(['normal', 'drop', 'failure']).default('normal'),
   completedAt: z.iso.datetime({ offset: true }),
 });
 export type LoggedSetInput = z.infer<typeof LoggedSetInput>;
@@ -28,6 +30,9 @@ export const FinishWorkoutInput = z.object({
   finishedAt: z.iso.datetime({ offset: true }),
   plannedHardSets: z.number().int().min(0),
   sets: z.array(LoggedSetInput).max(200),
+  kind: z.enum(['program', 'quick']).default('program'),
+  name: z.string().max(80).nullable().default(null),
+  notes: z.string().max(1000).nullable().default(null),
 });
 export type FinishWorkoutInput = z.infer<typeof FinishWorkoutInput>;
 
@@ -41,3 +46,79 @@ export const FinishWorkoutResponse = z.object({
   duplicate: z.boolean(),
 });
 export type FinishWorkoutResponse = z.infer<typeof FinishWorkoutResponse>;
+
+/* ---------------- Sprint 5.5: schedule, history, edits, manual logs (SYSTEMS.md §3.10–3.11) ---------------- */
+const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'HH:mm');
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+/** Everything about training the user can change at any time (Training settings screen). */
+export const TrainingSettingsInput = z.object({
+  experience: z.enum(['beginner', 'novice', 'intermediate', 'advanced']),
+  location: z.enum(['HOME', 'GYM', 'HYBRID']),
+  equipment: z.array(z.string()).max(50),
+  injuries: z.array(z.string()).max(20),
+  sessionMinutes: z.union([z.literal(15), z.literal(30), z.literal(45), z.literal(60), z.literal(75), z.literal(90)]),
+  /** 0 = Sunday … 6 = Saturday; 2–6 training days */
+  weekdays: z.array(z.number().int().min(0).max(6)).min(2).max(6).refine((w) => new Set(w).size === w.length, 'duplicate weekday'),
+  /** when you usually train; reminders fire 30 min before. null = no reminders */
+  workoutTime: hhmm.nullable(),
+});
+export type TrainingSettingsInput = z.infer<typeof TrainingSettingsInput>;
+
+export const WorkoutSource = z.enum(['app', 'manual']);
+
+export const WorkoutSummaryDto = z.object({
+  id: z.string(),
+  date: isoDate,
+  name: z.string(),
+  kind: z.enum(['program', 'quick', 'manual']),
+  source: WorkoutSource,
+  minutes: z.number(),
+  workingSets: z.number().int(),
+  volumeKg: z.number(),
+  xp: z.number().int(),
+  prs: z.array(z.object({ exerciseId: z.string(), e1rmKg: z.number() })),
+  notes: z.string().nullable(),
+  /** editable/deletable for 7 days (leaderboard integrity) */
+  editableUntil: isoDate,
+});
+export type WorkoutSummaryDto = z.infer<typeof WorkoutSummaryDto>;
+
+export const WorkoutDetailDto = WorkoutSummaryDto.extend({
+  sessionRpe: z.number().nullable(),
+  sets: z.array(LoggedSetInput.extend({ id: z.string() })),
+});
+export type WorkoutDetailDto = z.infer<typeof WorkoutDetailDto>;
+
+export const WorkoutListResponse = z.object({ workouts: z.array(WorkoutSummaryDto) });
+export type WorkoutListResponse = z.infer<typeof WorkoutListResponse>;
+
+/** Full replacement of the sets + notes; the server recomputes PRs, stats and XP as a diff. */
+export const EditWorkoutInput = z.object({
+  /** client-generated id of this edit = idempotency key for the XP adjustment */
+  editId: z.uuid(),
+  sets: z.array(LoggedSetInput).max(200),
+  notes: z.string().max(1000).nullable(),
+  sessionRpe: z.number().min(1).max(10).nullable(),
+});
+export type EditWorkoutInput = z.infer<typeof EditWorkoutInput>;
+
+export const EditWorkoutResponse = z.object({ xp: z.number().int(), delta: z.number().int(), totalXp: z.number().int(), level: z.number().int() });
+export type EditWorkoutResponse = z.infer<typeof EditWorkoutResponse>;
+
+/** Training done without the app. Counts for personal XP and streaks, never for leaderboards. */
+export const ManualWorkoutInput = z.object({
+  id: z.uuid(),
+  type: z.enum(['strength', 'cardio', 'sport', 'class', 'other']),
+  name: z.string().trim().min(2).max(60),
+  minutes: z.number().int().min(5).max(300),
+  rpe: z.number().int().min(1).max(10),
+  localDate: isoDate,
+  distanceKm: z.number().min(0).max(300).nullable(),
+  notes: z.string().max(1000).nullable(),
+});
+export type ManualWorkoutInput = z.infer<typeof ManualWorkoutInput>;
+
+export const ExerciseNoteInput = z.object({ note: z.string().max(300) });
+export const ExerciseNotesResponse = z.object({ notes: z.record(z.string(), z.string()) });
+export type ExerciseNotesResponse = z.infer<typeof ExerciseNotesResponse>;

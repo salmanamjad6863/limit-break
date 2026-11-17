@@ -1,0 +1,467 @@
+{
+  "id": "push-pull-legs",
+  "name": "Push / Pull / Legs",
+  "typeId": "hypertrophy",
+  "summary": "The classic bodybuilding split. Six days hits every muscle twice a week; on three days, one full rotation a week.",
+  "levels": [
+    "intermediate",
+    "advanced"
+  ],
+  "locations": [
+    "GYM"
+  ],
+  "goals": [
+    "bulk",
+    "recomp",
+    "maintain",
+    "cut"
+  ],
+  "daysPerWeek": [
+    3,
+    6
+  ],
+  "blockWeeks": 5,
+  "deloadEvery": 5,
+  "days": [
+    {
+      "id": "push-a",
+      "name": "Push A · Chest",
+      "focus": "upper",
+      "slots": [
+        {
+          "pattern": "horizontal_push",
+          "role": "main",
+          "sets": 4,
+          "rir": 2,
+          "reps": [
+            5,
+            8
+          ],
+          "prefer": [
+            "bench-press"
+          ]
+        },
+        {
+          "pattern": "horizontal_push",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "incline-db-press"
+          ]
+        },
+        {
+          "pattern": "vertical_push",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "db-shoulder-press"
+          ]
+        },
+        {
+          "pattern": "shoulder_abduction",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            12,
+            20
+          ],
+          "prefer": [
+            "db-lateral-raise"
+          ]
+        },
+        {
+          "pattern": "elbow_extension",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "triceps-pushdown"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pull-a",
+      "name": "Pull A · Width",
+      "focus": "upper",
+      "slots": [
+        {
+          "pattern": "vertical_pull",
+          "role": "main",
+          "sets": 4,
+          "rir": 2,
+          "reps": [
+            6,
+            10
+          ],
+          "prefer": [
+            "pull-up",
+            "lat-pulldown"
+          ]
+        },
+        {
+          "pattern": "horizontal_pull",
+          "role": "main",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            6,
+            10
+          ],
+          "prefer": [
+            "barbell-row"
+          ]
+        },
+        {
+          "pattern": "rear_delt",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            12,
+            20
+          ],
+          "prefer": [
+            "face-pull"
+          ]
+        },
+        {
+          "pattern": "elbow_flexion",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "db-curl"
+          ]
+        },
+        {
+          "pattern": "core_flexion",
+          "role": "core",
+          "sets": 2,
+          "rir": 2,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "hanging-knee-raise"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "legs-a",
+      "name": "Legs A · Squat",
+      "focus": "lower",
+      "slots": [
+        {
+          "pattern": "squat",
+          "role": "main",
+          "sets": 4,
+          "rir": 2,
+          "reps": [
+            5,
+            8
+          ],
+          "prefer": [
+            "back-squat"
+          ]
+        },
+        {
+          "pattern": "hinge",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            10
+          ],
+          "prefer": [
+            "romanian-deadlift"
+          ]
+        },
+        {
+          "pattern": "lunge",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "bulgarian-split-squat"
+          ]
+        },
+        {
+          "pattern": "knee_flexion",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "leg-curl"
+          ]
+        },
+        {
+          "pattern": "calf",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "standing-calf-raise"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "push-b",
+      "name": "Push B · Shoulders",
+      "focus": "upper",
+      "slots": [
+        {
+          "pattern": "vertical_push",
+          "role": "main",
+          "sets": 4,
+          "rir": 2,
+          "reps": [
+            5,
+            8
+          ],
+          "prefer": [
+            "overhead-press"
+          ]
+        },
+        {
+          "pattern": "horizontal_push",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "machine-chest-press",
+            "db-bench-press"
+          ]
+        },
+        {
+          "pattern": "vertical_push_dip",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            6,
+            12
+          ],
+          "prefer": [
+            "dip"
+          ],
+          "fallback": [
+            "horizontal_push"
+          ]
+        },
+        {
+          "pattern": "shoulder_abduction",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            12,
+            20
+          ],
+          "prefer": [
+            "db-lateral-raise"
+          ]
+        },
+        {
+          "pattern": "elbow_extension",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "overhead-triceps-extension"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pull-b",
+      "name": "Pull B · Thickness",
+      "focus": "upper",
+      "slots": [
+        {
+          "pattern": "hinge",
+          "role": "main",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            3,
+            5
+          ],
+          "prefer": [
+            "deadlift"
+          ]
+        },
+        {
+          "pattern": "horizontal_pull",
+          "role": "main",
+          "sets": 4,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "chest-supported-row",
+            "seated-cable-row"
+          ]
+        },
+        {
+          "pattern": "vertical_pull",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "lat-pulldown"
+          ]
+        },
+        {
+          "pattern": "rear_delt",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            15,
+            20
+          ],
+          "prefer": [
+            "band-pull-apart",
+            "face-pull"
+          ]
+        },
+        {
+          "pattern": "elbow_flexion",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "db-curl"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "legs-b",
+      "name": "Legs B · Posterior",
+      "focus": "lower",
+      "slots": [
+        {
+          "pattern": "squat",
+          "role": "main",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "leg-press",
+            "front-squat"
+          ]
+        },
+        {
+          "pattern": "hip_thrust",
+          "role": "secondary",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            8,
+            12
+          ],
+          "prefer": [
+            "hip-thrust"
+          ]
+        },
+        {
+          "pattern": "lunge",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 2,
+          "reps": [
+            10,
+            12
+          ],
+          "prefer": [
+            "walking-lunge"
+          ]
+        },
+        {
+          "pattern": "knee_flexion",
+          "role": "accessory",
+          "sets": 3,
+          "rir": 1,
+          "reps": [
+            10,
+            15
+          ],
+          "prefer": [
+            "leg-curl"
+          ]
+        },
+        {
+          "pattern": "core_anti_extension",
+          "role": "core",
+          "sets": 3,
+          "rir": 2,
+          "seconds": [
+            30,
+            60
+          ],
+          "prefer": [
+            "plank"
+          ]
+        }
+      ]
+    }
+  ]
+}

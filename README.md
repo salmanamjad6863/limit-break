@@ -7,6 +7,7 @@ Anime RPG fitness app: real training, real macros, and a rank you can't fake.
 | [PLAN.md](PLAN.md) | Product and game design, market, roadmap |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Stack, repo layout, animation system, asset pipeline, sprints |
 | [SYSTEMS.md](SYSTEMS.md) | Every formula (nutrition, training, XP, ranks), community, subscriptions |
+| [VISUALS.md](VISUALS.md) | Exercise demos, follow-along trainer, warm-ups, naming, Signature Gates, Avatar Forge |
 
 ## Repo
 
@@ -85,6 +86,7 @@ All motion respects the system Reduce Motion setting. Durations and springs come
 | Generator, schedule, set coaching | `packages/engine/src/training/generator.ts` |
 | Workout rewards (XP, PRs, level) | `packages/engine/src/progression/workout.ts`, shared by the app and `POST /workouts/finish` |
 | Progression (stats, trials) | `packages/engine/src/progression/stats.ts`, API `apps/api/src/modules/progression`, app `src/app/profile.tsx`, `src/app/trial.tsx` |
+| Quests, streaks, boss | engine `src/quests`, API `apps/api/src/modules/quests`, app `src/features/quests`, `src/app/(tabs)/quests.tsx` |
 | App flow | `apps/mobile/src/app/workout/*` (preview → session → debrief, `quick/[id]`), `programs.tsx`, `exercises.tsx`, `exercise/[id].tsx` |
 
 ## Rules

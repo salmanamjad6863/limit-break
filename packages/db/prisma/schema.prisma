@@ -70,7 +70,16 @@ model Profile {
   lifestyle          String?
   nutritionMode      String            @default("full")
   fatPreference      String            @default("balanced")
+  /// nutrition settings (SYSTEMS.md §2.10)
+  ratePerWeek        Float             @default(0)
+  checkInDay         Int               @default(1)
+  hideCalories       Boolean           @default(false)
+  proteinOverrideG   Float?
+  fatOverrideG       Float?
   daysPerWeek        Int?
+  /// picked training weekdays, 0 = Sunday (SYSTEMS.md §3.10)
+  trainingWeekdays   Int[]             @default([])
+  workoutTime        String?
   sessionMinutes     Int?
   questTime          String?
   timezone           String            @default("UTC")
@@ -81,36 +90,44 @@ model Profile {
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 
-  state        HunterState?
-  events       Event[]
-  workouts     WorkoutSession[]
-  records      PersonalRecord[]
-  quests       QuestInstance[]
-  foodLogs     FoodLog[]
-  bodyMetrics  BodyMetric[]
-  tdee         TdeeEstimate[]
-  targets      NutritionTarget[]
-  entitlements Entitlement[]
-  pushTokens   PushToken[]
-  trials       TrialAttempt[]
+  state         HunterState?
+  events        Event[]
+  workouts      WorkoutSession[]
+  records       PersonalRecord[]
+  quests        QuestInstance[]
+  foodLogs      FoodLog[]
+  bodyMetrics   BodyMetric[]
+  tdee          TdeeEstimate[]
+  targets       NutritionTarget[]
+  entitlements  Entitlement[]
+  pushTokens    PushToken[]
+  trials        TrialAttempt[]
+  exerciseNotes ExerciseNote[]
 }
 
 model HunterState {
-  userId    String   @id @db.Uuid
-  level     Int      @default(1)
-  xp        Int      @default(0)
-  rank      Rank     @default(E)
-  apUnspent Int      @default(0)
-  streak    Int      @default(0)
-  longest   Int      @default(0)
-  shields   Int      @default(2)
-  str       Float    @default(10)
-  agi       Float    @default(10)
-  end       Float    @default(10)
-  vit       Float    @default(10)
-  spi       Float    @default(10)
-  updatedAt DateTime @updatedAt
-  profile   Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String   @id @db.Uuid
+  level            Int      @default(1)
+  xp               Int      @default(0)
+  rank             Rank     @default(E)
+  apUnspent        Int      @default(0)
+  streak           Int      @default(0)
+  longest          Int      @default(0)
+  shields          Int      @default(2)
+  /// SYSTEMS.md §4.5–4.6 streak + quest scaling state
+  questScale       Float    @default(0.6)
+  consecutiveFails Int      @default(0)
+  shieldsMonth     String?
+  penaltyDate      String?
+  lastResolved     String?
+  sickDates        String[] @default([])
+  str              Float    @default(10)
+  agi              Float    @default(10)
+  end              Float    @default(10)
+  vit              Float    @default(10)
+  spi              Float    @default(10)
+  updatedAt        DateTime @updatedAt
+  profile          Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 /// Append-only source of truth. id is client-generated = idempotency key.
@@ -177,6 +194,20 @@ model WorkoutSession {
   startedAt        DateTime
   finishedAt       DateTime?
   plannedHardSets  Int          @default(0)
+  /// interval / cardio minutes (quick sessions) — feeds the Shadow-Self boss
+  cardioMinutes    Float        @default(0)
+  /// program | quick | manual (SYSTEMS.md §3.11)
+  kind             String       @default("program")
+  /// app = logged live; manual = logged afterwards (unverified: no leaderboards)
+  source           String       @default("app")
+  name             String?
+  notes            String?
+  programId        String?
+  dayId            String?
+  sessionRpe       Float?
+  /// XP currently credited for this workout (edits adjust it by a diff)
+  xpGranted        Int          @default(0)
+  editedAt         DateTime?
   sets             WorkoutSet[]
   profile          Profile      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -195,6 +226,8 @@ model WorkoutSet {
   durationS   Int?
   distanceM   Float?
   isWarmup    Boolean        @default(false)
+  /// normal | drop | failure
+  setType     String         @default("normal")
   completedAt DateTime
   session     WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
@@ -227,6 +260,7 @@ model QuestInstance {
   completedAt DateTime?
   profile     Profile     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, localDate, templateId])
   @@index([userId, status, dueAt])
 }
 
@@ -244,6 +278,7 @@ model Food {
   alc100   Float     @default(0)
   fiber100 Float?
   density  Float?
+  servings Json      @default("[]")
   verified Boolean   @default(false)
   ownerId  String?   @db.Uuid // user-created foods stay private
   logs     FoodLog[]
@@ -252,15 +287,16 @@ model Food {
 }
 
 model FoodLog {
-  id        String   @id @db.Uuid
-  userId    String   @db.Uuid
-  foodId    String
-  grams     Float
-  meal      String
-  localDate String
-  loggedAt  DateTime
-  food      Food     @relation(fields: [foodId], references: [id])
-  profile   Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String   @id @db.Uuid
+  userId       String   @db.Uuid
+  foodId       String
+  grams        Float
+  meal         String
+  servingLabel String?
+  localDate    String
+  loggedAt     DateTime
+  food         Food     @relation(fields: [foodId], references: [id])
+  profile      Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, localDate])
 }
@@ -270,6 +306,7 @@ model NutritionDay {
   localDate      String
   markedComplete Boolean  @default(false)
   lowDayConfirm  Boolean  @default(false)
+  waterMl        Int      @default(0)
   updatedAt      DateTime @updatedAt
 
   @@id([userId, localDate])
@@ -355,4 +392,15 @@ model TrialAttempt {
   profile    Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+/// Sticky per-exercise note ("seat 4", "use the EZ bar"), shown next time (SYSTEMS.md §3.11).
+model ExerciseNote {
+  userId     String   @db.Uuid
+  exerciseId String
+  note       String
+  updatedAt  DateTime @updatedAt
+  profile    Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, exerciseId])
 }

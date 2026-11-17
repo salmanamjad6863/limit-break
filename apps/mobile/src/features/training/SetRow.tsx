@@ -56,7 +56,7 @@ export function SetRow({
   unilateral?: boolean;
   defaultReps: number | null;
   defaultLoad: number | null;
-  onLog: (e: { reps: number | null; loadKg: number | null; rir: number | null; durationS: number | null }) => void;
+  onLog: (e: { reps: number | null; loadKg: number | null; rir: number | null; durationS: number | null; setType?: 'normal' | 'drop' | 'failure' }) => void;
 }) {
   const { c, spacing, radius } = useTheme();
   const step = LOAD_STEP[loadType];
@@ -64,6 +64,7 @@ export function SetRow({
   const [reps, setReps] = useState(defaultReps ?? planned.reps?.[1] ?? 8);
   const [load, setLoad] = useState<number>(planned.loadKg ?? defaultLoad ?? 0);
   const [rir, setRir] = useState<number>(planned.rir);
+  const [setType, setSetType] = useState<'normal' | 'drop' | 'failure'>('normal');
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const started = useRef(0);
@@ -99,12 +100,15 @@ export function SetRow({
             <Text variant="callout">
               {logged.durationS != null
                 ? `${logged.durationS} s`
-                : `${logged.reps} reps${logged.loadKg ? ` × ${logged.loadKg} kg` : ''}${logged.rir != null && planned.kind === 'working' ? ` · RIR ${logged.rir}` : ''}`}
+                : `${logged.reps} reps${logged.loadKg ? ` × ${logged.loadKg} kg` : ''}${logged.rir != null && planned.kind === 'working' ? ` · RIR ${logged.rir}` : ''}${logged.setType === 'drop' ? ' · drop set' : logged.setType === 'failure' ? ' · to failure' : ''}`}
             </Text>
           ) : (
             <Text variant="callout" color={active ? c.text : c.textDim}>{targetText(planned, { bodyweight, unilateral })}</Text>
           )}
           {planned.kind === 'warmup' ? <Text variant="caption" muted>Warm-up</Text> : null}
+          {active && !done && planned.kind === 'working' && defaultReps != null ? (
+            <Text variant="caption" muted>{`Last time: ${defaultReps} reps${defaultLoad ? ` × ${defaultLoad} kg` : ''}`}</Text>
+          ) : null}
         </View>
       </View>
 
@@ -159,10 +163,21 @@ export function SetRow({
                 </View>
               </View>
             ) : null}
+            {planned.kind === 'working' ? (
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                {(['normal', 'drop', 'failure'] as const).map((t) => (
+                  <PressableScale key={t} haptic="tap" onPress={() => { setSetType(t); if (t === 'failure') setRir(0); }}
+                    accessibilityRole="radio" accessibilityState={{ selected: setType === t }} accessibilityLabel={t === 'normal' ? 'Normal set' : t === 'drop' ? 'Drop set' : 'Taken to failure'}
+                    style={{ flex: 1, alignItems: 'center', paddingVertical: 6, borderRadius: radius.sm, borderWidth: 1, borderColor: setType === t ? (t === 'failure' ? c.danger : t === 'drop' ? c.mana : c.accent) : c.border }}>
+                    <Text variant="caption" color={setType === t ? c.text : c.textMuted}>{t === 'normal' ? 'Normal' : t === 'drop' ? 'Drop set' : 'To failure'}</Text>
+                  </PressableScale>
+                ))}
+              </View>
+            ) : null}
             <Button
               label={`Log set ${index + 1}`}
               icon="checkmark"
-              onPress={() => onLog({ reps, loadKg: step ? (load > 0 ? load : null) : null, rir: planned.kind === 'working' ? rir : null, durationS: null })}
+              onPress={() => onLog({ reps, loadKg: step ? (load > 0 ? load : null) : null, rir: planned.kind === 'working' ? rir : null, durationS: null, setType })}
             />
           </>
         )

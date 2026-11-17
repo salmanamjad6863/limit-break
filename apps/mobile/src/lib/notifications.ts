@@ -34,3 +34,21 @@ export async function scheduleDailyQuestReminder(hhmm: string, hunterName: strin
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute },
   });
 }
+
+/**
+ * Workout reminders 30 min before the user's training time on each picked weekday (SYSTEMS.md §3.10).
+ * Rest days get none. Re-run whenever the schedule changes; `time = null` clears them.
+ */
+export async function scheduleWorkoutReminders(slots: readonly { weekday: number; hour: number; minute: number }[], workoutName: string): Promise<void> {
+  if (!supported) return;
+  await Promise.all([0, 1, 2, 3, 4, 5, 6].map((d) => Notifications.cancelScheduledNotificationAsync(`workout-${d}`).catch(() => {})));
+  if (!slots.length || !(await Notifications.getPermissionsAsync()).granted) return;
+  for (const s of slots) {
+    await Notifications.scheduleNotificationAsync({
+      identifier: `workout-${s.weekday}`,
+      content: { title: 'Training in 30 minutes', body: `${workoutName} is waiting. Warm-up is guided. Just press start.` },
+      // expo weekdays are 1 = Sunday … 7 = Saturday
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: s.weekday + 1, hour: s.hour, minute: s.minute },
+    });
+  }
+}

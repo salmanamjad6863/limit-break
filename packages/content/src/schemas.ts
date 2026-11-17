@@ -137,3 +137,94 @@ export const QuickSession = z.object({
   moves: z.array(z.string()).min(1),
 });
 export type QuickSession = z.infer<typeof QuickSession>;
+
+export const SideQuest = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  title: z.string(),
+  /** Ionicons name */
+  icon: z.string(),
+  color: z.string().regex(/^#[0-9A-F]{6}$/i),
+  /** manual = honest check-off; auto:* = verified from logged data */
+  verify: z.union([z.literal('manual'), z.literal('auto:program-workout'), z.string().regex(/^auto:quick:[a-z0-9-]+$/)]),
+  upgrade: z.string().optional(),
+});
+export type SideQuest = z.infer<typeof SideQuest>;
+
+/** One exercise's demo media (VISUALS.md §2.1, §3.2). Paths are Storage/CDN keys; absent = not produced yet. */
+export const ExerciseMediaEntry = z.object({
+  tier: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  /** animated WebP loop, front three-quarter */
+  loop: z.string().optional(),
+  side: z.string().optional(),
+  thumb: z.string().optional(),
+  trainer: z.array(z.enum(['a', 'b'])).optional(),
+  cueMarks: z.array(z.object({ at: z.number().min(0), cue: z.number().int().min(0) })).optional(),
+  approvedBy: z.string().optional(),
+  /** where the motion came from, for the licence log (VISUALS.md §3.3, §10) */
+  source: z.enum(['mixamo', 'rokoko-vision', 'mocap', 'hand-keyed']).optional(),
+});
+export type ExerciseMediaEntry = z.infer<typeof ExerciseMediaEntry>;
+
+export const FlowStep = z.object({
+  exerciseId: z.string(),
+  seconds: z.number().int().min(10).max(300),
+  perSide: z.boolean().optional(),
+  optional: z.boolean().optional(),
+});
+const FocusFlows = z.object({ upper: z.array(FlowStep), lower: z.array(FlowStep), full: z.array(FlowStep) });
+export const Flows = z.object({ warmup: FocusFlows, cooldown: FocusFlows, safeSwaps: z.array(z.string()).min(1) });
+export type Flows = z.infer<typeof Flows>;
+
+/* ---------------- Nutrition: curated foods (SYSTEMS.md §2.10) ---------------- */
+export const Per100 = z.object({
+  kcal: z.number().min(0).max(902),
+  protein: z.number().min(0).max(100),
+  carbs: z.number().min(0).max(100),
+  fat: z.number().min(0).max(100),
+  fiber: z.number().min(0).max(100).optional(),
+});
+export type Per100 = z.infer<typeof Per100>;
+
+export const Serving = z.object({ label: z.string().min(1), grams: z.number().positive() });
+export type Serving = z.infer<typeof Serving>;
+
+export const FoodGroup = z.enum(['protein', 'dairy', 'legumes', 'grains', 'fruit', 'veg', 'fats', 'drinks', 'sweets', 'meals']);
+
+export const CuratedFood = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  name: z.string(),
+  group: FoodGroup,
+  per100: Per100,
+  servings: z.array(Serving).min(1),
+  /** exact USDA SR Legacy description, for the verifier (scripts/verify-foods.mjs) */
+  usda: z.string(),
+  fdcId: z.number().int().optional(),
+  /** date the values were last confirmed against USDA */
+  checkedAt: z.string().optional(),
+});
+
+export const CuratedRecipe = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  name: z.string(),
+  group: FoodGroup,
+  ingredients: z.array(z.object({ food: z.string(), grams: z.number().positive() })).min(1),
+  cookedWeightG: z.number().positive(),
+  servings: z.array(Serving).min(1),
+});
+
+export const FoodsFile = z.object({ foods: z.array(CuratedFood), recipes: z.array(CuratedRecipe) });
+
+/** What the app searches and logs: one shape for curated, recipe, barcode and custom foods. */
+export interface FoodItem {
+  id: string;
+  name: string;
+  brand?: string | null;
+  group?: z.infer<typeof FoodGroup>;
+  per100: Per100;
+  servings: Serving[];
+  source: 'usda' | 'recipe' | 'off' | 'custom' | 'quick';
+  verified: boolean;
+  barcode?: string | null;
+  /** 0–1 search prior: staples above mixed dishes (SYSTEMS.md §2.7 globalPopularity) */
+  popularity?: number;
+}

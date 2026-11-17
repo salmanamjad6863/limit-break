@@ -9,8 +9,11 @@ import {
   useTraining,
   useWorkoutSession,
 } from '@/features/training';
+import { ExerciseMedia } from '@/features/visuals';
 import { mmss, ROLE_LABEL } from '@/features/training/format';
 import { SetRow } from '@/features/training/SetRow';
+import { useHistoryActions } from '@/features/training/history';
+import { TextField } from '@/ui/form';
 import { useTheme } from '@/theme';
 import { Button, Card, Icon, Page, Pill, PressableScale, Text } from '@/ui';
 import { Ring } from '@/ui/fx';
@@ -28,7 +31,10 @@ export default function WorkoutSession() {
   const flagPain = useTraining((s) => s.flagPain);
   const [now, setNow] = useState(Date.now());
   const [showHow, setShowHow] = useState(false);
-  const [sheet, setSheet] = useState<'none' | 'swap' | 'pain' | 'exit'>('none');
+  const [sheet, setSheet] = useState<'none' | 'swap' | 'pain' | 'exit' | 'note'>('none');
+  const notes = useTraining((s) => s.notes);
+  const { setNote } = useHistoryActions();
+  const [noteDraft, setNoteDraft] = useState('');
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 500);
@@ -65,6 +71,7 @@ export default function WorkoutSession() {
       ? 'Finish workout'
       : exerciseName(active.exercises[i + 1]!.exerciseId)
     : `${ex.name} · set ${nextSetIndex + 1}`;
+  const upNextId = exerciseDone ? (isLast ? null : active.exercises[i + 1]!.exerciseId) : ex.id;
 
   return (
     <View style={{ flex: 1 }}>
@@ -141,7 +148,7 @@ export default function WorkoutSession() {
                   size="md"
                   icon="flag"
                   label={doneCount === active.exercises.length ? 'Finish' : 'Finish early'}
-                  onPress={() => router.replace('/workout/debrief')}
+                  onPress={() => router.replace('/workout/flow?kind=cooldown')}
                 />
               ) : (
                 <Button
@@ -163,10 +170,15 @@ export default function WorkoutSession() {
             />
             <Pill label={patternLabel(ex.pattern)} />
             {ex.unilateral ? <Pill label="Each side" color={c.mana} /> : null}
+            {pe.supersetGroup ? (
+              <Pill icon="git-compare-outline" color={c.warning}
+                label={`Superset ${pe.supersetGroup}${active.exercises.filter((x, k) => x.supersetGroup === pe.supersetGroup && k <= i).length} · alternate sets`} />
+            ) : null}
           </View>
           <Text variant="title" style={{ fontSize: 24, lineHeight: 30 }}>
             {ex.name}
           </Text>
+          <ExerciseMedia exerciseId={ex.id} variant="card" height={190} />
           <PressableScale
             haptic="tap"
             onPress={() => setShowHow((v) => !v)}
@@ -203,15 +215,22 @@ export default function WorkoutSession() {
               ) : null}
             </View>
           ) : null}
-          <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+          <View style={{ flexDirection: 'row', gap: spacing[2], flexWrap: 'wrap' }}>
             <Chip icon="swap-horizontal" label="Swap" onPress={() => setSheet('swap')} />
             <Chip icon="medkit-outline" label="This hurts" onPress={() => setSheet('pain')} />
+            <Chip icon="create-outline" label="Note" onPress={() => { setNoteDraft(notes[ex.id] ?? ''); setSheet('note'); }} />
             <Chip
               icon="information-circle-outline"
               label="Details"
               onPress={() => router.push(`/exercise/${ex.id}`)}
             />
           </View>
+          {notes[ex.id] ? (
+            <View style={{ flexDirection: 'row', gap: spacing[2], alignItems: 'flex-start' }}>
+              <Icon name="bookmark" size={14} color={c.warning} />
+              <Text variant="callout" color={c.textDim} style={{ flex: 1 }}>{notes[ex.id]}</Text>
+            </View>
+          ) : null}
         </Card>
 
         {active.coachNote ? (
@@ -279,6 +298,7 @@ export default function WorkoutSession() {
                 </Text>
                 <Text variant="callout">{upNext}</Text>
               </View>
+              {upNextId && upNextId !== ex.id ? <ExerciseMedia exerciseId={upNextId} variant="thumb" height={56} /> : null}
             </View>
             <View style={{ flexDirection: 'row', gap: spacing[2] }}>
               <View style={{ flex: 1 }}>
@@ -327,7 +347,15 @@ export default function WorkoutSession() {
             }}
           >
             <Card style={{ borderColor: c.borderStrong }}>
-              {sheet === 'exit' ? (
+              {sheet === 'note' ? (
+                <>
+                  <Text variant="heading">{`Note for ${ex.name}`}</Text>
+                  <Text variant="callout" dim>Shown every time you do this exercise: seat height, grip, cues that work for you.</Text>
+                  <TextField label="Note" placeholder="e.g. Seat 4, grip just outside the rings" value={noteDraft} onChangeText={setNoteDraft} maxLength={300} />
+                  <Button label="Save note" icon="checkmark" onPress={() => { setNote.mutate({ exerciseId: ex.id, note: noteDraft }); setSheet('none'); }} />
+                  <Button variant="ghost" label="Cancel" onPress={() => setSheet('none')} />
+                </>
+              ) : sheet === 'exit' ? (
                 <>
                   <Text variant="heading">End this workout?</Text>
                   <Text variant="callout" dim>
