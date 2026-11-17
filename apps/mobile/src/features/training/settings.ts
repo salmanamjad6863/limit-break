@@ -5,6 +5,7 @@ import { progressionKeys, useLocalHunter } from '@/features/progression';
 import { useSession } from '@/features/session';
 import { api, unwrap } from '@/lib/api';
 import { scheduleWorkoutReminders } from '@/lib/notifications';
+import { track } from '@/lib/analytics';
 
 /** Saves training settings (server when signed in, on-device in demo) and reschedules workout reminders. */
 export function useUpdateTraining() {
@@ -25,6 +26,7 @@ export function useUpdateTraining() {
           });
         }
       }
+      track({ event: 'settings_changed', area: 'training' });
       await scheduleWorkoutReminders(input.workoutTime ? reminderSlots(weekdays, input.workoutTime) : [], nextWorkout).catch(() => {});
     },
   });

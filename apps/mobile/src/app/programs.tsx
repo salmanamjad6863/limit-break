@@ -1,6 +1,9 @@
 import { workoutTypes } from '@lb/content';
 import { router } from 'expo-router';
 import { View } from 'react-native';
+import { starterProgramIds } from '@lb/content';
+import { useState } from 'react';
+import { useFeature } from '@/features/paywall';
 import { rankedPrograms, useTraining, useTrainingProfile } from '@/features/training';
 import { useTheme } from '@/theme';
 import { Appear, Card, Icon, Page, Pill, PressableScale, ScreenHeader, Text } from '@/ui';
@@ -15,6 +18,9 @@ export default function ProgramsScreen() {
   const setProgram = useTraining((s) => s.setProgram);
   const ranked = rankedPrograms(profile);
   const recommended = ranked[0]?.program.id;
+  // SYSTEMS.md §7.1: the gate is real but open while PAYWALL_ENABLED=false
+  const allPrograms = useFeature('allPrograms').enabled;
+  const [lockedTap, setLockedTap] = useState<string | null>(null);
 
   return (
     <Page header={<ScreenHeader title="Choose a program" icon="close" />}>
@@ -24,6 +30,7 @@ export default function ProgramsScreen() {
       {ranked.map(({ program: p }, i) => {
         const type = workoutTypes.find((t) => t.id === p.typeId);
         const isActive = (active ?? recommended) === p.id;
+        const locked = !allPrograms && !starterProgramIds.has(p.id) && !isActive;
         return (
           <Appear key={p.id} index={i}>
             <PressableScale
@@ -31,6 +38,7 @@ export default function ProgramsScreen() {
               accessibilityRole="button"
               accessibilityLabel={`Choose ${p.name}`}
               onPress={() => {
+                if (locked) return setLockedTap(p.id);
                 setProgram(p.id);
                 router.back();
               }}>
@@ -39,6 +47,7 @@ export default function ProgramsScreen() {
                   {type ? <Pill icon={type.icon as never} label={type.name} color={type.color} /> : null}
                   {p.id === recommended ? <Pill icon="sparkles" label="Recommended" color={c.accentGlow} /> : null}
                   {isActive ? <Pill icon="checkmark-circle" label="Active" color={c.success} /> : null}
+                  {locked ? <Pill icon="lock-closed" label="Premium" color={c.warning} /> : null}
                 </View>
                 <Text variant="headline">{p.name}</Text>
                 <Text variant="callout" dim>{p.summary}</Text>
@@ -48,6 +57,7 @@ export default function ProgramsScreen() {
                   <Meta icon="location-outline" text={p.locations.map((l) => LOC[l]).join(' · ')} />
                 </View>
                 <Text variant="caption" muted>{p.days.map((d) => d.name).join('  ·  ')}</Text>
+                {lockedTap === p.id ? <Text variant="caption" color={c.warning}>Part of Premium. The free programs above cover every level and setting.</Text> : null}
               </Card>
             </PressableScale>
           </Appear>

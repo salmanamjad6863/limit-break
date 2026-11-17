@@ -7,6 +7,7 @@ import { useSession } from '@/features/session';
 import { api, unwrap } from '@/lib/api';
 import { scheduleDailyQuestReminder } from '@/lib/notifications';
 import { birthDateFromAge, type Draft } from './store';
+import { track } from '@/lib/analytics';
 
 export function toInput(d: Draft): OnboardingInput {
   return OnboardingInput.parse({
@@ -54,7 +55,8 @@ export function useCompleteOnboarding() {
       if (input.assessment) useProgress.getState().mergeTests(input.assessment);
       return me;
     },
-    onSuccess: (me) => {
+    onSuccess: (me, input) => {
+      track({ event: 'onboarding_completed', goal: input.goal, location: input.location, experience: input.experience });
       if (status === 'demo') setLocal(me);
       else qc.setQueryData(progressionKeys.me(), me);
     },

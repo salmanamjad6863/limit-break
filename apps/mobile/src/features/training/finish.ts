@@ -9,6 +9,7 @@ import { exerciseById } from './catalog';
 import { useTrainingProfile } from './profile';
 import type { ActiveSession } from './session';
 import { useTraining, type CompletedWorkout } from './store';
+import { minutesBucket, track } from '@/lib/analytics';
 
 export interface FinishSummary {
   minutes: number;
@@ -103,6 +104,7 @@ export function useFinishWorkout() {
       t.addXp(date, granted);
 
       enqueue(rewards as Reward[]);
+      track({ event: 'workout_finished', kind: session.kind === 'quick' ? 'quick' : 'program', minutes_bucket: minutesBucket(minutes), working_sets: working.length, prs: prs.length });
       const lvl = (rewards as Reward[]).find((r) => r.type === 'levelUp') as Extract<Reward, { type: 'levelUp' }> | undefined;
       return {
         minutes, workingSets: working.length, volumeKg, xp: granted, prs,

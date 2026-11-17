@@ -1,7 +1,9 @@
 import { heroes } from '@lb/content';
 import { bmr, calorieTarget, macroTargets, tdeePrior } from '@lb/engine';
 import { useState, type ComponentType } from 'react';
-import { View } from 'react-native';
+import { Linking, View } from 'react-native';
+import { CONSENT_VERSION } from '@lb/contracts';
+import { env } from '@/lib/env';
 import { requestNotificationPermission } from '@/lib/notifications';
 import { useTheme } from '@/theme';
 import { Appear, Button, GlitchText, Icon, PressableScale, SystemWindow, Text, TypewriterText } from '@/ui';
@@ -267,6 +269,44 @@ function Body() {
   );
 }
 
+/* ---------- Consent (GDPR Art. 9 explicit consent for health data) ---------- */
+function Consent() {
+  const { c, spacing } = useTheme();
+  const d = useDraft();
+  const set = useSet();
+  const on = d.consentVersion === CONSENT_VERSION;
+  const link = (label: string, url: string) =>
+    url ? (
+      <PressableScale haptic="tap" onPress={() => Linking.openURL(url)} accessibilityRole="link" accessibilityLabel={label}>
+        <Text variant="callout" color={c.accentGlow}>{label}</Text>
+      </PressableScale>
+    ) : null;
+  return (
+    <View style={{ gap: spacing[3] }}>
+      <Text dim>Next, the System asks about your body and health so your plan is safe and accurate. That’s sensitive data, so here’s the deal:</Text>
+      {[
+        'It’s used only to build your training and nutrition plan.',
+        'It’s never sold and never used for ads.',
+        'Export or delete everything any time in your profile.',
+      ].map((t) => (
+        <View key={t} style={{ flexDirection: 'row', gap: spacing[2] }}>
+          <Icon name="shield-checkmark-outline" size={18} color={c.success} />
+          <Text variant="callout" style={{ flex: 1 }}>{t}</Text>
+        </View>
+      ))}
+      <View style={{ flexDirection: 'row', gap: spacing[4] }}>
+        {link('Privacy Policy', env.privacyUrl)}
+        {link('Terms of Use', env.termsUrl)}
+      </View>
+      <PressableScale haptic="tap" onPress={() => set({ consentVersion: on ? undefined : CONSENT_VERSION })} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
+        style={{ flexDirection: 'row', gap: spacing[3], alignItems: 'center', padding: spacing[3], borderRadius: 12, borderWidth: 1.5, borderColor: on ? c.accent : c.border, backgroundColor: on ? `${c.accent}1A` : c.surface }}>
+        <Icon name={on ? 'checkbox' : 'square-outline'} size={22} color={on ? c.accentGlow : c.textMuted} />
+        <Text variant="callout" style={{ flex: 1 }}>I agree to the Terms and Privacy Policy, and consent to LIMITBREAK processing my health and fitness data to provide the app.</Text>
+      </PressableScale>
+    </View>
+  );
+}
+
 /* ---------- 10. Health screen ---------- */
 function Health() {
   const { c, spacing } = useTheme();
@@ -443,6 +483,7 @@ export const STEPS: StepDef[] = [
   { id: 'location', kicker: 'BATTLEGROUND', title: 'Where will you train?', valid: (d) => !!d.location, Component: Location },
   { id: 'schedule', kicker: 'SCHEDULE', title: 'When can you train?', valid: () => true, Component: Schedule },
   { id: 'class', kicker: 'CLASS', title: 'Choose your path', valid: (d) => !!d.heroClass, Component: ClassPick },
+  { id: 'consent', kicker: 'YOUR DATA', title: 'Your data stays yours', valid: (d) => d.consentVersion === CONSENT_VERSION, Component: Consent },
   { id: 'body', kicker: 'VITALS', title: 'Your body, measured', valid: (d) => !!d.sex, Component: Body },
   { id: 'lifestyle', kicker: 'DAILY MOVEMENT', title: 'Outside training, how active are you?', valid: (d) => !!d.lifestyle, Component: choiceStep('lifestyle', LIFESTYLES) },
   { id: 'health', kicker: 'SAFETY CHECK', title: 'Before we begin', valid: () => true, Component: Health },

@@ -94,6 +94,7 @@ export async function getProgression(prisma: PrismaClient, userId: string): Prom
     }),
     attempts: attempts.slice(0, 5).map((a) => ({
       id: a.id, target: a.targetRank === 'SOVEREIGN' ? 'S' : a.targetRank, at: a.createdAt.toISOString(), passed: a.passed, composite: a.composite,
+      verification: (a.verification ?? 'none') as 'none' | 'required' | 'pending' | 'verified' | 'rejected', reviewNote: a.reviewNote ?? null,
     })),
     xpByDay: [...byDay.entries()].sort().map(([date, xp]) => ({ date, xp })),
     prs: [...bestPr.values()].slice(0, 10).map((p) => ({ exerciseId: p.exerciseId, e1rmKg: Math.round(p.e1rmKg * 10) / 10, at: p.achievedAt.toISOString() })),
@@ -152,6 +153,8 @@ export async function attemptTrial(prisma: PrismaClient, userId: string, input: 
       data: {
         id: input.id, userId, targetRank: target, setting: input.setting, results: input.results as never,
         events: events as never, composite: evalr.composite, passed: evalr.passed,
+        // A and S ranks are granted now but need verification for leaderboards (§4.4)
+        verification: evalr.passed && (target === 'A' || target === 'S') ? 'required' : 'none',
       },
     });
     const req = RANK_REQUIREMENTS[target];

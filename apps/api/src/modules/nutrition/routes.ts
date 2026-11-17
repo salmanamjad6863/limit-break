@@ -5,6 +5,7 @@ import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import type { AppEnv } from '../../lib/types';
 import { requireAuth } from '../../middleware/auth';
+import { hasFeature } from '../../middleware/features';
 import * as s from './service';
 
 const guard = async <T>(fn: () => Promise<T>): Promise<T> => {
@@ -17,14 +18,15 @@ const guard = async <T>(fn: () => Promise<T>): Promise<T> => {
 };
 const db = (c: Context<AppEnv>) => c.get('deps').prisma;
 const me = (c: Context<AppEnv>) => c.get('userId');
+const adaptive = (c: Context<AppEnv>) => hasFeature(c.get('deps'), c.get('userId'), 'adaptiveTdee');
 
 export const nutritionRoutes = new Hono<AppEnv>()
   .use(requireAuth)
   .get('/day', zValidator('query', z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() })), async (c) =>
-    c.json(await guard(() => s.getDay(db(c), me(c), c.req.valid('query').date))),
+    c.json(await guard(async () => s.getDay(db(c), me(c), c.req.valid('query').date, await adaptive(c)))),
   )
-  .get('/summary', async (c) => c.json(await guard(() => s.getSummary(db(c), me(c)))))
-  .put('/settings', zValidator('json', NutritionSettings), async (c) => c.json(await guard(() => s.updateSettings(db(c), me(c), c.req.valid('json')))))
+  .get('/summary', async (c) => c.json(await guard(async () => s.getSummary(db(c), me(c), await adaptive(c)))))
+  .put('/settings', zValidator('json', NutritionSettings), async (c) => c.json(await guard(async () => s.updateSettings(db(c), me(c), c.req.valid('json'), await adaptive(c)))))
   .post('/logs', zValidator('json', FoodLogInput), async (c) => c.json(await guard(() => s.addLog(db(c), me(c), c.req.valid('json')))))
   .patch('/logs/:id', zValidator('json', FoodLogPatch), async (c) => c.json(await guard(() => s.patchLog(db(c), me(c), c.req.param('id'), c.req.valid('json')))))
   .delete('/logs/:id', async (c) => c.json(await guard(() => s.deleteLog(db(c), me(c), c.req.param('id')))))

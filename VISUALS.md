@@ -169,6 +169,14 @@ Until a clip exists, the app shows the **thumbnail + muscle map + numbered cues*
 ```
 Tier-1 clips and thumbnails ship inside the app bundle. Tier-2 clips live in Supabase Storage, download on first view and are cached with `expo-image`. The next exercise's loop is prefetched during rest (§3.5).
 
+### 3.10 Animated 2D trainer (live now, $0)
+Until the 3D clips exist, every exercise is demonstrated by an **original animated 2D coach** drawn in code: spiky-haired anime trainer with a headband and outfit in the app's accent colour, cel outlines, and props (barbell, dumbbells, kettlebell, bench, box, bar, wall, cable, band).
+- **How it works:** a jointed skeleton (`packages/content/src/trainer`) posed by key frames per exercise at coaching tempo. Two-bone IK keeps hands and feet planted on floors, bars and benches; poses are baked to 30 fps joint data and drawn on the UI thread with Skia (`TrainerFigure`).
+- **Coverage:** all 87 exercises (side view, with front view for jumping jacks, lateral raises, side plank, skater hops, band pull-aparts). Unilateral moves mirror for the right side.
+- **Quality gates:** tests check every pinned hand/foot reaches its contact in every key, that push-up hands stay planted for the whole rep, and that every exercise has an animation; every animation was reviewed in the dev **Trainer lab** (`/dev/trainer`).
+- **Where it shows:** follow-along player (pauses with the session, aura behind), workout cards, exercise detail. List thumbnails keep the lightweight muscle map.
+- **Fallback chain:** recorded 3D clip (when produced, §3.1–3.6) → animated 2D trainer → muscle map + cues. The 3D pipeline stays the long-term upgrade; nothing in the app changes when clips land.
+
 ---
 
 ## 4. Follow-Along Trainer ("Train With Me")

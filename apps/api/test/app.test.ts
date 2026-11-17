@@ -65,7 +65,7 @@ describe('onboarding', () => {
       daysPerWeek: 4, sessionMinutes: 45, questTime: '07:00', heroClass: 'HYBRID', sex: 'male',
       birthDate: '2000-01-01', heightCm: 178, weightKg: 80, bodyFatPct: null, lifestyle: 'light',
       injuries: [], parqAnyYes: false, nutritionMode: 'full', fatPreference: 'balanced', timezone: 'Asia/Karachi',
-      assessment: { pushups: 22, plankSec: 80, squats60: 40 }, notificationsOptIn: true,
+      assessment: { pushups: 22, plankSec: 80, squats60: 40 }, notificationsOptIn: true, consentVersion: '2026-11',
     };
     const res = await a.request('/me/onboarding', {
       method: 'POST', headers: { Authorization: 'Bearer x', 'Content-Type': 'application/json' }, body: JSON.stringify(body),
@@ -73,6 +73,17 @@ describe('onboarding', () => {
     expect(res.status).toBe(200);
     expect(calls.state.create).toMatchObject({ xp: 200, level: 2, str: 50, end: 50 });
     expect(calls.profile.create.baselines).toEqual(body.assessment);
+    // explicit health-data consent is recorded with the version shown (GDPR Art. 9)
+    expect(calls.profile.create.consentVersion).toBe('2026-11');
+    expect(calls.profile.create.consentedAt).toBeInstanceOf(Date);
     expect(calls.weight.data).toMatchObject({ weightKg: 80, source: 'onboarding' });
+    // without consent, onboarding is refused before anything is stored
+    const { consentVersion: _c, ...noConsent } = body;
+    calls.profile = undefined;
+    const refused = await a.request('/me/onboarding', {
+      method: 'POST', headers: { Authorization: 'Bearer x', 'Content-Type': 'application/json' }, body: JSON.stringify(noConsent),
+    });
+    expect(refused.status).toBe(400);
+    expect(calls.profile).toBeUndefined();
   });
 });

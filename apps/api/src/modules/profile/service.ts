@@ -86,6 +86,8 @@ export async function completeOnboarding(prisma: PrismaClient, userId: string, i
     sessionMinutes: input.sessionMinutes, questTime: input.questTime, timezone: input.timezone,
     baselines: input.assessment ?? undefined,
     notificationsOptIn: input.notificationsOptIn,
+    consentVersion: input.consentVersion,
+    consentedAt: new Date(),
     onboardedAt: new Date(),
   };
   await prisma.$transaction([

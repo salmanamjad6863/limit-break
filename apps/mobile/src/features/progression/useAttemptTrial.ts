@@ -15,6 +15,7 @@ import { useMe } from './api';
 import { progressionKeys } from './keys';
 import { useLocalHunter } from './localHunter';
 import { useProgress } from './progressStore';
+import { track } from '@/lib/analytics';
 
 /** Submits a Rank Trial. Signed in: server-scored. Demo: same engine on-device. */
 export function useAttemptTrial() {
@@ -66,6 +67,7 @@ export function useAttemptTrial() {
       }
       useProgress.getState().mergeTests(results);
       enqueue(res.rewards as never);
+      track({ event: 'trial_attempted', target_rank: res.target, passed: res.passed });
       return res;
     },
   });

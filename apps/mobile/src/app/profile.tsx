@@ -2,11 +2,16 @@ import { heroes } from '@lb/content';
 import { levelProgress, powerLevel, RANK_REQUIREMENTS, RANKS } from '@lb/engine';
 import { rankColor, statColors } from '@lb/tokens';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { View } from 'react-native';
-import { useMe, useProgression } from '@/features/progression';
+import { useAccountActions } from '@/features/account';
+import { useAnalyticsConsent } from '@/lib/analytics';
+import { env } from '@/lib/env';
+import { useMe, useProgression, useVerifyTrial } from '@/features/progression';
 import { exerciseName } from '@/features/training';
 import { useTheme } from '@/theme';
 import { Appear, Bar, Button, Card, CountUp, Icon, Page, Pill, ScreenHeader, SectionHeader, Text } from '@/ui';
+import { TextField } from '@/ui/form';
 import { HeroEmblem, RankBadge } from '@/ui/fx';
 
 const STAT_INFO: Record<string, { name: string; raise: string }> = {
@@ -159,16 +164,81 @@ export default function HunterProfile() {
           <SectionHeader title="Trial history" />
           <Card padded={false}>
             {prog.attempts.map((a, i) => (
-              <View key={a.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[3], paddingHorizontal: spacing[4], borderTopWidth: i ? 1 : 0, borderColor: c.border }}>
-                <Icon name={a.passed ? 'checkmark-circle' : 'close-circle'} size={18} color={a.passed ? c.success : c.danger} />
-                <Text variant="callout" style={{ flex: 1 }}>{`${a.target}-Rank Trial`}</Text>
-                <Text variant="caption" muted>{`Score ${a.composite} · ${new Date(a.at).toLocaleDateString()}`}</Text>
+              <View key={a.id} style={{ gap: spacing[2], padding: spacing[3], paddingHorizontal: spacing[4], borderTopWidth: i ? 1 : 0, borderColor: c.border }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
+                  <Icon name={a.passed ? 'checkmark-circle' : 'close-circle'} size={18} color={a.passed ? c.success : c.danger} />
+                  <Text variant="callout" style={{ flex: 1 }}>{`${a.target}-Rank Trial`}</Text>
+                  <Text variant="caption" muted>{`Score ${a.composite} · ${new Date(a.at).toLocaleDateString()}`}</Text>
+                </View>
+                {a.verification !== 'none' ? <VerifyRow id={a.id} status={a.verification} note={a.reviewNote} /> : null}
               </View>
             ))}
           </Card>
         </Appear>
       ) : null}
       <View style={{ height: radius.sm }} />
+      <AccountSection />
     </Page>
+  );
+}
+
+/** Your data: export everything, or delete the account permanently (typed confirmation). */
+function AccountSection() {
+  const { c, spacing } = useTheme();
+  const { exportData, deleteAccount } = useAccountActions();
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState('');
+  const consent = useAnalyticsConsent((s) => s.consent);
+  const setConsent = useAnalyticsConsent((s) => s.set);
+  return (
+    <View style={{ gap: spacing[3] }}>
+      <SectionHeader title="Your data & account" />
+      <Card>
+        <Text variant="callout" dim>Your training, nutrition and progress belong to you.</Text>
+        {env.posthogKey ? (
+          <Button variant="ghost" size="md" icon={consent === 'granted' ? 'analytics' : 'analytics-outline'}
+            label={consent === 'granted' ? 'Anonymous usage stats: on (tap to turn off)' : 'Anonymous usage stats: off (tap to turn on)'}
+            onPress={() => setConsent(consent === 'granted' ? 'denied' : 'granted')} />
+        ) : null}
+        <Button variant="secondary" size="md" icon="download-outline" label="Export my data" loading={exportData.isPending} onPress={() => exportData.mutate()} />
+        {exportData.isError ? <Text variant="caption" color={c.warning}>Export failed. Check your connection and try again.</Text> : null}
+        {!open ? (
+          <Button variant="ghost" size="md" icon="trash-outline" label="Delete account" onPress={() => setOpen(true)} />
+        ) : (
+          <View style={{ gap: spacing[2] }}>
+            <Text variant="callout" color={c.danger}>This permanently deletes your account and everything in it: workouts, nutrition, ranks, XP and titles. It can’t be undone.</Text>
+            <TextField label="Type DELETE to confirm" value={typed} onChangeText={setTyped} autoCapitalize="characters" autoCorrect={false} />
+            <Button size="md" icon="trash" label="Delete my account forever" disabled={typed.trim() !== 'DELETE'} loading={deleteAccount.isPending} onPress={() => deleteAccount.mutate()} />
+            <Button variant="ghost" size="md" label="Cancel" onPress={() => { setOpen(false); setTyped(''); }} />
+            {deleteAccount.isError ? <Text variant="caption" color={c.warning}>Couldn’t finish. Your request is safe to retry.</Text> : null}
+          </View>
+        )}
+      </Card>
+    </View>
+  );
+}
+
+/** A/S passes: leaderboard verification status and the video upload (SYSTEMS.md §4.4). */
+function VerifyRow({ id, status, note }: { id: string; status: 'required' | 'pending' | 'verified' | 'rejected'; note: string | null }) {
+  const { c, spacing } = useTheme();
+  const verify = useVerifyTrial();
+  const pill = {
+    required: { label: 'Not yet on leaderboards', color: c.warning, icon: 'videocam-outline' as const },
+    pending: { label: 'Video in review', color: c.mana, icon: 'time-outline' as const },
+    verified: { label: 'Verified', color: c.success, icon: 'shield-checkmark' as const },
+    rejected: { label: 'Needs a new video', color: c.danger, icon: 'alert-circle-outline' as const },
+  }[status];
+  return (
+    <View style={{ gap: spacing[2] }}>
+      <Pill icon={pill.icon} label={pill.label} color={pill.color} />
+      {status === 'rejected' && note ? <Text variant="caption" color={c.textDim}>{`Reviewer: ${note}`}</Text> : null}
+      {status === 'required' || status === 'rejected' ? (
+        <>
+          <Text variant="caption" muted>Your rank is yours. To appear on A/S leaderboards, upload one uncut video of the trial (under 3 min). A moderator checks form and counts.</Text>
+          <Button variant="secondary" size="md" icon="cloud-upload-outline" label="Upload trial video" loading={verify.isPending} onPress={() => verify.mutate(id)} />
+          {verify.isError ? <Text variant="caption" color={c.warning}>{(verify.error as Error).message}</Text> : null}
+        </>
+      ) : null}
+    </View>
   );
 }

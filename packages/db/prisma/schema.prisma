@@ -86,6 +86,9 @@ model Profile {
   /// Awakening Assessment results — Daily Quest scaling baselines (SYSTEMS.md §4.6)
   baselines          Json?
   notificationsOptIn Boolean           @default(false)
+  /// explicit health-data consent (GDPR Art. 9): policy version shown + when
+  consentVersion     String?
+  consentedAt        DateTime?
   onboardedAt        DateTime?
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
@@ -379,19 +382,27 @@ model PushToken {
 
 /// SYSTEMS.md §4.4 — every Rank Trial attempt (pass or fail), for cooldowns, history and verification.
 model TrialAttempt {
-  id         String   @id @db.Uuid
-  userId     String   @db.Uuid
-  targetRank Rank
-  setting    String
-  results    Json
-  events     Json
-  composite  Float
-  passed     Boolean
-  verified   Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  profile    Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String    @id @db.Uuid
+  userId       String    @db.Uuid
+  targetRank   Rank
+  setting      String
+  results      Json
+  events       Json
+  composite    Float
+  passed       Boolean
+  verified     Boolean   @default(false)
+  /// none | required | pending | verified | rejected (A/S leaderboard eligibility, SYSTEMS.md §4.4)
+  verification String    @default("none")
+  videoKey     String?
+  submittedAt  DateTime?
+  reviewerId   String?   @db.Uuid
+  reviewNote   String?
+  reviewedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  profile      Profile   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+  @@index([verification, submittedAt])
 }
 
 /// Sticky per-exercise note ("seat 4", "use the EZ bar"), shown next time (SYSTEMS.md §3.11).

@@ -53,8 +53,29 @@ export const ProgressionResponse = z.object({
   sources: z.record(StatKey, z.enum(['measured', 'estimated'])),
   details: z.record(StatKey, z.string()),
   trial: TrialStatusDto,
-  attempts: z.array(z.object({ id: z.string(), target: Rank, at: z.string(), passed: z.boolean(), composite: z.number() })),
+  attempts: z.array(z.object({
+    id: z.string(), target: Rank, at: z.string(), passed: z.boolean(), composite: z.number(),
+    /** A/S passes need verification to appear on leaderboards (SYSTEMS.md §4.4) */
+    verification: z.enum(['none', 'required', 'pending', 'verified', 'rejected']).default('none'),
+    reviewNote: z.string().nullable().default(null),
+  })),
   xpByDay: z.array(z.object({ date: z.string(), xp: z.number() })),
   prs: z.array(z.object({ exerciseId: z.string(), e1rmKg: z.number(), at: z.string() })),
 });
 export type ProgressionResponse = z.infer<typeof ProgressionResponse>;
+
+/* ---------------- A/S trial verification (SYSTEMS.md §4.4) ---------------- */
+export const VerificationStatus = z.enum(['none', 'required', 'pending', 'verified', 'rejected']);
+export type VerificationStatus = z.infer<typeof VerificationStatus>;
+
+/** Signed, one-time upload target for the trial video (private bucket; never proxied by the API). */
+export const VerificationUploadResponse = z.object({ uploadUrl: z.string(), videoKey: z.string(), maxBytes: z.number().int() });
+export type VerificationUploadResponse = z.infer<typeof VerificationUploadResponse>;
+
+export const SubmitVerificationInput = z.object({ videoKey: z.string().min(1).max(200) });
+
+export const ReviewInput = z.object({ decision: z.enum(['verified', 'rejected']), note: z.string().max(300).nullable() });
+export type ReviewInput = z.infer<typeof ReviewInput>;
+
+export const PendingReview = z.object({ attemptId: z.string(), userId: z.string(), target: Rank, composite: z.number(), videoUrl: z.string().nullable(), submittedAt: z.string() });
+export type PendingReview = z.infer<typeof PendingReview>;

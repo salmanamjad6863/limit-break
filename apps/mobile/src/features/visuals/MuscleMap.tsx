@@ -75,6 +75,20 @@ function draw(s: Shape, color: string, k: string) {
   );
 }
 
+/** Below this width the map renders with plain views instead of a Skia canvas. */
+const THUMB_MAX = 100;
+
+function box(s: Shape, k: number, color: string, key: string) {
+  const w = s.w * k;
+  const h = s.h * k;
+  return (
+    <View key={key} style={{
+      position: 'absolute', left: s.x * k, top: s.y * k, width: w, height: h, backgroundColor: color,
+      borderRadius: s.t === 'oval' ? Math.min(w, h) / 2 : (s.r ?? 4) * k,
+    }} />
+  );
+}
+
 export function MuscleMap({
   primary,
   secondary = [],
@@ -94,15 +108,25 @@ export function MuscleMap({
   return (
     <View style={{ alignItems: 'center', gap: 4 }} accessibilityRole="image"
       accessibilityLabel={`Muscles worked: ${primary.join(', ').replace(/_/g, ' ')}${secondary.length ? `; also ${secondary.join(', ').replace(/_/g, ' ')}` : ''}`}>
-      {/* static drawing: on web, free the WebGL context after painting (browsers cap live contexts at ~16) */}
-      <Canvas style={{ width, height }} __destroyWebGLContextAfterRender={Platform.OS === 'web'}>
-        <Group transform={[{ scale }]}>
-          {SILHOUETTE.map((s, i) => draw(s, 'rgba(255,255,255,0.06)', `s${i}`))}
+      {width <= THUMB_MAX ? (
+        // thumbnails: plain views, no GPU surface (lists of maps stay smooth on low-end Android)
+        <View style={{ width, height }}>
+          {SILHOUETTE.map((s, i) => box(s, scale, 'rgba(255,255,255,0.06)', `s${i}`))}
           {Object.entries(REGIONS).flatMap(([name, shapes]) =>
-            shapes.map((s, i) => draw(s, prim.has(name) ? c.accent : sec.has(name) ? `${c.accent}66` : 'rgba(255,255,255,0.09)', `${name}${i}`)),
+            shapes.map((s, i) => box(s, scale, prim.has(name) ? c.accent : sec.has(name) ? `${c.accent}66` : 'rgba(255,255,255,0.09)', `${name}${i}`)),
           )}
-        </Group>
-      </Canvas>
+        </View>
+      ) : (
+        /* static drawing: on web, free the WebGL context after painting (browsers cap live contexts at ~16) */
+        <Canvas style={{ width, height }} __destroyWebGLContextAfterRender={Platform.OS === 'web'}>
+          <Group transform={[{ scale }]}>
+            {SILHOUETTE.map((s, i) => draw(s, 'rgba(255,255,255,0.06)', `s${i}`))}
+            {Object.entries(REGIONS).flatMap(([name, shapes]) =>
+              shapes.map((s, i) => draw(s, prim.has(name) ? c.accent : sec.has(name) ? `${c.accent}66` : 'rgba(255,255,255,0.09)', `${name}${i}`)),
+            )}
+          </Group>
+        </Canvas>
+      )}
       {showLabels ? (
         <View style={{ flexDirection: 'row', width, justifyContent: 'space-around' }}>
           <Text variant="micro" muted>Front</Text>

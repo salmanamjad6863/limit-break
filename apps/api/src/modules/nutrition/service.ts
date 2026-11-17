@@ -93,11 +93,12 @@ async function context(prisma: PrismaClient, userId: string) {
 }
 
 /** Weekly-stable targets; stores a new NutritionTarget when the week (or the goal) changes. */
-async function planFor(prisma: PrismaClient, userId: string, c: Awaited<ReturnType<typeof context>>): Promise<NutritionPlanDto> {
+/** `adaptive` = premium feature `adaptiveTdee`: without it, targets use the standard formula (no intake learning). */
+async function planFor(prisma: PrismaClient, userId: string, c: Awaited<ReturnType<typeof context>>, adaptive = true): Promise<NutritionPlanDto> {
   const latest: StoredTarget | null = c.latest
     ? { effectiveFrom: c.latest.effectiveFrom, kcal: c.latest.kcal, proteinG: c.latest.proteinG, fatG: c.latest.fatG, carbsG: c.latest.carbsG, fiberG: c.latest.fiberG, goal: c.latest.goal as StoredTarget['goal'], ratePerWeek: c.latest.ratePerWeek }
     : null;
-  const r = weeklyTargets({ profile: c.profile, weighIns: c.weighIns, intake: c.intake, today: c.today, latest, override: { proteinG: c.settings.proteinOverrideG, fatG: c.settings.fatOverrideG } });
+  const r = weeklyTargets({ profile: c.profile, weighIns: c.weighIns, intake: adaptive ? c.intake : [], today: c.today, latest, override: { proteinG: c.settings.proteinOverrideG, fatG: c.settings.fatOverrideG } });
   if (r.store) {
     const m = r.plan.macros;
     await prisma.nutritionTarget.create({
@@ -113,7 +114,7 @@ async function planFor(prisma: PrismaClient, userId: string, c: Awaited<ReturnTy
   };
 }
 
-export async function getDay(prisma: PrismaClient, userId: string, date?: string): Promise<NutritionDayResponse> {
+export async function getDay(prisma: PrismaClient, userId: string, date?: string, adaptive = true): Promise<NutritionDayResponse> {
   const c = await context(prisma, userId);
   const day = date ?? c.today;
   const logs: FoodLogDto[] = c.logs
@@ -121,7 +122,7 @@ export async function getDay(prisma: PrismaClient, userId: string, date?: string
     .sort((a, b) => a.loggedAt.getTime() - b.loggedAt.getTime())
     .map((l) => ({ id: l.id, food: foodOf(l.food), grams: l.grams, meal: l.meal as Meal, servingLabel: l.servingLabel, localDate: l.localDate, loggedAt: l.loggedAt.toISOString() }));
   const flags = c.flags.find((f) => f.localDate === day);
-  return { date: day, logs, waterMl: flags?.waterMl ?? 0, markedComplete: flags?.markedComplete ?? false, totals: totalsOf(logs), plan: await planFor(prisma, userId, c), settings: c.settings };
+  return { date: day, logs, waterMl: flags?.waterMl ?? 0, markedComplete: flags?.markedComplete ?? false, totals: totalsOf(logs), plan: await planFor(prisma, userId, c, adaptive), settings: c.settings };
 }
 
 /** Curated foods come from content (trusted); OFF foods are shared; custom/quick foods stay private. */
@@ -260,9 +261,9 @@ export async function setDayFlags(prisma: PrismaClient, userId: string, input: D
   return { ok: true };
 }
 
-export async function getSummary(prisma: PrismaClient, userId: string): Promise<NutritionSummaryResponse> {
+export async function getSummary(prisma: PrismaClient, userId: string, adaptive = true): Promise<NutritionSummaryResponse> {
   const c = await context(prisma, userId);
-  const plan = await planFor(prisma, userId, c);
+  const plan = await planFor(prisma, userId, c, adaptive);
   const trend = computeTrend(c.weighIns);
   const ids = new Map(c.weighIns.map((w) => [w.date, w.id]));
   const age = ageOn(c.profile.birthDate, c.today);
@@ -276,7 +277,7 @@ export async function getSummary(prisma: PrismaClient, userId: string): Promise<
 }
 
 /** Settings are editable any time; the rate must be one the engine allows for this goal (safety rails). */
-export async function updateSettings(prisma: PrismaClient, userId: string, s: NutritionSettings) {
+export async function updateSettings(prisma: PrismaClient, userId: string, s: NutritionSettings, adaptive = true) {
   const c = await context(prisma, userId);
   const age = ageOn(c.profile.birthDate, c.today);
   const rates = allowedRates(s.goal, { bmi: bmi(c.weighIns.at(-1)?.kg ?? c.profile.weightKg, c.profile.heightCm), ageYears: age });
@@ -288,5 +289,5 @@ export async function updateSettings(prisma: PrismaClient, userId: string, s: Nu
   if (s.bodyFatPct !== c.settings.bodyFatPct && s.bodyFatPct != null) {
     await prisma.bodyMetric.create({ data: { id: crypto.randomUUID(), userId, bodyFatPct: s.bodyFatPct, localDate: c.today, measuredAt: new Date(), source: 'manual' } });
   }
-  return getSummary(prisma, userId);
+  return getSummary(prisma, userId, adaptive);
 }

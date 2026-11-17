@@ -9,6 +9,7 @@ import { Icon, PressableScale, Pill, Text } from '@/ui';
 import { AuraLayer, type AuraState } from './AuraLayer';
 import { bundledMedia } from './bundled.generated';
 import { MuscleMap } from './MuscleMap';
+import { hasTrainer, TrainerFigure } from './TrainerFigure';
 
 type Kind = 'loop' | 'side' | 'thumb';
 type Source = number | { uri: string };
@@ -22,11 +23,12 @@ function sourceFor(exerciseId: string, kind: Kind): Source | undefined {
 }
 
 /** True once a recorded demo exists for this exercise (bundled, or media keys + CDN configured). */
-export const hasDemo = (exerciseId: string) => !!(sourceFor(exerciseId, 'loop') ?? sourceFor(exerciseId, 'thumb'));
+/** True when a moving demo exists: a recorded clip, or the animated trainer. */
+export const hasDemo = (exerciseId: string) => !!(sourceFor(exerciseId, 'loop') ?? sourceFor(exerciseId, 'thumb')) || hasTrainer(exerciseId);
 
 /**
- * Demo media with a fallback chain (VISUALS.md §3.8): loop → thumbnail → muscle map + cues.
- * Never renders an empty box. Reduce Motion shows the still thumbnail instead of the loop.
+ * Demo media with a fallback chain (VISUALS.md §3.8): recorded loop → animated 2D trainer → muscle map + cues.
+ * Never renders an empty box. Reduce Motion shows the still thumbnail / a still trainer pose.
  */
 export function ExerciseMedia({
   exerciseId,
@@ -34,6 +36,7 @@ export function ExerciseMedia({
   height,
   mirrored,
   aura,
+  playing = true,
 }: {
   exerciseId: string;
   variant?: 'card' | 'hero' | 'thumb';
@@ -42,6 +45,8 @@ export function ExerciseMedia({
   mirrored?: boolean;
   /** live anime aura behind the trainer (VISUALS.md §3.4); omit for a plain demo */
   aura?: AuraState;
+  /** pause the animated trainer (follow-along paused / rest) */
+  playing?: boolean;
 }) {
   const { c, radius, spacing } = useTheme();
   const reduce = useReducedMotion();
@@ -81,6 +86,18 @@ export function ExerciseMedia({
           accessibilityLabel={`${ex?.name ?? exerciseId} demonstration`}
         />
         </>
+      ) : ex && hasTrainer(exerciseId) ? (
+        <>
+          {aura ? <AuraLayer state={aura} /> : null}
+          <View style={{ flex: 1 }} accessible accessibilityRole="image" accessibilityLabel={`Animated coach demonstrating ${ex.name}`}>
+            <TrainerFigure exerciseId={exerciseId} width={w} height={h} mirrored={mirrored} accent={c.accent} playing={playing} />
+          </View>
+          {variant === 'hero' ? (
+            <View style={{ position: 'absolute', right: spacing[2], top: spacing[2], padding: 4, borderRadius: radius.sm, backgroundColor: 'rgba(7,6,11,0.55)' }}>
+              <MuscleMap primary={ex.primary} secondary={ex.secondary} width={64} showLabels={false} />
+            </View>
+          ) : null}
+        </>
       ) : ex ? (
         <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: variant === 'hero' ? 'flex-start' : 'center', padding: spacing[3], paddingBottom: spacing[8], gap: spacing[3] }}>
           <View>
@@ -102,7 +119,7 @@ export function ExerciseMedia({
         </View>
       ) : null}
       <View style={{ position: 'absolute', left: spacing[2], bottom: spacing[2], flexDirection: 'row', gap: 6 }}>
-        {!src ? <Pill icon="film-outline" label="Demo in production" /> : null}
+        {!src && !hasTrainer(exerciseId) ? <Pill icon="film-outline" label="Demo in production" /> : null}
         {mirrored ? <Pill label="Right side" color={c.mana} /> : null}
       </View>
       {src && side ? (

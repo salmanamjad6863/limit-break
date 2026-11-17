@@ -13,9 +13,35 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { CinematicOverlay } from '@/features/celebrations';
 import { useMe } from '@/features/progression';
 import { useAuthBootstrap, useSession } from '@/features/session';
+import { track } from '@/lib/analytics';
+import { reportError, startMonitoring } from '@/lib/monitoring';
 import { queryClient, queryPersister } from '@/lib/query';
+import { Pressable, Text as RNText, View } from 'react-native';
+import type { ErrorBoundaryProps } from 'expo-router';
 
 SplashScreen.preventAutoHideAsync();
+startMonitoring();
+
+/**
+ * Root error screen (Expo Router): any render crash lands here instead of a blank screen.
+ * Plain RN primitives only, so it renders even if the theme or fonts are what failed.
+ */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  useEffect(() => {
+    reportError(error, { boundary: 'root' });
+  }, [error]);
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.dark.background, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 16 }}>
+      <RNText style={{ color: colors.dark.text, fontSize: 22, fontWeight: '700', textAlign: 'center' }}>The System hit a glitch.</RNText>
+      <RNText style={{ color: colors.dark.textDim, fontSize: 15, textAlign: 'center', lineHeight: 22 }}>
+        Your training and progress are saved on this device. Try again; if it keeps happening, restart the app.
+      </RNText>
+      <Pressable onPress={retry} accessibilityRole="button" style={{ backgroundColor: colors.dark.accent, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14 }}>
+        <RNText style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>Try again</RNText>
+      </Pressable>
+    </View>
+  );
+}
 
 const navTheme = {
   ...DarkTheme,
@@ -36,7 +62,9 @@ function Bootstrap() {
   const onboarded = me.data ? me.data.onboarded : true;
 
   useEffect(() => {
-    if (ready) SplashScreen.hideAsync();
+    if (!ready) return;
+    SplashScreen.hideAsync();
+    track({ event: 'app_opened' });
   }, [ready]);
 
   if (!ready) return null;

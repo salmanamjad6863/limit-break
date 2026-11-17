@@ -43,6 +43,8 @@ export const programs = z
     foundation, dumbbellOnly, shinobiPath, burnProtocol, ironFoundation, linearStrength, upperLowerFull, lowerGlutes, upperLowerBuilder, pushPullLegs, powerbuilding,
   ]);
 export const programById = new Map(programs.map((p) => [p.id, p]));
+/** Free tier (feature `starterPrograms`); the rest are `allPrograms` (premium, SYSTEMS.md §7.2). A user's running program is never locked. */
+export const starterProgramIds: ReadonlySet<string> = new Set(['foundation', 'dumbbell-only', 'iron-foundation', 'linear-strength', 'burn-protocol']);
 export const quickSessions = z.array(QuickSession).parse(quickSessionsJson);
 export const trials = TrialsConfig.parse(trialsJson);
 export const sideQuests = z.array(SideQuest).parse(sideQuestsJson);
@@ -86,3 +88,4 @@ export function renderTemplate(template: string, vars: Record<string, string | n
   return template.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? `{${k}}`));
 }
 export * from './off';
+export * from './trainer';

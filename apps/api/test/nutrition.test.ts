@@ -8,7 +8,7 @@ const today = () => gameDate(new Date(), 'UTC');
 const shift = (iso: string, d: number) => new Date(Date.parse(`${iso}T00:00:00Z`) + d * 86_400_000).toISOString().slice(0, 10);
 
 /** In-memory Prisma double for the nutrition module. */
-function nutritionDb(opts: { goal?: string; rate?: number } = {}) {
+function nutritionDb(opts: { goal?: string; rate?: number; premium?: boolean } = {}) {
   const db = {
     profile: {
       id: USER, onboardedAt: new Date('2026-01-01'), birthDate: new Date('2001-01-10T00:00:00Z'), goal: opts.goal ?? 'cut', heightCm: 178, sex: 'male',
@@ -54,12 +54,13 @@ function nutritionDb(opts: { goal?: string; rate?: number } = {}) {
       findFirst: async () => [...db.targets].sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? 1 : -1))[0] ?? null,
       create: async ({ data }: any) => db.targets.push(data),
     },
+    entitlement: { findFirst: async () => (opts.premium ? { id: 'e1' } : null) },
   };
   return { db, prisma };
 }
 
-const app = (prisma: any, lookupBarcode?: (code: string) => Promise<unknown>) =>
-  createApp({ prisma, paywallEnabled: false, verifyToken: async () => ({ userId: USER }), lookupBarcode });
+const app = (prisma: any, lookupBarcode?: (code: string) => Promise<unknown>, paywallEnabled = false) =>
+  createApp({ prisma, paywallEnabled, verifyToken: async () => ({ userId: USER }), lookupBarcode });
 const call = (a: ReturnType<typeof app>, method: string, path: string, body?: unknown) =>
   a.request(path, { method, headers: { Authorization: 'Bearer x', 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
 
@@ -172,5 +173,36 @@ describe('Nutrition API', () => {
     expect(r.plan.kcal).toBe(2513);
     expect(r.plan.proteinG).toBe(180);
     expect(db.targets).toHaveLength(2);
+  });
+});
+
+describe('premium gate: adaptive TDEE (SYSTEMS.md §7.2)', () => {
+  /** 28 days of eating ~2,100 kcal while losing 0.05 kg/day → observed TDEE ≈ 2,485 */
+  const seed = (db: any) => {
+    db.metrics = [];
+    for (let d = 1; d <= 28; d++) {
+      const date = shift(today(), -d);
+      db.metrics.push({ id: uuid(2000 + d), userId: USER, weightKg: 80 - 0.05 * (28 - d), bodyFatPct: null, localDate: date, measuredAt: new Date(Date.parse(`${date}T07:00:00Z`)) });
+      for (const meal of ['breakfast', 'lunch', 'dinner']) db.logs.push({ id: `${d}-${meal}`, userId: USER, foodId: 'rice-white-cooked', grams: 538, meal, localDate: date, loggedAt: new Date() });
+    }
+    db.foods.push({ id: 'rice-white-cooked', name: 'Rice', kcal100: 130, p100: 2.4, c100: 28.6, f100: 0.2, fiber100: 0.3, servings: [], source: 'usda', verified: true, ownerId: null, brand: null, barcode: null });
+  };
+  it('everything stays open while the paywall is off', async () => {
+    const { db, prisma } = nutritionDb();
+    seed(db);
+    const day = (await (await call(app(prisma), 'GET', '/nutrition/day')).json()) as any;
+    expect(day.plan.calibrating).toBe(false);
+  });
+  it('paywall on: free users get formula targets, premium users get adaptive learning', async () => {
+    const free = nutritionDb();
+    seed(free.db);
+    const f = (await (await call(app(free.prisma, undefined, true), 'GET', '/nutrition/day')).json()) as any;
+    expect(f.plan.calibrating).toBe(true);
+    expect(f.plan.tdee).toBe(f.plan.prior);
+    const prem = nutritionDb({ premium: true });
+    seed(prem.db);
+    const p = (await (await call(app(prem.prisma, undefined, true), 'GET', '/nutrition/day')).json()) as any;
+    expect(p.plan.calibrating).toBe(false);
+    expect(p.plan.tdee).not.toBe(p.plan.prior);
   });
 });

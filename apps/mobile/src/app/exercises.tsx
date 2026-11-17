@@ -1,10 +1,10 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { TextInput, View } from 'react-native';
+import { SectionList, TextInput, View } from 'react-native';
 import { canPerform } from '@lb/engine';
 import { catalog, muscleLabel, patternLabel, useTrainingProfile } from '@/features/training';
 import { useTheme } from '@/theme';
-import { Card, Icon, Page, PressableScale, ScreenHeader, Text } from '@/ui';
+import { Icon, Page, PressableScale, ScreenHeader, Text } from '@/ui';
 
 export default function ExerciseLibrary() {
   const { c, spacing, radius, type } = useTheme();
@@ -18,11 +18,12 @@ export default function ExerciseLibrary() {
     );
     const map = new Map<string, typeof list>();
     for (const e of list) map.set(patternLabel(e.pattern), [...(map.get(patternLabel(e.pattern)) ?? []), e]);
-    return [...map.entries()];
+    return [...map.entries()].map(([title, data]) => ({ title, data }));
   }, [q, mine, profile]);
 
   return (
-    <Page header={<ScreenHeader title="Exercise library" />}>
+    // virtualized: the library grows toward 250 exercises (PLAN.md), so rows mount only when visible
+    <Page header={<ScreenHeader title="Exercise library" />} scroll={false}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], backgroundColor: c.surface, borderRadius: radius.md, borderWidth: 1, borderColor: c.border, paddingHorizontal: spacing[3] }}>
         <Icon name="search" size={18} />
         <TextInput
@@ -38,23 +39,39 @@ export default function ExerciseLibrary() {
         <Icon name={mine ? 'checkbox' : 'square-outline'} size={20} color={mine ? c.accentGlow : c.textMuted} />
         <Text variant="callout" dim>Only what I can do with my equipment</Text>
       </PressableScale>
-      {groups.map(([label, list]) => (
-        <View key={label} style={{ gap: spacing[2] }}>
-          <Text variant="label" dim>{`${label} · ${list.length}`}</Text>
-          <Card padded={false}>
-            {list.map((e, k) => (
-              <PressableScale key={e.id} haptic="tap" onPress={() => router.push(`/exercise/${e.id}`)} accessibilityRole="button" accessibilityLabel={e.name}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[3], paddingHorizontal: spacing[4], borderTopWidth: k ? 1 : 0, borderColor: c.border }}>
-                <View style={{ flex: 1, gap: 2 }}>
-                  <Text variant="callout">{e.name}</Text>
-                  <Text variant="caption" muted>{e.primary.map(muscleLabel).join(', ')}</Text>
-                </View>
-                <Icon name="chevron-forward" size={16} color={c.textMuted} />
-              </PressableScale>
-            ))}
-          </Card>
-        </View>
-      ))}
+      <SectionList
+        sections={groups}
+        keyExtractor={(e) => e.id}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: spacing[8] }}
+        stickySectionHeadersEnabled={false}
+        initialNumToRender={14}
+        windowSize={7}
+        keyboardShouldPersistTaps="handled"
+        renderSectionHeader={({ section }) => (
+          <Text variant="label" dim style={{ marginTop: spacing[4], marginBottom: spacing[2] }}>{`${section.title} · ${section.data.length}`}</Text>
+        )}
+        renderItem={({ item: e, index, section }) => {
+          const first = index === 0;
+          const last = index === section.data.length - 1;
+          return (
+            <PressableScale haptic="tap" onPress={() => router.push(`/exercise/${e.id}`)} accessibilityRole="button" accessibilityLabel={e.name}
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[3], paddingHorizontal: spacing[4],
+                backgroundColor: c.surface, borderColor: c.border, borderLeftWidth: 1, borderRightWidth: 1, borderTopWidth: 1, borderBottomWidth: last ? 1 : 0,
+                borderTopLeftRadius: first ? radius.lg : 0, borderTopRightRadius: first ? radius.lg : 0,
+                borderBottomLeftRadius: last ? radius.lg : 0, borderBottomRightRadius: last ? radius.lg : 0,
+              }}>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text variant="callout">{e.name}</Text>
+                <Text variant="caption" muted>{e.primary.map(muscleLabel).join(', ')}</Text>
+              </View>
+              <Icon name="chevron-forward" size={16} color={c.textMuted} />
+            </PressableScale>
+          );
+        }}
+        ListEmptyComponent={<Text dim style={{ marginTop: spacing[4] }}>No exercises match.</Text>}
+      />
     </Page>
   );
 }

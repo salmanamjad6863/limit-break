@@ -76,7 +76,10 @@ export function useProgression(): { data: ProgressionResponse | undefined; isLoa
     return {
       stats: b.stats, sources: b.sources, details: b.details,
       trial: trialStatus({ rank: me.state.rank as Rank, level: me.state.level, attempts: attempts.map((a) => ({ target: a.target, at: a.at, passed: a.passed })) }),
-      attempts: attempts.slice(0, 5).map(({ id, target, at, passed, composite }) => ({ id, target, at, passed, composite })),
+      attempts: attempts.slice(0, 5).map(({ id, target, at, passed, composite }) => ({
+        id, target, at, passed, composite, reviewNote: null,
+        verification: passed && (target === 'A' || target === 'S') ? ('required' as const) : ('none' as const),
+      })),
       xpByDay: days,
       prs: [...prMap.values()].sort((a, b2) => b2.e1rmKg - a.e1rmKg).slice(0, 10),
     };

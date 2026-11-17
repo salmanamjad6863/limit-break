@@ -10,6 +10,8 @@ import { SlotRow } from '@/features/quests/SlotRow';
 import { useLocalHunter, useMe, useProgression } from '@/features/progression';
 import { useSession } from '@/features/session';
 import { useToday, useTraining, useTrainingProfile, useWorkoutSession } from '@/features/training';
+import { useAnalyticsConsent } from '@/lib/analytics';
+import { env } from '@/lib/env';
 import { greeting, useQuestDeadline } from '@/lib/time';
 import { useTheme } from '@/theme';
 import { Appear, Bar, Button, Card, CountUp, Icon, Pill, PressableScale, Screen, SectionHeader, StatRow, SystemWindow, Text } from '@/ui';
@@ -80,6 +82,7 @@ export default function HomeScreen() {
       </Appear>
 
       {/* Hunter card */}
+      <ConsentCard />
       <Appear index={1}>
         <PressableScale haptic="tap" scaleTo={0.98} onPress={() => router.push('/profile')} accessibilityRole="button" accessibilityLabel="Open hunter profile">
         <Card tint={hero.accent}>
@@ -220,5 +223,23 @@ function Meta({ icon, text }: { icon: React.ComponentProps<typeof Icon>['name'];
       <Icon name={icon} size={15} />
       <Text variant="caption" dim>{text}</Text>
     </View>
+  );
+}
+
+/** One-time, opt-in analytics question (EU ePrivacy: analytics are non-essential). Only shown when analytics exist in this build. */
+function ConsentCard() {
+  const { spacing } = useTheme();
+  const consent = useAnalyticsConsent((s) => s.consent);
+  const set = useAnalyticsConsent((s) => s.set);
+  if (!env.posthogKey || consent !== 'unknown') return null;
+  return (
+    <Card>
+      <Text variant="headline">Help improve LIMITBREAK?</Text>
+      <Text variant="callout" dim>Share anonymous usage stats, like which screens get used. Never your name, email, weight or food. Change it any time in your profile.</Text>
+      <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+        <View style={{ flex: 1 }}><Button size="md" label="Allow" onPress={() => set('granted')} /></View>
+        <View style={{ flex: 1 }}><Button variant="secondary" size="md" label="No thanks" onPress={() => set('denied')} /></View>
+      </View>
+    </Card>
   );
 }

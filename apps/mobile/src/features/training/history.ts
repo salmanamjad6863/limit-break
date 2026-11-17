@@ -13,6 +13,7 @@ import { newId } from '@/lib/id';
 import { exerciseById } from './catalog';
 import { useTrainingProfile } from './profile';
 import { useTraining, type CompletedSet, type CompletedWorkout } from './store';
+import { track } from '@/lib/analytics';
 
 export const historyKeys = { all: ['workouts'] as const, list: ['workouts', 'list'] as const, detail: (id: string) => ['workouts', 'detail', id] as const };
 export const EDIT_WINDOW_DAYS = 7;
@@ -114,6 +115,7 @@ export function useHistoryActions() {
           sets: sets.map((s): CompletedSet => ({ id: s.id, exerciseId: s.exerciseId, reps: s.reps, loadKg: s.weightKg, rir: s.rir, durationS: s.durationS, isWarmup: s.isWarmup, setType: s.setType })),
         });
       }
+      track({ event: 'workout_edited' });
       return response;
     },
     onSuccess: refresh,
@@ -126,6 +128,7 @@ export function useHistoryActions() {
       if (signedIn) await unwrap(await api.workouts[':id'].$delete({ param: { id } }));
       else if (h) applyLocalDelta(-h.xp);
       t.removeWorkout(id);
+      track({ event: 'workout_deleted' });
     },
     onSuccess: refresh,
   });
@@ -151,6 +154,7 @@ export function useHistoryActions() {
         workingSets: 0, volumeKg: 0, xp: granted, prs: [], notes: input.notes, sessionRpe: input.rpe, cardioMinutes: input.minutes, sets: [],
       }, {}, false);
       t.addXp(input.localDate, granted);
+      track({ event: 'manual_workout_logged' });
       return granted;
     },
     onSuccess: refresh,

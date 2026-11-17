@@ -244,7 +244,7 @@ export function FollowAlongPlayer({
           <Pill label={step.kind === 'work' ? (step.round ? `Round ${step.round} of ${step.rounds}` : `Move ${workIdx} of ${workTotal}`) : step.kind === 'ready' ? 'Get ready' : 'Rest'} color={color} />
           <Text variant="caption" muted>{`${mmss(remaining)} left`}</Text>
         </View>
-        <ExerciseMedia exerciseId={step.exerciseId} variant="hero" height={230} mirrored={step.side === 'right'} aura={aura} />
+        <ExerciseMedia exerciseId={step.exerciseId} variant="hero" height={230} mirrored={step.side === 'right'} aura={aura} playing={!paused} />
         <View style={{ alignItems: 'center', gap: spacing[2] }}>
           <Text variant="headline" style={{ textAlign: 'center' }}>
             {`${step.kind === 'work' ? '' : 'Next: '}${name(step.exerciseId)}${step.side ? ` · ${step.side}` : ''}`}

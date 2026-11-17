@@ -11,6 +11,7 @@ import { syncQuestNotifications } from '@/lib/questNotifications';
 import { localBoss } from './boss';
 import { grantLocalXp, localChooseSides, localProgress, localSetSick, localToday } from './local';
 import { useQuestLocal } from './localStore';
+import { track } from '@/lib/analytics';
 
 export const questKeys = { today: ['quests', 'today'] as const, boss: ['quests', 'boss'] as const };
 
@@ -79,7 +80,10 @@ export function useQuestActions() {
       status === 'signedIn'
         ? unwrap<QuestProgressResponse>(await api.quests[':id'].progress.$post({ param: { id: quest.id }, json: { progress } }))
         : localProgress(quest.id, progress, profile.timezone),
-    onSuccess: (r) => after(r.rewards),
+    onSuccess: (r) => {
+      after(r.rewards);
+      if (r.quest.status === 'COMPLETED') track({ event: 'quest_completed', kind: r.quest.kind });
+    },
   });
   const chooseSides = useMutation({
     mutationFn: async (ids: string[]) =>

@@ -18,6 +18,7 @@ export default function History() {
   const today = gameDate(new Date(), tz);
   const { workouts, isLoading } = useWorkoutHistory();
   const [day, setDay] = useState<string | null>(null);
+  const [limit, setLimit] = useState(30);
   const byDate = useMemo(() => {
     const m = new Map<string, WorkoutSummaryDto[]>();
     for (const w of workouts) m.set(w.date, [...(m.get(w.date) ?? []), w]);
@@ -27,7 +28,8 @@ export default function History() {
   const weekday = (new Date(`${today}T12:00:00Z`).getUTCDay() + 6) % 7;
   const start = shift(today, -weekday - 28);
   const cells = Array.from({ length: 35 }, (_, i) => shift(start, i));
-  const shown = day ? workouts.filter((w) => w.date === day) : workouts;
+  const all = day ? workouts.filter((w) => w.date === day) : workouts;
+  const shown = all.slice(0, limit);
   const sessions28 = workouts.filter((w) => w.date > shift(today, -28)).length;
 
   return (
@@ -81,6 +83,7 @@ export default function History() {
           ))}
         </Card>
       ) : null}
+      {all.length > shown.length ? <Button variant="ghost" size="md" label={`Show more (${all.length - shown.length})`} onPress={() => setLimit((l) => l + 30)} /> : null}
     </Page>
   );
 }

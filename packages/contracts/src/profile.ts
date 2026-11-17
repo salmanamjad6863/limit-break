@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { NutritionSettings } from './nutrition';
 
+/** Bump when the privacy policy or terms change materially: users re-consent. */
+export const CONSENT_VERSION = '2026-11';
+
 export const NutritionProfile = NutritionSettings.extend({ birthDate: z.iso.date() });
 export type NutritionProfile = z.infer<typeof NutritionProfile>;
 import {
@@ -40,6 +43,8 @@ export const OnboardingInput = z.object({
   timezone: z.string().min(1),
   assessment: Assessment.nullable(),
   notificationsOptIn: z.boolean(),
+  /** explicit consent to health-data processing + terms/privacy (GDPR Art. 9); the version that was shown */
+  consentVersion: z.string().min(1).max(20),
 });
 export type OnboardingInput = z.infer<typeof OnboardingInput>;
 

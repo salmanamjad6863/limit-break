@@ -12,6 +12,7 @@ import { useTrainingProfile } from '@/features/training/profile';
 import { api, ApiError, unwrap } from '@/lib/api';
 import { newId } from '@/lib/id';
 import { asDto, defaultNutrition, localDay, localSearch, localSummary, useNutritionLocal, type LocalData } from './local';
+import { track } from '@/lib/analytics';
 
 export const nutritionKeys = {
   all: ['nutrition'] as const,
@@ -126,6 +127,7 @@ export function useNutritionActions() {
         remember(input.food);
         local().set({ logs: [...local().logs, full] });
       } else await unwrap(await api.nutrition.logs.$post({ json: full }));
+      track({ event: 'food_logged', source: input.food.source, meal: input.meal });
     },
     onSuccess: refresh,
   });
@@ -172,6 +174,7 @@ export function useNutritionActions() {
         const rest = local().weighIns.filter((w) => w.date !== input.localDate);
         local().set({ weighIns: [...rest, { id: full.id, date: input.localDate, kg: input.weightKg }].sort((a, b) => a.date.localeCompare(b.date)) });
       } else await unwrap(await api.nutrition['weigh-ins'].$post({ json: full }));
+      track({ event: 'weigh_in_logged' });
     },
     onSuccess: refresh,
   });
@@ -188,6 +191,7 @@ export function useNutritionActions() {
         const me = useLocalHunter.getState().me;
         if (me) useLocalHunter.getState().setMe({ ...me, nutrition: { ...(me.nutrition ?? { birthDate: `${new Date().getUTCFullYear() - 25}-01-01` }), ...s } as NutritionProfile });
       } else await unwrap(await api.nutrition.settings.$put({ json: s }));
+      track({ event: 'settings_changed', area: 'nutrition' });
     },
     onSuccess: () => {
       refresh();
