@@ -1,7 +1,13 @@
-import { defaultRate, type MeResponse, type NutritionProfile, type OnboardingInput, type TrainingProfile, type TrainingSettingsInput } from '@lb/contracts';
+import { defaultRate, type IdentityInput, type MeResponse, type NotificationSettingsInput, type NutritionProfile, type OnboardingInput, type TrainingProfile, type TrainingSettingsInput } from '@lb/contracts';
 import type { PrismaClient } from '@lb/db';
-import { assessmentNorms } from '@lb/content';
+import { assessmentNorms, heroes } from '@lb/content';
 import { defaultWeekdays, displayStat, gameDate, initialStats, levelFromXp } from '@lb/engine';
+
+export class ProfileError extends Error {
+  constructor(public status: 400 | 409, message: string) {
+    super(message);
+  }
+}
 
 export async function getMe(prisma: PrismaClient, userId: string): Promise<MeResponse> {
   const p = await prisma.profile.findUnique({ where: { id: userId }, include: { state: true } });
@@ -52,6 +58,8 @@ export async function getMe(prisma: PrismaClient, userId: string): Promise<MeRes
     hunterName: p?.hunterName ?? null,
     heroId: p?.heroId ?? null,
     heroClass: p?.heroClass ?? null,
+    questTime: p?.questTime ?? null,
+    notificationsOptIn: p?.notificationsOptIn ?? false,
     state: s
       ? {
           level: s.level, xp: s.xp, rank: s.rank === 'SOVEREIGN' ? 'S' : s.rank, apUnspent: s.apUnspent,
@@ -124,10 +132,14 @@ export async function completeOnboarding(prisma: PrismaClient, userId: string, i
   return getMe(prisma, userId);
 }
 
+async function requireOnboarded(prisma: PrismaClient, userId: string) {
+  const p = await prisma.profile.findUnique({ where: { id: userId }, select: { onboardedAt: true } });
+  if (!p?.onboardedAt) throw new ProfileError(409, 'profile not onboarded');
+}
+
 /** Training settings, editable any time (SYSTEMS.md §3.10). Days/week follows the picked weekdays. */
 export async function updateTraining(prisma: PrismaClient, userId: string, input: TrainingSettingsInput) {
-  const p = await prisma.profile.findUnique({ where: { id: userId }, select: { onboardedAt: true } });
-  if (!p?.onboardedAt) throw new Error('profile not onboarded');
+  await requireOnboarded(prisma, userId);
   const weekdays = [...new Set(input.weekdays)].sort((a, b) => a - b);
   await prisma.profile.update({
     where: { id: userId },
@@ -135,6 +147,28 @@ export async function updateTraining(prisma: PrismaClient, userId: string, input
       experience: input.experience, location: input.location, equipment: input.equipment, injuries: input.injuries,
       sessionMinutes: input.sessionMinutes, trainingWeekdays: weekdays, daysPerWeek: weekdays.length, workoutTime: input.workoutTime,
     },
+  });
+  return getMe(prisma, userId);
+}
+
+/** Hunter name + hero sigil. Does not change class, XP, rank or True Stats. */
+export async function updateIdentity(prisma: PrismaClient, userId: string, input: IdentityInput) {
+  await requireOnboarded(prisma, userId);
+  const hero = heroes.find((h) => h.id === input.heroId);
+  if (!hero) throw new ProfileError(400, 'unknown hero');
+  await prisma.profile.update({
+    where: { id: userId },
+    data: { hunterName: input.hunterName, heroId: input.heroId },
+  });
+  return getMe(prisma, userId);
+}
+
+/** Daily Quest reminder time + opt-in. */
+export async function updateNotifications(prisma: PrismaClient, userId: string, input: NotificationSettingsInput) {
+  await requireOnboarded(prisma, userId);
+  await prisma.profile.update({
+    where: { id: userId },
+    data: { notificationsOptIn: input.notificationsOptIn, questTime: input.questTime },
   });
   return getMe(prisma, userId);
 }

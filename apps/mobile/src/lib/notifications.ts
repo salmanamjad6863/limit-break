@@ -22,17 +22,23 @@ export async function requestNotificationPermission(): Promise<boolean> {
   return res.granted;
 }
 
+const QUEST_ID = 'daily-quest';
+
 /** Daily Quest drop at the user's chosen time, in the System voice. Replaces any previous one. */
 export async function scheduleDailyQuestReminder(hhmm: string, hunterName: string): Promise<void> {
   if (!supported) return;
   const [hour, minute] = hhmm.split(':').map(Number) as [number, number];
-  const ID = 'daily-quest';
-  await Notifications.cancelScheduledNotificationAsync(ID).catch(() => {});
+  await Notifications.cancelScheduledNotificationAsync(QUEST_ID).catch(() => {});
   await Notifications.scheduleNotificationAsync({
-    identifier: ID,
+    identifier: QUEST_ID,
     content: { title: 'LIMITBREAK', body: renderTemplate(copy.dailyQuest ?? '', { name: hunterName }) },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute },
   });
+}
+
+export async function cancelDailyQuestReminder(): Promise<void> {
+  if (!supported) return;
+  await Notifications.cancelScheduledNotificationAsync(QUEST_ID).catch(() => {});
 }
 
 /**

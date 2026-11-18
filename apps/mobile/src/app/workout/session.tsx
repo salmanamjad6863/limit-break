@@ -1,6 +1,8 @@
 import { Redirect, router } from 'expo-router';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
+import { endRestActivity, startRestActivity, updateRestActivity, useGymMode } from '@/features/depth';
 import { haptics } from '@/lib/haptics';
 import {
   exerciseById,
@@ -21,6 +23,7 @@ import { usePainFlags } from '@/features/training/sync';
 
 export default function WorkoutSession() {
   const { c, spacing, radius } = useTheme();
+  const gymMode = useGymMode((s) => s.enabled);
   const active = useWorkoutSession((s) => s.active);
   const logSet = useWorkoutSession((s) => s.logSet);
   const go = useWorkoutSession((s) => s.go);
@@ -47,6 +50,49 @@ export default function WorkoutSession() {
       clearRest();
     }
   }, [now, active?.restUntil, clearRest]);
+
+  // Gym Mode: keep the screen awake for the whole session (SYSTEMS.md §6.3).
+  useEffect(() => {
+    if (!gymMode || !active) return;
+    const tag = 'lb-gym';
+    let on = false;
+    let gone = false;
+    activateKeepAwakeAsync(tag)
+      .then(() => {
+        on = true;
+        if (gone) deactivateKeepAwake(tag).catch(() => {});
+      })
+      .catch(() => {});
+    return () => {
+      gone = true;
+      if (on) deactivateKeepAwake(tag).catch(() => {});
+    };
+  }, [gymMode, active]);
+
+  // Live Activity / ongoing rest notification hook (no-op until native rebuild).
+  const restingNow = !!(active?.restUntil && active.restUntil > now);
+  const restLeftNow = restingNow && active ? Math.ceil((active.restUntil! - now) / 1000) : 0;
+  useEffect(() => {
+    if (!active) return;
+    if (!restingNow) {
+      void endRestActivity();
+      return;
+    }
+    const i = active.current;
+    const pe = active.exercises[i]!;
+    const ex = exerciseById.get(pe.exerciseId);
+    const logs = active.logs[i] ?? [];
+    const exerciseDone = logs.length >= pe.sets.length;
+    const isLast = i === active.exercises.length - 1;
+    const nextLabel = exerciseDone
+      ? isLast
+        ? 'Finish workout'
+        : exerciseName(active.exercises[i + 1]!.exerciseId)
+      : `${ex?.name ?? 'Exercise'} · set ${logs.length + 1}`;
+    const payload = { exerciseName: ex?.name ?? 'Rest', secondsLeft: restLeftNow, upNext: nextLabel };
+    void startRestActivity(payload);
+    void updateRestActivity(payload);
+  }, [active, restingNow, restLeftNow]);
 
   if (!active) return <Redirect href="/train" />;
 
@@ -105,6 +151,7 @@ export default function WorkoutSession() {
                   muted
                 >{`Exercise ${i + 1} of ${active.exercises.length}`}</Text>
               </View>
+              {gymMode ? <Pill icon="phone-landscape-outline" label="Gym" color={c.mana} /> : null}
               <Pill icon="time-outline" label={mmss(elapsed)} />
             </View>
             <View style={{ flexDirection: 'row', gap: 4 }}>
@@ -266,6 +313,7 @@ export default function WorkoutSession() {
               unilateral={ex.unilateral}
               defaultReps={lastSet[ex.id]?.reps ?? null}
               defaultLoad={lastSet[ex.id]?.loadKg ?? null}
+              large={gymMode}
               onLog={(e) => {
                 haptics.press();
                 logSet(i, { setIndex: k, isWarmup: s.kind === 'warmup', ...e });
@@ -282,11 +330,11 @@ export default function WorkoutSession() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[4] }}>
               <Ring
                 ratio={restLeft / Math.max(1, active.restTotal || restLeft)}
-                size={84}
-                stroke={8}
+                size={gymMode ? 112 : 84}
+                stroke={gymMode ? 10 : 8}
                 color={c.accent}
               >
-                <Text variant="stat" style={{ fontSize: 22, lineHeight: 26 }}>
+                <Text variant="stat" style={{ fontSize: gymMode ? 28 : 22, lineHeight: gymMode ? 32 : 26 }}>
                   {mmss(restLeft)}
                 </Text>
               </Ring>

@@ -4,6 +4,7 @@ import type {
 } from '@lb/contracts';
 import type { PrismaClient } from '@lb/db';
 import { computeWorkoutRewards, gameDate, levelFromXp, rpeZone, type FinishedSet } from '@lb/engine';
+import { ESSENCE_WORKOUT, grantEssence } from '../avatar/essence';
 import { apForLevelUp } from '../progression/ap';
 import { recomputeStats } from '../progression/service';
 import { isUniqueViolation } from '../../lib/db';
@@ -159,6 +160,8 @@ async function finishWorkoutTx(prisma: PrismaClient, userId: string, input: Fini
       where: { userId },
       data: { xp: r.newXp, level: r.levelTo, ...ap.data },
     });
+    // Avatar Forge: program (and other finished) sessions mint Essence — cosmetic only, daily-capped (docs/AVATAR.md).
+    await grantEssence(tx, { userId, eventId: input.id, localDate, amount: ESSENCE_WORKOUT, reason: 'workout' }).catch(() => null);
     await recomputeStats(tx, userId);
     return response;
   }, TX);

@@ -68,5 +68,9 @@ export function supabaseStorage(supabaseUrl: string, serviceRoleKey: string) {
       const { signedURL } = (await res.json()) as { signedURL: string };
       return `${base}${signedURL}`;
     },
+    async remove(bucket: string, path: string) {
+      const res = await fetch(`${base}/object/${bucket}/${path}`, { method: 'DELETE', headers });
+      if (!res.ok && res.status !== 404) throw new Error(`remove failed: ${res.status}`);
+    },
   };
 }

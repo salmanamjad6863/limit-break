@@ -91,8 +91,25 @@ export const MeResponse = z.object({
   nutrition: NutritionProfile.nullable().optional(),
   /** privacy/health-data consent the user last agreed to; the app asks again when it differs from CONSENT_VERSION */
   consentVersion: z.string().nullable().optional(),
+  /** Daily Quest reminder time (HH:mm). Editable in Settings after onboarding. */
+  questTime: z.string().nullable().optional(),
+  notificationsOptIn: z.boolean().optional(),
 });
 export type MeResponse = z.infer<typeof MeResponse>;
+
+/** Rename + change hero sigil. Class / stats are not in this payload (cosmetic only). */
+export const IdentityInput = z.object({
+  hunterName: z.string().trim().min(2).max(20),
+  heroId: z.string().min(1),
+});
+export type IdentityInput = z.infer<typeof IdentityInput>;
+
+/** Daily Quest reminder. Workout reminders stay on-device (they are scheduled locally). */
+export const NotificationSettingsInput = z.object({
+  notificationsOptIn: z.boolean(),
+  questTime: z.string().regex(/^\d{2}:\d{2}$/, 'HH:mm'),
+});
+export type NotificationSettingsInput = z.infer<typeof NotificationSettingsInput>;
 
 /** Re-consent after a policy change (GDPR Art. 9 explicit consent, versioned). */
 export const ConsentInput = z.object({ version: z.literal(CONSENT_VERSION) });

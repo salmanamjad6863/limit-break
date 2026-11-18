@@ -129,17 +129,11 @@ Agent notes:
   - Web moderation UI (APIs are ready: `GET /community/moderation`, `POST /community/moderation/:type/:id`, `/progression/reviews`).
 - Trial-video retention job; CAPTCHA (Turnstile) for anonymous sign-ins; HealthKit / Health Connect; live USDA search on the server.
 
-## Next in the plan (after the audit is committed)
-- **Sprint 10, friends/guilds/sharing (SYSTEMS.md §5.6):**
-  - Friend Streaks with a Streak Shield gift.
-  - 7-day Duels scored by XP vs own 4-week average.
-  - Guilds (≤20, Leader/Officer/Member, public/private code), guild chat (Supabase Realtime, pre-moderated).
-  - Weekly Raid (boss HP = 0.8 × Σ expected weekly XP, Contribution% loot at ≥25%).
-  - Weekly leagues of 30 (Bronze → Mythic, top 7 up / bottom 5 down).
-  - Shareable Hunter License card, photo posts with moderation, DMs (mutual follows, both 18+), follow requests, web admin moderation queue.
-- **Sprint 11, depth (SYSTEMS.md §6):** private progress photos with the Before/After Awakening frame, body measurements, Gym Mode, widgets + Live Activity rest timer, AI weekly debrief, smart swap, meal templates, HealthKit/Health Connect, rest-day content.
-- **V3–V5:** Avatar Forge, Signature Gates, Tier-2 demo clips, weekly muscle-volume map.
-- **Last:** Sign in with Apple/Google (Apple required if Google is offered), Railway deploy (`railway.json`, then smoke tests via `SMOKE_API_URL`), then subscriptions (RevenueCat, paywall, `PAYWALL_ENABLED`).
+## Next in the plan
+- **Settings hub (in progress):** `/settings` gear on Home + Profile. Identity (`PUT /me/identity` — name + sigil, class locked), notifications (`PUT /me/notifications` + on-device workout toggle), subscription shell (Free / restore / manage). Account dump moved off Profile. PAYWALL still off. Avatar Forge still parked.
+- **Sprint 11 ✅ (depth):** API `/depth/*` + migration **0014_depth**; mobile Progress hub, meal templates, Gym Mode, rest-day lore. Stubs: Live Activity / widgets / HealthKit. **Manual:** private Storage bucket `progress-photos` (8 MB).
+- **Avatar Forge — PENDING:** parked until proper VRoid / layered art. Home/Profile stay on `HeroEmblem` only (no `/forge` UI). Scaffold kept: migration **0015_avatar**, `/avatar` API, Essence mint, `docs/AVATAR.md`. Do not ship cosmetics UI until portraits + overlays read as real.
+- **Last:** Apple/Google sign-in → Railway deploy + smokes → subscriptions (RevenueCat). Depth polish: real Live Activities, Health write-back, watch logger.
 
 ## Rules
 - Original IP only.

@@ -141,6 +141,8 @@ function Bootstrap() {
           <Stack.Screen name="diary" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="training-settings" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="history" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="progress" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
           {/* community screens (Sprint 9) */}
           <Stack.Screen name="community/compose" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="community/handle" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assessmentNorms, exerciseById, exercises, features, heroes, quickSessions } from '../src';
+import { assessmentNorms, cosmeticById, cosmetics, exerciseById, exercises, features, heroes, quickSessions } from '../src';
 
 describe('content', () => {
   it('norm tables parse and ascend', () => {
@@ -8,6 +8,9 @@ describe('content', () => {
   it('parses and has unique ids', () => {
     expect(new Set(exercises.map((e) => e.id)).size).toBe(exercises.length);
     expect(heroes).toHaveLength(6);
+    expect(new Set(cosmetics.map((c) => c.id)).size).toBe(cosmetics.length);
+    expect(cosmetics.some((c) => c.free && c.slot === 'body')).toBe(true);
+    expect(cosmeticById.has('body-standard')).toBe(true);
   });
   it('progression chains only reference known exercises', () => {
     for (const e of exercises) {

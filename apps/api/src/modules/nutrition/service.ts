@@ -70,7 +70,7 @@ async function trainingHoursOn(prisma: PrismaClient, userId: string, localDate: 
 }
 
 /** Deterministic uuid (v5-style, sha1) so a retried copy re-derives the same row ids. */
-function uuidFrom(key: string) {
+export function uuidFrom(key: string) {
   const h = createHash('sha1').update(`limitbreak:${key}`).digest();
   h[6] = (h[6]! & 0x0f) | 0x50;
   h[8] = (h[8]! & 0x3f) | 0x80;
@@ -150,7 +150,7 @@ export async function getDay(prisma: PrismaClient, userId: string, date?: string
 }
 
 /** Curated foods come from content (trusted); OFF foods are shared; custom/quick foods stay private. */
-async function upsertFood(prisma: PrismaClient, userId: string, f: FoodDto) {
+export async function upsertFood(prisma: PrismaClient, userId: string, f: FoodDto) {
   const curated = curatedFoodById.get(f.id);
   const src = curated ?? f;
   if (!curated && f.source !== 'off' && f.source !== 'custom' && f.source !== 'quick') throw new NutritionError(400, 'unknown curated food');

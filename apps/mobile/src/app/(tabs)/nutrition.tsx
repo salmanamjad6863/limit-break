@@ -111,6 +111,7 @@ export default function NutritionScreen() {
               label={data.markedComplete ? 'Completed' : 'Complete'} onPress={() => setDay.mutate({ localDate: date, markedComplete: !data.markedComplete })} />
           </View>
         </View>
+        <Button variant="ghost" size="md" icon="bookmark-outline" label="Meal templates" onPress={() => router.push('/diary/templates')} />
         {copy.isError ? <Text variant="caption" color={c.warning}>Nothing logged yesterday to copy.</Text> : null}
       </Appear>
 

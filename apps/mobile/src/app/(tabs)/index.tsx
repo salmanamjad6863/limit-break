@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { activeSlots, questRatio as questRatioOf } from '@lb/contracts';
+import { restDayContent } from '@/features/depth';
 import { useGameDate, useNutritionDay } from '@/features/nutrition';
 import { useQuestActions, useQuests } from '@/features/quests';
 import { SlotRow } from '@/features/quests/SlotRow';
@@ -16,11 +17,10 @@ import { env } from '@/lib/env';
 import { storage } from '@/lib/storage';
 import { greeting, useQuestDeadline } from '@/lib/time';
 import { useTheme } from '@/theme';
-import { Appear, Bar, Button, Card, CountUp, Icon, Pill, PressableScale, Screen, SectionHeader, StatRow, SystemWindow, Text } from '@/ui';
+import { Appear, Bar, Button, Card, CountUp, Icon, Pill, PressableScale, Screen, SectionHeader, SettingsGear, StatRow, SystemWindow, Text } from '@/ui';
 import { HeroEmblem, RankBadge, Ring } from '@/ui/fx';
 
 const STAT_KEYS = ['STR', 'AGI', 'END', 'VIT', 'SPI'] as const;
-
 
 export default function HomeScreen() {
   const { c, spacing } = useTheme();
@@ -76,11 +76,14 @@ export default function HomeScreen() {
     <Screen accent={hero.accent}>
       {/* Header */}
       <Appear index={0} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text variant="callout" dim>{greeting()}</Text>
           <Text variant="title">{me.hunterName ?? 'Hunter'}</Text>
         </View>
-        <Pill icon="flame" label={`${quests?.streak.current ?? state?.streak ?? 0} day streak`} color={penaltyActive ? c.danger : c.warning} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+          <Pill icon="flame" label={`${quests?.streak.current ?? state?.streak ?? 0} day streak`} color={penaltyActive ? c.danger : c.warning} />
+          <SettingsGear />
+        </View>
       </Appear>
 
       {/* Hunter card */}
@@ -164,10 +167,13 @@ export default function HomeScreen() {
               <Meta icon="list-outline" text={`${today.workout.exercises.length} exercises`} />
               <Meta icon="trending-up-outline" text="Coached loads" />
             </View>
+          ) : state_ === 'rest' ? (
+            <>
+              <Text variant="label" color={type.color}>{restDayContent(todayIso).title}</Text>
+              <Text variant="callout" dim>{restDayContent(todayIso).body}</Text>
+            </>
           ) : (
-            <Text variant="callout" dim>
-              {state_ === 'done' ? `Next up: ${today.workout.name}. A short mobility flow helps recovery.` : 'Take a 10-minute mobility session to keep your streak.'}
-            </Text>
+            <Text variant="callout" dim>{`Next up: ${today.workout.name}. A short mobility flow helps recovery.`}</Text>
           )}
           <Button
             label={{ active: 'Resume workout', done: 'Mobility · 10 min', train: 'Start workout', rest: 'Mobility · 10 min' }[state_]}

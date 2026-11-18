@@ -8,16 +8,17 @@ import { Button, Icon, PressableScale, Text } from '@/ui';
 import { mmss, targetText } from './format';
 import type { LoggedEntry } from './session';
 
-function Mini({ label, value, onChange, step, min = 0, format }: { label: string; value: number; onChange: (v: number) => void; step: number; min?: number; format?: (v: number) => string }) {
+function Mini({ label, value, onChange, step, min = 0, format, large }: { label: string; value: number; onChange: (v: number) => void; step: number; min?: number; format?: (v: number) => string; large?: boolean }) {
   const { c, spacing, radius } = useTheme();
+  const hit = large ? 56 : 40;
   const btn = (dir: 1 | -1) => (
     <PressableScale
       haptic="tap"
       onPress={() => onChange(Math.max(min, Math.round((value + dir * step) * 100) / 100))}
       accessibilityRole="button"
       accessibilityLabel={`${dir > 0 ? 'Increase' : 'Decrease'} ${label}`}
-      style={{ width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: c.surface }}>
-      <Icon name={dir > 0 ? 'add' : 'remove'} size={18} color={c.text} />
+      style={{ width: hit, height: hit, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: c.surface }}>
+      <Icon name={dir > 0 ? 'add' : 'remove'} size={large ? 24 : 18} color={c.text} />
     </PressableScale>
   );
   return (
@@ -25,7 +26,7 @@ function Mini({ label, value, onChange, step, min = 0, format }: { label: string
       <Text variant="micro" muted>{label}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing[1], backgroundColor: c.surfaceRaised, borderRadius: radius.md, padding: 4 }}>
         {btn(-1)}
-        <Text variant="stat" style={{ fontSize: 24, lineHeight: 28 }}>{format ? format(value) : value}</Text>
+        <Text variant="stat" style={{ fontSize: large ? 32 : 24, lineHeight: large ? 36 : 28 }}>{format ? format(value) : value}</Text>
         {btn(1)}
       </View>
     </View>
@@ -44,6 +45,7 @@ export function SetRow({
   unilateral,
   defaultReps,
   defaultLoad,
+  large,
   onLog,
 }: {
   index: number;
@@ -56,6 +58,8 @@ export function SetRow({
   unilateral?: boolean;
   defaultReps: number | null;
   defaultLoad: number | null;
+  /** Gym Mode: oversized steppers for chalky fingers (SYSTEMS.md §6.3). */
+  large?: boolean;
   onLog: (e: { reps: number | null; loadKg: number | null; rir: number | null; durationS: number | null; setType?: 'normal' | 'drop' | 'failure' }) => void;
 }) {
   const { c, spacing, radius } = useTheme();
@@ -138,8 +142,8 @@ export function SetRow({
         ) : (
           <>
             <View style={{ flexDirection: 'row', gap: spacing[2] }}>
-              <Mini label="Reps" value={reps} onChange={setReps} step={1} />
-              {step ? <Mini label="Load (kg)" value={load} onChange={setLoad} step={step} format={(v) => (v === 0 ? '—' : String(v))} /> : null}
+              <Mini label="Reps" value={reps} onChange={setReps} step={1} large={large} />
+              {step ? <Mini label="Load (kg)" value={load} onChange={setLoad} step={step} format={(v) => (v === 0 ? '—' : String(v))} large={large} /> : null}
             </View>
             {planned.kind === 'working' ? (
               <View style={{ gap: 6 }}>
@@ -154,7 +158,7 @@ export function SetRow({
                       accessibilityState={{ selected: rir === v }}
                       accessibilityLabel={`RIR ${v}`}
                       style={{
-                        flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: radius.sm,
+                        flex: 1, alignItems: 'center', paddingVertical: large ? 14 : 8, borderRadius: radius.sm,
                         backgroundColor: rir === v ? c.accent : c.surfaceRaised,
                       }}>
                       <Text variant="callout" color={rir === v ? '#FFFFFF' : c.textDim}>{v === 4 ? '4+' : v}</Text>

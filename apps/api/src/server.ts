@@ -5,6 +5,7 @@ import { createApp } from './app';
 import { supabaseAdminDeleter, supabaseStorage, supabaseVerifier } from './lib/auth';
 import { env } from './lib/env';
 import { claudeClassifier } from './modules/community/moderation';
+import { claudeDebriefWriter } from './modules/depth/debrief';
 
 const e = env();
 if (e.SENTRY_DSN) {
@@ -30,6 +31,7 @@ const app = createApp({
   storage: e.SUPABASE_SERVICE_ROLE_KEY ? supabaseStorage(e.SUPABASE_URL, e.SUPABASE_SERVICE_ROLE_KEY) : undefined,
   moderatorIds: e.MODERATOR_IDS?.split(',').map((x) => x.trim()).filter(Boolean),
   classifier: e.ANTHROPIC_API_KEY ? claudeClassifier(e.ANTHROPIC_API_KEY) : undefined,
+  debriefWriter: e.ANTHROPIC_API_KEY ? claudeDebriefWriter(e.ANTHROPIC_API_KEY) : undefined,
   communityWordlist: e.COMMUNITY_WORDLIST?.split(',').map((w) => w.trim()).filter(Boolean),
   deleteAuthUser: e.SUPABASE_SERVICE_ROLE_KEY ? supabaseAdminDeleter(e.SUPABASE_URL, e.SUPABASE_SERVICE_ROLE_KEY) : undefined,
 });

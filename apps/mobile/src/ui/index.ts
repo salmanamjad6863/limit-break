@@ -1,5 +1,6 @@
 export { Card } from './Card';
 export { Icon, type IconName } from './Icon';
+export { SettingsGear, SettingsGroup, SettingsRow } from './SettingsRow';
 export { Page } from './Page';
 export { Pill } from './Pill';
 export { Screen } from './Screen';

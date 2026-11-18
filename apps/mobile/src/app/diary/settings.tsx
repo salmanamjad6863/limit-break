@@ -2,6 +2,7 @@ import type { NutritionSettings } from '@lb/contracts';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
+import { healthStatusLabel } from '@/features/health';
 import { useNutritionActions, useNutritionSummary } from '@/features/nutrition';
 import { useTheme } from '@/theme';
 import { Button, Card, Page, PressableScale, ScreenHeader, SectionHeader, Text } from '@/ui';
@@ -99,6 +100,12 @@ export default function NutritionSettingsScreen() {
       {invalid ? <Text variant="caption" color={c.warning}>Protein 40–400 g, fat 20–250 g, body fat 3–60%.</Text> : null}
       {updateSettings.isError ? <Text variant="caption" color={c.warning}>Couldn’t save. That rate isn’t available for this goal.</Text> : null}
       <Text variant="caption" muted>Safety: targets never go below your BMR or a safe floor, and deficits are capped. No rewards are ever given for eating less.</Text>
+
+      <SectionHeader title="Health sync" />
+      <Card>
+        <Text variant="callout" dim>{healthStatusLabel()}</Text>
+        <Button variant="ghost" size="md" icon="body-outline" label="Private progress" onPress={() => router.push('/progress')} />
+      </Card>
     </Page>
   );
 }

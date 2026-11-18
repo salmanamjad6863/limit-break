@@ -93,9 +93,12 @@ export function HeroEmblem({ size = 220, color, initial }: { size?: number; colo
           <BlurMask blur={1.5} style="solid" />
         </Path>
       </Canvas>
-      <Text variant="display" style={{ fontSize: size * 0.22, lineHeight: size * 0.26, textShadowColor: color, textShadowRadius: 18 }}>
-        {initial}
-      </Text>
+      {initial ? (
+        <Text variant="display" style={{ fontSize: size * 0.22, lineHeight: size * 0.26, textShadowColor: color, textShadowRadius: 18 }}>
+          {initial}
+        </Text>
+      ) : null}
     </View>
   );
 }
+

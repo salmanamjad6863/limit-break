@@ -3,6 +3,7 @@ import { validateWeekdays } from '@lb/engine';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
+import { useGymMode } from '@/features/depth';
 import { EQUIPMENT, FULL_GYM, INJURIES } from '@/features/onboarding/options';
 import { useToday, useTrainingProfile, useUpdateTraining } from '@/features/training';
 import { requestNotificationPermission } from '@/lib/notifications';
@@ -26,6 +27,8 @@ export default function TrainingSettings() {
   const profile = useTrainingProfile();
   const today = useToday();
   const save = useUpdateTraining();
+  const gymMode = useGymMode((x) => x.enabled);
+  const setGymMode = useGymMode((x) => x.setEnabled);
   const [s, setS] = useState<TrainingSettingsInput>(() => ({
     experience: profile.experience, location: profile.location, equipment: profile.equipment, injuries: profile.injuries,
     sessionMinutes: ([15, 30, 45, 60, 75, 90].includes(profile.sessionMinutes) ? profile.sessionMinutes : 45) as TrainingSettingsInput['sessionMinutes'],
@@ -88,6 +91,16 @@ export default function TrainingSettings() {
       <SectionHeader title="Injuries to work around" />
       <Chips options={INJURIES} value={s.injuries} onToggle={(v) => toggle('injuries', v)} accent={c.danger} />
       <Text variant="caption" muted>Exercises that load these areas are swapped for safe alternatives.</Text>
+
+      <SectionHeader title="Gym Mode" />
+      <Card>
+        <Text variant="callout">Bigger set controls and keep the screen awake during a live workout. Saved on this device.</Text>
+        <Segmented
+          options={[{ value: 'off', label: 'Off' }, { value: 'on', label: 'On' }]}
+          value={gymMode ? 'on' : 'off'}
+          onChange={(v) => setGymMode(v === 'on')}
+        />
+      </Card>
 
       <Button variant="ghost" size="md" icon="swap-horizontal" label={`Program: ${today.program.name} (change)`} onPress={() => router.push('/programs')} />
     </Page>

@@ -30,7 +30,7 @@ export type AnalyticsEvent =
   | { event: 'food_logged'; source: string; meal: string }
   | { event: 'weigh_in_logged' }
   | { event: 'trial_attempted'; target_rank: string; passed: boolean }
-  | { event: 'settings_changed'; area: 'training' | 'nutrition' }
+  | { event: 'settings_changed'; area: 'training' | 'nutrition' | 'identity' | 'notifications' }
   | { event: 'follow_along_finished'; kind: 'quest' | 'quick' | 'warmup' | 'cooldown' };
 
 /** Coarse duration buckets (never exact values). */

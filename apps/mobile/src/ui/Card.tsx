@@ -38,7 +38,7 @@ export function Card({
           style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 120 }}
         />
       ) : null}
-      <View style={{ padding: padded ? spacing[4] : 0, gap: spacing[3] }}>{children}</View>
+      <View style={{ padding: padded ? spacing[4] : 0, gap: padded ? spacing[3] : 0 }}>{children}</View>
     </View>
   );
 }

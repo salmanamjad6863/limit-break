@@ -1,0 +1,44 @@
+[
+  { "id": "body-standard", "slot": "body", "name": "Standard form", "rarity": "common", "price": 0, "free": true, "tint": "#C4A484", "shape": "body", "rankLock": null, "classLock": null },
+
+  { "id": "hair-shadow", "slot": "hair", "name": "Shadow cut", "rarity": "common", "price": 0, "free": true, "tint": "#1A1A22", "shape": "hair", "rankLock": null, "classLock": null },
+  { "id": "hair-wind", "slot": "hair", "name": "Wind sweep", "rarity": "common", "price": 40, "free": false, "tint": "#38BDF8", "shape": "hair", "rankLock": null, "classLock": null },
+  { "id": "hair-ember", "slot": "hair", "name": "Ember tips", "rarity": "rare", "price": 70, "free": false, "tint": "#F97316", "shape": "hair", "rankLock": "D", "classLock": null },
+  { "id": "hair-silver", "slot": "hair", "name": "Silver crest", "rarity": "rare", "price": 90, "free": false, "tint": "#E2E8F0", "shape": "hair", "rankLock": "C", "classLock": null },
+  { "id": "hair-void", "slot": "hair", "name": "Void fringe", "rarity": "epic", "price": 140, "free": false, "tint": "#7C3AED", "shape": "hair", "rankLock": "B", "classLock": null },
+
+  { "id": "outfit-training", "slot": "outfit", "name": "Training gear", "rarity": "common", "price": 0, "free": true, "tint": "#3B82F6", "shape": "outfit", "rankLock": null, "classLock": null },
+  { "id": "outfit-street", "slot": "outfit", "name": "Street runner", "rarity": "common", "price": 50, "free": false, "tint": "#64748B", "shape": "outfit", "rankLock": null, "classLock": null },
+  { "id": "outfit-techwear", "slot": "outfit", "name": "Techwear hoodie", "rarity": "rare", "price": 100, "free": false, "tint": "#22D3EE", "shape": "outfit", "rankLock": "D", "classLock": null },
+  { "id": "outfit-shadow-coat", "slot": "outfit", "name": "Shadow coat", "rarity": "rare", "price": 120, "free": false, "tint": "#6D28D9", "shape": "outfit", "rankLock": "D", "classLock": null },
+  { "id": "outfit-crimson", "slot": "outfit", "name": "Crimson cloak", "rarity": "rare", "price": 130, "free": false, "tint": "#DC2626", "shape": "outfit", "rankLock": "C", "classLock": null },
+  { "id": "outfit-ascendant", "slot": "outfit", "name": "Ascendant coat", "rarity": "epic", "price": 180, "free": false, "tint": "#F8FAFC", "shape": "outfit", "rankLock": "C", "classLock": null },
+  { "id": "outfit-iron", "slot": "outfit", "name": "Iron plating", "rarity": "rare", "price": 120, "free": false, "tint": "#FB923C", "shape": "outfit", "rankLock": "D", "classLock": "JUGGERNAUT" },
+  { "id": "outfit-storm", "slot": "outfit", "name": "Storm wrap", "rarity": "epic", "price": 200, "free": false, "tint": "#34D399", "shape": "outfit", "rankLock": "B", "classLock": null },
+  { "id": "outfit-mythic", "slot": "outfit", "name": "Mythic mantle", "rarity": "legendary", "price": 320, "free": false, "tint": "#FBBF24", "shape": "outfit", "rankLock": "A", "classLock": null },
+  { "id": "outfit-sovereign", "slot": "outfit", "name": "Sovereign plate", "rarity": "legendary", "price": 400, "free": false, "tint": "#F5D0A9", "shape": "outfit", "rankLock": "S", "classLock": null },
+
+  { "id": "accessory-headband", "slot": "accessory", "name": "Focus band", "rarity": "common", "price": 30, "free": false, "tint": "#F43F5E", "shape": "accessory", "rankLock": null, "classLock": null },
+  { "id": "accessory-scar", "slot": "accessory", "name": "Hunter scarf", "rarity": "common", "price": 35, "free": false, "tint": "#94A3B8", "shape": "accessory", "rankLock": null, "classLock": null },
+  { "id": "accessory-earrings", "slot": "accessory", "name": "Signal studs", "rarity": "rare", "price": 60, "free": false, "tint": "#A78BFA", "shape": "accessory", "rankLock": "D", "classLock": null },
+  { "id": "accessory-gauntlet", "slot": "accessory", "name": "Grip wraps", "rarity": "rare", "price": 80, "free": false, "tint": "#F59E0B", "shape": "accessory", "rankLock": "C", "classLock": null },
+  { "id": "accessory-crown", "slot": "accessory", "name": "Rank circlet", "rarity": "epic", "price": 160, "free": false, "tint": "#FDE68A", "shape": "accessory", "rankLock": "B", "classLock": null },
+
+  { "id": "aura-spirit", "slot": "aura", "name": "Spirit haze", "rarity": "common", "price": 0, "free": true, "tint": "#60A5FA", "shape": "aura", "rankLock": null, "classLock": null },
+  { "id": "aura-mint", "slot": "aura", "name": "Mint drift", "rarity": "common", "price": 45, "free": false, "tint": "#6EE7B7", "shape": "aura", "rankLock": null, "classLock": null },
+  { "id": "aura-ember", "slot": "aura", "name": "Ember flare", "rarity": "rare", "price": 110, "free": false, "tint": "#F97316", "shape": "aura", "rankLock": "D", "classLock": null },
+  { "id": "aura-void", "slot": "aura", "name": "Void bloom", "rarity": "epic", "price": 160, "free": false, "tint": "#8B5CF6", "shape": "aura", "rankLock": "C", "classLock": null },
+  { "id": "aura-gold", "slot": "aura", "name": "Gold corona", "rarity": "legendary", "price": 280, "free": false, "tint": "#FBBF24", "shape": "aura", "rankLock": "A", "classLock": null },
+  { "id": "aura-sovereign", "slot": "aura", "name": "Sovereign storm", "rarity": "legendary", "price": 350, "free": false, "tint": "#F472B6", "shape": "aura", "rankLock": "S", "classLock": null },
+
+  { "id": "prop-bokken", "slot": "prop", "name": "Practice bokken", "rarity": "rare", "price": 80, "free": false, "tint": "#A16207", "shape": "prop", "rankLock": "D", "classLock": "FIGHTER" },
+  { "id": "prop-staff", "slot": "prop", "name": "Training staff", "rarity": "rare", "price": 80, "free": false, "tint": "#78716C", "shape": "prop", "rankLock": "D", "classLock": "MONK" },
+  { "id": "prop-band", "slot": "prop", "name": "Calisthenics bands", "rarity": "rare", "price": 70, "free": false, "tint": "#4ADE80", "shape": "prop", "rankLock": "D", "classLock": "ASSASSIN" },
+
+  { "id": "frame-hunter", "slot": "frame", "name": "Hunter ring", "rarity": "common", "price": 0, "free": true, "tint": "#8B5CF6", "shape": "frame", "rankLock": null, "classLock": null },
+  { "id": "frame-streak-7", "slot": "frame", "name": "7-day seal", "rarity": "common", "price": 40, "free": false, "tint": "#38BDF8", "shape": "frame", "rankLock": null, "classLock": null },
+  { "id": "frame-streak-30", "slot": "frame", "name": "30-day seal", "rarity": "rare", "price": 120, "free": false, "tint": "#FBBF24", "shape": "frame", "rankLock": "D", "classLock": null },
+  { "id": "frame-rank-c", "slot": "frame", "name": "C-Rank brand", "rarity": "rare", "price": 100, "free": false, "tint": "#22C55E", "shape": "frame", "rankLock": "C", "classLock": null },
+  { "id": "frame-rank-a", "slot": "frame", "name": "A-Rank brand", "rarity": "epic", "price": 200, "free": false, "tint": "#F59E0B", "shape": "frame", "rankLock": "A", "classLock": null },
+  { "id": "frame-s", "slot": "frame", "name": "S-Rank halo", "rarity": "legendary", "price": 300, "free": false, "tint": "#EF4444", "shape": "frame", "rankLock": "S", "classLock": null }
+]

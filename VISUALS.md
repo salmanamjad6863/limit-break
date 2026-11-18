@@ -324,7 +324,8 @@ Answers "build the avatar on points": your hunter's look is **earned by training
 | **V2** ✅ (Live Activity + next-loop prefetch pending media) | Follow-along player (timed + rep-based), voice-cue scheduler with captions, Live Activity hook, guided warm-up/cool-down flows | Tier 1 clips (65) via Mixamo + coach mocap; record voice lines |
 | **V2.5** ✅ engineering | `<AuraLayer>` Skia shader with 7 states (E spirit-blue → S gold, 30 fps, opacity cap, static under Reduce Motion) · bundled Tier-1 map (`media:bundle`, budget-checked) in `ExerciseMedia` · `tools/render` Blender batch render + libwebp encoder · dev-only `/dev/aura` lab | **Pilot of 5 exercises (§3.6)** → lock the look → Tier 1 production |
 | **V3** | Signature Gates (content, timer for time, personal bests, boards) | Hero cover art for 9 Gates |
-| **V4** | Avatar Forge: Essence ledger, cosmetics content, inventory/loadout, layered avatar renderer, Shadow-Self silhouette | Base parts + first 40 cosmetic items, rendered as layers |
+| **V4** ⏸ PENDING | Avatar Forge parked: backend scaffold only (**0015**, `/avatar`, Essence). No Forge UI until proper VRoid/layered art. Home/Profile keep `HeroEmblem`. See `docs/AVATAR.md` | Ship `/forge` + layered PNG compositor; grow catalog; Shadow-Self silhouette |
+
 | **V5** | Tier 2 clips land; weekly muscle-volume map on Profile | Tier 2 (22) clips |
 
 V1–V2 come before launch, because demos are a launch requirement for a real fitness app. V3–V5 can follow soon after.

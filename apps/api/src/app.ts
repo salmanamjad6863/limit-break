@@ -7,7 +7,10 @@ import { requestId } from 'hono/request-id';
 import type { AppEnv, Deps } from './lib/types';
 import { rateLimit } from './middleware/rateLimit';
 import { communityRoutes } from './modules/community/routes';
+import { avatarRoutes } from './modules/avatar/routes';
+import { depthRoutes } from './modules/depth/routes';
 import { featureRoutes } from './modules/features/routes';
+
 import { nutritionRoutes } from './modules/nutrition/routes';
 import { profileRoutes } from './modules/profile/routes';
 import { progressionRoutes } from './modules/progression/routes';
@@ -43,7 +46,9 @@ export function createApp(deps: Deps) {
     .route('/quests', questRoutes)
     .route('/nutrition', nutritionRoutes)
     .route('/community', communityRoutes)
-    .route('/social', socialRoutes);
+    .route('/social', socialRoutes)
+    .route('/depth', depthRoutes)
+    .route('/avatar', avatarRoutes);
 
   app.onError((err, c) => {
     if (err instanceof HTTPException) return c.json({ error: err.message }, err.status);

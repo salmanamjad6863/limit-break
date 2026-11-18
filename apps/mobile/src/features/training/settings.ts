@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { progressionKeys, useLocalHunter } from '@/features/progression';
 import { useSession } from '@/features/session';
 import { api, unwrap } from '@/lib/api';
+import { workoutRemindersOn } from '@/features/settings/reminders';
 import { scheduleWorkoutReminders } from '@/lib/notifications';
 import { track } from '@/lib/analytics';
 
@@ -27,7 +28,8 @@ export function useUpdateTraining() {
         }
       }
       track({ event: 'settings_changed', area: 'training' });
-      await scheduleWorkoutReminders(input.workoutTime ? reminderSlots(weekdays, input.workoutTime) : [], nextWorkout).catch(() => {});
+      const remind = workoutRemindersOn() && !!input.workoutTime;
+      await scheduleWorkoutReminders(remind ? reminderSlots(weekdays, input.workoutTime!) : [], nextWorkout).catch(() => {});
     },
   });
 }

@@ -36,7 +36,8 @@ export function fakeDb(opts: { level?: number; xp?: number; rank?: string; basel
     } as any,
     profile: {
       id: USER, timezone: 'UTC', sex: 'male', birthDate: new Date('1998-01-01'), experience: 'novice', daysPerWeek: 3,
-      heroClass: 'HYBRID', baselines: opts.baselines ?? { pushups: 22, plankSec: 80, squats60: 40 }, onboardedAt: new Date(opts.onboarded ?? '2026-11-01T12:00:00Z'),
+      hunterName: 'Ren', heroId: 'ren', heroClass: 'HYBRID', questTime: '07:00', notificationsOptIn: true,
+      baselines: opts.baselines ?? { pushups: 22, plankSec: 80, squats60: 40 }, onboardedAt: new Date(opts.onboarded ?? '2026-11-01T12:00:00Z'),
       createdAt: new Date('2026-11-01'), injuries: [] as string[], location: 'HOME',
     },
   };
@@ -46,7 +47,10 @@ export function fakeDb(opts: { level?: number; xp?: number; rank?: string; basel
       create: async ({ data }: any) => db.events.set(data.id, data),
       update: async ({ where, data }: any) => db.events.set(where.id, { ...db.events.get(where.id), ...data }),
     },
-    profile: { findUnique: async () => db.profile },
+    profile: {
+      findUnique: async () => db.profile,
+      update: async ({ data }: any) => Object.assign(db.profile, data),
+    },
     hunterState: {
       findUnique: async () => db.state,
       update: async ({ data }: any) => {

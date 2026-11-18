@@ -98,44 +98,50 @@ model Profile {
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 
-  state         HunterState?
-  events        Event[]
-  workouts      WorkoutSession[]
-  records       PersonalRecord[]
-  quests        QuestInstance[]
-  foodLogs      FoodLog[]
-  bodyMetrics   BodyMetric[]
-  tdee          TdeeEstimate[]
-  targets       NutritionTarget[]
-  entitlements  Entitlement[]
-  pushTokens    PushToken[]
-  trials        TrialAttempt[]
-  exerciseNotes ExerciseNote[]
-  publicProfile PublicProfile?
-  posts         Post[]
-  comments      Comment[]
-  reactions     Reaction[]
-  following     Follow[]          @relation("follower")
-  followers     Follow[]          @relation("followee")
-  blocking      Block[]           @relation("blocker")
-  blockedBy     Block[]           @relation("blocked")
-  reports       Report[]
-  followRequestsOut FollowRequest[] @relation("followReqFrom")
-  followRequestsIn  FollowRequest[] @relation("followReqTo")
+  state             HunterState?
+  events            Event[]
+  workouts          WorkoutSession[]
+  records           PersonalRecord[]
+  quests            QuestInstance[]
+  foodLogs          FoodLog[]
+  bodyMetrics       BodyMetric[]
+  progressPhotos    ProgressPhoto[]
+  mealTemplates     MealTemplate[]
+  weeklyDebriefs    WeeklyDebrief[]
+  tdee              TdeeEstimate[]
+  targets           NutritionTarget[]
+  entitlements      Entitlement[]
+  pushTokens        PushToken[]
+  trials            TrialAttempt[]
+  exerciseNotes     ExerciseNote[]
+  publicProfile     PublicProfile?
+  posts             Post[]
+  comments          Comment[]
+  reactions         Reaction[]
+  following         Follow[]           @relation("follower")
+  followers         Follow[]           @relation("followee")
+  blocking          Block[]            @relation("blocker")
+  blockedBy         Block[]            @relation("blocked")
+  reports           Report[]
+  followRequestsOut FollowRequest[]    @relation("followReqFrom")
+  followRequestsIn  FollowRequest[]    @relation("followReqTo")
   guildMemberships  GuildMember[]
   guildMessages     GuildMessage[]
-  guildsLed         Guild[]         @relation("guildLeader")
-  duelsChallenged   Duel[]          @relation("duelChallenger")
-  duelsOpposed      Duel[]          @relation("duelOpponent")
+  guildsLed         Guild[]            @relation("guildLeader")
+  duelsChallenged   Duel[]             @relation("duelChallenger")
+  duelsOpposed      Duel[]             @relation("duelOpponent")
   raidParts         RaidContribution[]
   leagueParts       LeagueMember[]
-  conversationsA    Conversation[]  @relation("convoA")
-  conversationsB    Conversation[]  @relation("convoB")
+  conversationsA    Conversation[]     @relation("convoA")
+  conversationsB    Conversation[]     @relation("convoB")
   messages          Message[]
-  friendStreaksA    FriendStreak[]  @relation("streakA")
-  friendStreaksB    FriendStreak[]  @relation("streakB")
+  friendStreaksA    FriendStreak[]     @relation("streakA")
+  friendStreaksB    FriendStreak[]     @relation("streakB")
   shieldsGiven      FriendShieldGift[] @relation("shieldGiver")
   shieldsReceived   FriendShieldGift[] @relation("shieldReceiver")
+  essenceLedger     EssenceLedger[]
+  cosmeticsOwned    CosmeticOwned[]
+  avatarLoadout     AvatarLoadout?
 }
 
 model HunterState {
@@ -161,6 +167,8 @@ model HunterState {
   end              Float    @default(10)
   vit              Float    @default(10)
   spi              Float    @default(10)
+  /// Avatar Forge cosmetic currency (VISUALS.md §7). Never buys XP/stats/rank.
+  essence          Int      @default(0)
   updatedAt        DateTime @updatedAt
   profile          Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -359,6 +367,8 @@ model BodyMetric {
   waistCm    Float?
   neckCm     Float?
   hipCm      Float?
+  chestCm    Float?
+  armCm      Float?
   source     String   @default("manual")
   profile    Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -476,8 +486,8 @@ model Follow {
 
 /// milestone (auto: rank-up, PR, level, streak, program) | progress (written by the hunter)
 model Post {
-  id           String    @id @db.Uuid
-  authorId     String    @db.Uuid
+  id           String      @id @db.Uuid
+  authorId     String      @db.Uuid
   type         String
   body         String?
   /// milestone details or an attached workout card
@@ -487,16 +497,16 @@ model Post {
   /// pending (moderation) | visible | hidden (by moderator) | removed (by author)
   status       String
   /// all | followers | off
-  commentsMode String    @default("all")
-  respectCount Int       @default(0)
-  commentCount Int       @default(0)
+  commentsMode String      @default("all")
+  respectCount Int         @default(0)
+  commentCount Int         @default(0)
   /// rank of the author when posted (the "My rank" tab)
-  authorRank   String    @default("E")
-  createdAt    DateTime  @default(now())
+  authorRank   String      @default("E")
+  createdAt    DateTime    @default(now())
   comments     Comment[]
   reactions    Reaction[]
   media        PostMedia[]
-  author       Profile   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author       Profile     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([status, createdAt])
   @@index([authorId, createdAt])
@@ -591,7 +601,9 @@ model ModerationAction {
   @@index([targetType, targetId])
 }
 
-/* ---------------- Sprint 10: friends, guilds, raids, leagues, DMs (SYSTEMS.md §5.6) ---------------- */
+/**
+ * ---------------- Sprint 10: friends, guilds, raids, leagues, DMs (SYSTEMS.md §5.6) ----------------
+ */
 
 /// private-profile follow request (accepted → Follow row)
 model FollowRequest {
@@ -654,16 +666,16 @@ model Duel {
 }
 
 model Guild {
-  id        String        @id @db.Uuid
+  id        String         @id @db.Uuid
   name      String
   /// short join code (uppercase)
-  code      String        @unique
-  isPublic  Boolean       @default(true)
+  code      String         @unique
+  isPublic  Boolean        @default(true)
   language  String?
-  timezone  String        @default("UTC")
-  leaderId  String        @db.Uuid
-  createdAt DateTime      @default(now())
-  leader    Profile       @relation("guildLeader", fields: [leaderId], references: [id], onDelete: Cascade)
+  timezone  String         @default("UTC")
+  leaderId  String         @db.Uuid
+  createdAt DateTime       @default(now())
+  leader    Profile        @relation("guildLeader", fields: [leaderId], references: [id], onDelete: Cascade)
   members   GuildMember[]
   messages  GuildMessage[]
   raids     Raid[]
@@ -785,4 +797,90 @@ model Message {
   sender         Profile      @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
+}
+
+/// Private progress photos (SYSTEMS.md §6). Storage bucket `progress-photos` is PRIVATE; never shown in community payloads.
+model ProgressPhoto {
+  id         String   @id @db.Uuid
+  userId     String   @db.Uuid
+  localDate  String
+  takenAt    DateTime
+  /// before | after | progress
+  kind       String
+  /// progress/{userId}/{id}.jpg
+  storageKey String
+  width      Int
+  height     Int
+  note       String?
+  createdAt  DateTime @default(now())
+  profile    Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, localDate])
+}
+
+model MealTemplate {
+  id        String   @id @db.Uuid
+  userId    String   @db.Uuid
+  name      String
+  /// breakfast | lunch | dinner | snack | other
+  meal      String
+  /// [{ foodId, grams, servingLabel? }]
+  items     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  profile   Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Private weekly recap written in the System's voice. weekStart = Monday (YYYY-MM-DD).
+model WeeklyDebrief {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  weekStart String
+  body      String
+  metrics   Json
+  createdAt DateTime @default(now())
+  profile   Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart])
+}
+
+/// Avatar Forge Essence ledger (docs/AVATAR.md). amount may be negative for spends. Idempotent on (eventId, reason).
+model EssenceLedger {
+  id        Int      @id @default(autoincrement())
+  eventId   String   @db.Uuid
+  userId    String   @db.Uuid
+  localDate String
+  amount    Int
+  reason    String
+  createdAt DateTime @default(now())
+  profile   Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, reason])
+  @@index([userId, localDate])
+}
+
+model CosmeticOwned {
+  userId     String   @db.Uuid
+  cosmeticId String
+  acquiredAt DateTime @default(now())
+  profile    Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, cosmeticId])
+  @@index([userId])
+}
+
+/// Equipped cosmetic ids per slot (null = none / default).
+model AvatarLoadout {
+  userId    String  @id @db.Uuid
+  body      String?
+  hair      String?
+  outfit    String?
+  accessory String?
+  aura      String?
+  prop      String?
+  frame     String?
+  updatedAt DateTime @updatedAt
+  profile   Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

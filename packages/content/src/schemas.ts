@@ -38,6 +38,29 @@ export const Hero = z.object({
 });
 export type Hero = z.infer<typeof Hero>;
 
+/** Avatar Forge catalog (VISUALS.md §7 / docs/AVATAR.md). Procedural `shape` until PNG layers ship. */
+export const CosmeticSlot = z.enum(['body', 'hair', 'outfit', 'accessory', 'aura', 'prop', 'frame']);
+export type CosmeticSlot = z.infer<typeof CosmeticSlot>;
+
+export const CosmeticRarity = z.enum(['common', 'rare', 'epic', 'legendary']);
+export type CosmeticRarity = z.infer<typeof CosmeticRarity>;
+
+export const Cosmetic = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  slot: CosmeticSlot,
+  name: z.string().min(1).max(60),
+  rarity: CosmeticRarity,
+  /** Essence price; 0 = free unlock when owned/granted */
+  price: z.number().int().min(0).max(10_000),
+  free: z.boolean(),
+  tint: z.string().regex(/^#[0-9A-F]{6}$/i),
+  shape: z.enum(['body', 'hair', 'outfit', 'accessory', 'aura', 'prop', 'frame']),
+  rankLock: z.enum(['E', 'D', 'C', 'B', 'A', 'S']).nullable(),
+  classLock: HeroClass.nullable(),
+});
+export type Cosmetic = z.infer<typeof Cosmetic>;
+
+
 export const Notifications = z.record(z.string(), z.string());
 export { FeatureMatrix };
 
