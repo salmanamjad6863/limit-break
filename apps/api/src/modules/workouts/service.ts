@@ -141,6 +141,7 @@ function summarize(s: SessionRow, prs: { exerciseId: string; e1rmKg: number }[])
     minutes: s.kind === 'manual' ? s.cardioMinutes : Math.max(1, Math.round((end.getTime() - s.startedAt.getTime()) / 60000)),
     workingSets: working.length, volumeKg: Math.round(working.reduce((v, x) => v + (x.weightKg ?? 0) * (x.reps ?? 0), 0)),
     xp: s.xpGranted, prs, notes: s.notes, editableUntil: shiftIso(s.localDate, EDIT_WINDOW_DAYS),
+    programId: s.programId ?? null, dayId: s.dayId ?? null,
   };
 }
 

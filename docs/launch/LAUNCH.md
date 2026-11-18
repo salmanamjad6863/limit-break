@@ -45,7 +45,7 @@
 - [ ] `eas submit --profile production` (fill `submit.production` in `eas.json` with your Apple team/ASC app id and Play service account).
 
 ## 5b. Known follow-ups before a policy change
-- [ ] **Re-consent:** when `CONSENT_VERSION` changes (`packages/contracts/src/profile.ts`), show already-onboarded users the consent screen again (not needed for the first launch: nobody has consented to an older version).
+- [x] **Re-consent:** built. Bump `CONSENT_VERSION` (`packages/contracts/src/profile.ts`) when the privacy policy or terms change in a way that needs new consent; onboarded users then see the consent screen before the app (`POST /me/consent`).
 - [ ] Trial-video retention job (see the [DECIDE] in PRIVACY.md) if you promise a deletion window.
 - [ ] Moderation queue UI in the web admin (the API `/progression/reviews` is ready; reviewing now needs an API client).
 

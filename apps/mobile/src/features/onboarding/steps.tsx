@@ -3,6 +3,8 @@ import { bmr, calorieTarget, macroTargets, tdeePrior } from '@lb/engine';
 import { useState, type ComponentType } from 'react';
 import { Linking, View } from 'react-native';
 import { CONSENT_VERSION } from '@lb/contracts';
+import { router } from 'expo-router';
+import { useSession } from '@/features/session/store';
 import { env } from '@/lib/env';
 import { requestNotificationPermission } from '@/lib/notifications';
 import { useTheme } from '@/theme';
@@ -35,6 +37,7 @@ const useSet = () => useOnboarding((s) => s.set);
 /* ---------- 1. Cold open ---------- */
 function ColdOpen({ next }: { next: () => void }) {
   const { c, spacing } = useTheme();
+  const isGuest = useSession((s) => s.isGuest);
   return (
     <View style={{ flex: 1, justifyContent: 'center', gap: spacing[6] }}>
       <Appear index={0}>
@@ -59,6 +62,9 @@ function ColdOpen({ next }: { next: () => void }) {
         <Text variant="caption" muted style={{ textAlign: 'center' }}>
           There is no decline button.
         </Text>
+        {isGuest ? (
+          <Button variant="ghost" label="I already have an account" onPress={() => router.push('/sign-in?mode=signin')} />
+        ) : null}
       </Appear>
     </View>
   );
@@ -271,10 +277,15 @@ function Body() {
 
 /* ---------- Consent (GDPR Art. 9 explicit consent for health data) ---------- */
 function Consent() {
-  const { c, spacing } = useTheme();
   const d = useDraft();
   const set = useSet();
   const on = d.consentVersion === CONSENT_VERSION;
+  return <ConsentTerms checked={on} onToggle={() => set({ consentVersion: on ? undefined : CONSENT_VERSION })} />;
+}
+
+/** The consent text + checkbox, shared by onboarding and the re-consent screen after a policy change. */
+export function ConsentTerms({ checked: on, onToggle }: { checked: boolean; onToggle: () => void }) {
+  const { c, spacing } = useTheme();
   const link = (label: string, url: string) =>
     url ? (
       <PressableScale haptic="tap" onPress={() => Linking.openURL(url)} accessibilityRole="link" accessibilityLabel={label}>
@@ -283,7 +294,7 @@ function Consent() {
     ) : null;
   return (
     <View style={{ gap: spacing[3] }}>
-      <Text dim>Next, the System asks about your body and health so your plan is safe and accurate. That’s sensitive data, so here’s the deal:</Text>
+      <Text dim>The System uses details about your body and health so your plan is safe and accurate. That’s sensitive data, so here’s the deal:</Text>
       {[
         'It’s used only to build your training and nutrition plan.',
         'It’s never sold and never used for ads.',
@@ -298,7 +309,7 @@ function Consent() {
         {link('Privacy Policy', env.privacyUrl)}
         {link('Terms of Use', env.termsUrl)}
       </View>
-      <PressableScale haptic="tap" onPress={() => set({ consentVersion: on ? undefined : CONSENT_VERSION })} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
+      <PressableScale haptic="tap" onPress={onToggle} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
         style={{ flexDirection: 'row', gap: spacing[3], alignItems: 'center', padding: spacing[3], borderRadius: 12, borderWidth: 1.5, borderColor: on ? c.accent : c.border, backgroundColor: on ? `${c.accent}1A` : c.surface }}>
         <Icon name={on ? 'checkbox' : 'square-outline'} size={22} color={on ? c.accentGlow : c.textMuted} />
         <Text variant="callout" style={{ flex: 1 }}>I agree to the Terms and Privacy Policy, and consent to LIMITBREAK processing my health and fitness data to provide the app.</Text>

@@ -1,12 +1,12 @@
 import { zValidator } from '@hono/zod-validator';
-import { OnboardingInput, TrainingSettingsInput } from '@lb/contracts';
+import { ConsentInput, OnboardingInput, TrainingSettingsInput } from '@lb/contracts';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { AccountError, deleteAccount, exportData } from './account';
 import type { AppEnv } from '../../lib/types';
 import { requireAuth } from '../../middleware/auth';
-import { completeOnboarding, getMe, updateTraining } from './service';
+import { completeOnboarding, getMe, recordConsent, updateTraining } from './service';
 
 export const profileRoutes = new Hono<AppEnv>()
   .use(requireAuth)
@@ -27,6 +27,9 @@ export const profileRoutes = new Hono<AppEnv>()
       throw e;
     }
   })
+  .post('/consent', zValidator('json', ConsentInput), async (c) =>
+    c.json(await recordConsent(c.get('deps').prisma, c.get('userId'), c.req.valid('json').version)),
+  )
   .put('/training', zValidator('json', TrainingSettingsInput), async (c) =>
     c.json(await updateTraining(c.get('deps').prisma, c.get('userId'), c.req.valid('json'))),
   );

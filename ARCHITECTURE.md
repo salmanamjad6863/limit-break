@@ -59,7 +59,7 @@ Using famous characters (their names, designs, faces or recognisable outfits) in
 ### 2.1 Who talks to what (the rules)
 | Operation | Path | Why |
 |---|---|---|
-| Sign in / sign up / session refresh | App → **supabase-js Auth** | Free, Apple/Google sign-in built in |
+| Sign in / sign up / session refresh | App → **supabase-js Auth**: guest (anonymous) first, then email one-time code to save/sign in; Apple/Google later (docs/launch/AUTH.md) | Free, passwordless |
 | Every game-affecting write (log workout, complete quest, trial attempt, food log) | App → **API (Prisma)** | Server computes XP: anti-cheat, one place for business rules |
 | Reads for screens | App → **API** (default) | Typed, shaped responses, one cache key style |
 | Live data (raid HP, league table) | App → **Supabase Realtime** (read-only, RLS) | No websocket server to run |

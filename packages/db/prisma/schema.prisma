@@ -86,6 +86,11 @@ model Profile {
   /// Awakening Assessment results — Daily Quest scaling baselines (SYSTEMS.md §4.6)
   baselines          Json?
   notificationsOptIn Boolean           @default(false)
+  /// chosen program + when it was picked (rotation restarts on change) — restored on a new phone
+  activeProgramId    String?
+  programStartedAt   DateTime?
+  /// exercises flagged "this hurts" in the player; the generator swaps them out
+  avoidExercises     String[]          @default([])
   /// explicit health-data consent (GDPR Art. 9): policy version shown + when
   consentVersion     String?
   consentedAt        DateTime?

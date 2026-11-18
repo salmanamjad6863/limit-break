@@ -44,7 +44,8 @@ export const OnboardingInput = z.object({
   assessment: Assessment.nullable(),
   notificationsOptIn: z.boolean(),
   /** explicit consent to health-data processing + terms/privacy (GDPR Art. 9); the version that was shown */
-  consentVersion: z.string().min(1).max(20),
+  /** must be the current version: the server stores what the user actually agreed to */
+  consentVersion: z.literal(CONSENT_VERSION),
 });
 export type OnboardingInput = z.infer<typeof OnboardingInput>;
 
@@ -88,5 +89,11 @@ export const MeResponse = z.object({
   profile: TrainingProfile.nullable().optional(),
   /** nutrition settings + birth date (needed for BMR) */
   nutrition: NutritionProfile.nullable().optional(),
+  /** privacy/health-data consent the user last agreed to; the app asks again when it differs from CONSENT_VERSION */
+  consentVersion: z.string().nullable().optional(),
 });
 export type MeResponse = z.infer<typeof MeResponse>;
+
+/** Re-consent after a policy change (GDPR Art. 9 explicit consent, versioned). */
+export const ConsentInput = z.object({ version: z.literal(CONSENT_VERSION) });
+export type ConsentInput = z.infer<typeof ConsentInput>;

@@ -3,45 +3,62 @@ import { useEffect } from 'react';
 import { clearLocalData } from '@/features/account/localData';
 import { storage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
+import { SIGNED_OUT_FLAG, startGuest } from './auth';
 import { useSession } from './store';
 
 const LAST_USER = 'lb.session.lastUser';
 
 /**
- * Mirrors the Supabase session into the UI and protects personal data on shared devices:
+ * Guest-first session (PLAN.md §7), mirrored into the UI:
+ * - no session on a fresh install → a guest account starts automatically (train right away)
+ * - no session after a deliberate sign-out → the sign-in screen (with "continue as a new guest")
  * - a different account signing in → the previous account's on-device data and cache are wiped first
  * - signing out (or a revoked/expired refresh token) → on-device data is wiped
- * - anonymous sessions (from the old guest-first build) are not accepted: signed out, email sign-in instead
+ * - a guest saving their progress keeps the same user id, so nothing is wiped or migrated
  */
 export function useAuthBootstrap() {
   const set = useSession((s) => s.set);
 
   useEffect(() => {
     if (!supabase) {
-      set({ status: 'demo', userId: null, email: null });
+      set({ status: 'demo', userId: null, email: null, isGuest: false });
       return;
     }
-    const client = supabase;
 
     const adopt = (session: Session | null) => {
-      if (!session || session.user.is_anonymous) {
-        if (session) setTimeout(() => void client.auth.signOut({ scope: 'local' }), 0);
+      if (!session) {
         if (storage.getString(LAST_USER)) {
           clearLocalData();
           storage.remove(LAST_USER);
         }
-        set({ status: 'signedOut', userId: null, email: null });
+        if (storage.getBoolean(SIGNED_OUT_FLAG)) {
+          set({ status: 'signedOut', userId: null, email: null, isGuest: false });
+          return;
+        }
+        set({ status: 'booting', userId: null, email: null, isGuest: false });
+        // Outside the auth callback (never await Supabase calls inside it). Offline → sign-in screen with retry.
+        setTimeout(() => {
+          startGuest().catch(() => set({ status: 'signedOut' }));
+        }, 0);
         return;
       }
+      storage.remove(SIGNED_OUT_FLAG);
       const prev = storage.getString(LAST_USER);
       if (prev && prev !== session.user.id) clearLocalData();
       storage.set(LAST_USER, session.user.id);
-      set({ status: 'signedIn', userId: session.user.id, email: session.user.email ?? null });
+      set({
+        status: 'signedIn',
+        userId: session.user.id,
+        email: session.user.email || null,
+        isGuest: session.user.is_anonymous === true,
+      });
     };
 
-    // INITIAL_SESSION fires first with the restored session (or null). Never await Supabase calls in here.
-    const { data: sub } = client.auth.onAuthStateChange((event, session) => {
-      if (event === 'TOKEN_REFRESHED' && session && useSession.getState().userId === session.user.id) return;
+    // INITIAL_SESSION fires first with the restored session (or null).
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      const cur = useSession.getState();
+      const same = session && cur.userId === session.user.id && cur.isGuest === (session.user.is_anonymous === true);
+      if (event === 'TOKEN_REFRESHED' && same) return;
       adopt(session);
     });
     return () => sub.subscription.unsubscribe();

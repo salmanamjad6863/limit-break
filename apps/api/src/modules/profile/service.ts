@@ -61,7 +61,14 @@ export async function getMe(prisma: PrismaClient, userId: string): Promise<MeRes
       : null,
     profile,
     nutrition,
+    consentVersion: p?.consentVersion ?? null,
   };
+}
+
+/** Records agreement to the current privacy/health-data terms (the version is validated as current by the route). */
+export async function recordConsent(prisma: PrismaClient, userId: string, version: string) {
+  await prisma.profile.update({ where: { id: userId }, data: { consentVersion: version, consentedAt: new Date() } });
+  return { consentVersion: version };
 }
 
 /**

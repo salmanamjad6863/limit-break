@@ -3,7 +3,8 @@ import type { PrismaClient } from '@lb/db';
 /** Dependencies injected into the app — lets tests swap Prisma and auth. */
 export interface Deps {
   prisma: PrismaClient;
-  verifyToken: (token: string) => Promise<{ userId: string }>;
+  /** isGuest = anonymous (guest-first) account; community features will require a saved account */
+  verifyToken: (token: string) => Promise<{ userId: string; isGuest?: boolean }>;
   paywallEnabled: boolean;
   /** CORS allow-list for browsers (web app); empty = any (dev) */
   allowedOrigins?: string[];
@@ -20,5 +21,5 @@ export interface Deps {
 }
 
 export type AppEnv = {
-  Variables: { userId: string; deps: Deps; requestId: string };
+  Variables: { userId: string; isGuest: boolean; deps: Deps; requestId: string };
 };

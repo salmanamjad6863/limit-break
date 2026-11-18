@@ -95,6 +95,10 @@ try {
   const workoutId = randomUUID();
   const set = (n, reps) => ({ id: randomUUID(), exerciseId: 'push-up', order: n, reps, weightKg: null, rir: 2, rpe: null, durationS: null, distanceM: null, isWarmup: false, setType: 'normal', completedAt: new Date().toISOString() });
   const sets = [set(0, 12), set(1, 11)];
+  await step('PUT /workouts/program (pick Foundation)', async () => {
+    const j = expectOk(await call('PUT', '/workouts/program', { programId: 'foundation' }), 'program');
+    return j.activeProgramId;
+  });
   await step('POST /workouts/finish (2 push-up sets)', async () => {
     const j = expectOk(await call('POST', '/workouts/finish', {
       id: workoutId, plannedWorkoutId: null, programId: 'foundation', dayId: 'a', sessionRpe: 7, cardio: [], startedAt: new Date(Date.now() - 1800_000).toISOString(),
@@ -120,6 +124,29 @@ try {
     expectOk(await call('PUT', '/workouts/notes/push-up', { note: 'Hands under shoulders' }), 'note');
     const j = expectOk(await call('GET', '/workouts/notes'), 'notes');
     if (j.notes['push-up'] !== 'Hands under shoulders') throw new Error('note not saved');
+  });
+  await step('PUT /workouts/avoid (flag push-up as painful, then clear)', async () => {
+    expectOk(await call('PUT', '/workouts/avoid', { exerciseId: 'burpee', avoid: true }), 'avoid on');
+    const j = expectOk(await call('PUT', '/workouts/avoid', { exerciseId: 'push-up', avoid: true }), 'avoid on');
+    expectOk(await call('PUT', '/workouts/avoid', { exerciseId: 'push-up', avoid: false }), 'avoid off');
+    return `flagged: ${j.avoid.join(', ')}`;
+  });
+  await step('GET /workouts/state (restore on a new phone)', async () => {
+    const j = expectOk(await call('GET', '/workouts/state'), 'state');
+    if (j.activeProgramId !== 'foundation') throw new Error(`program ${j.activeProgramId}`);
+    if (j.completedSessions !== 1) throw new Error(`completedSessions ${j.completedSessions}`);
+    if (j.lastSet['push-up']?.reps !== 10) throw new Error(`lastSet ${JSON.stringify(j.lastSet['push-up'])}`);
+    if (j.notes['push-up'] !== 'Hands under shoulders') throw new Error('notes missing');
+    if (JSON.stringify(j.avoid) !== '["burpee"]') throw new Error(`avoid ${JSON.stringify(j.avoid)}`);
+    if (j.recent.length !== 2 || !j.recent.some((w) => w.programId === 'foundation' && w.dayId === 'a')) throw new Error('recent workouts wrong');
+    return `program ${j.activeProgramId} day ${j.completedSessions + 1}, ${j.recent.length} recent, last push-up set ${j.lastSet['push-up'].reps} reps`;
+  });
+  await step('POST /me/consent (current version only)', async () => {
+    const bad = await call('POST', '/me/consent', { version: '2000-01' });
+    if (bad.status !== 400) throw new Error(`old version accepted: ${bad.status}`);
+    const me = expectOk(await call('GET', '/me'), 'me');
+    expectOk(await call('POST', '/me/consent', { version: me.consentVersion }), 'consent');
+    return `consentVersion ${me.consentVersion}`;
   });
   await step('GET /progression', async () => {
     const j = expectOk(await call('GET', '/progression'), 'progression');

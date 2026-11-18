@@ -205,7 +205,14 @@ function AccountSection() {
         ) : null}
         <Button variant="secondary" size="md" icon="download-outline" label="Export my data" loading={exportData.isPending} onPress={() => exportData.mutate()} />
         {exportData.isError ? <Text variant="caption" color={c.warning}>Export failed. Check your connection and try again.</Text> : null}
-        {session.status === 'signedIn' ? (
+        {session.status === 'signedIn' && session.isGuest ? (
+          <View style={{ gap: spacing[2] }}>
+            <Text variant="callout" color={c.warning}>You’re training as a guest. Your progress lives only on this account until you save it with an email.</Text>
+            <Button size="md" icon="shield-checkmark-outline" label="Save your progress" onPress={() => router.push('/sign-in?mode=save')} />
+            <Button variant="ghost" size="md" icon="log-in-outline" label="Sign in to another account" onPress={() => router.push('/sign-in?mode=signin')} />
+          </View>
+        ) : null}
+        {session.status === 'signedIn' && !session.isGuest ? (
           <View style={{ gap: spacing[2] }}>
             <Text variant="caption" dim>{`Signed in as ${session.email ?? 'your account'}`}</Text>
             {!confirmOut ? (

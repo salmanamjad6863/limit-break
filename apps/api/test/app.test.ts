@@ -87,3 +87,23 @@ describe('onboarding', () => {
     expect(calls.profile).toBeUndefined();
   });
 });
+
+describe('re-consent', () => {
+  it('records only the current consent version', async () => {
+    const { CONSENT_VERSION } = await import('@lb/contracts');
+    const calls: any[] = [];
+    const prisma = {
+      profile: { update: async (a: any) => calls.push(a), findUnique: async () => null },
+      entitlement: { findFirst: async () => null },
+    } as unknown as PrismaClient;
+    const a = createApp({ prisma, paywallEnabled: false, verifyToken: async () => ({ userId: '00000000-0000-4000-8000-000000000001' }) });
+    const post = (version: string) => a.request('/me/consent', {
+      method: 'POST', headers: { Authorization: 'Bearer good', 'Content-Type': 'application/json' }, body: JSON.stringify({ version }),
+    });
+    expect((await post('2020-01')).status).toBe(400);
+    expect(calls).toHaveLength(0);
+    expect((await post(CONSENT_VERSION)).status).toBe(200);
+    expect(calls[0].data.consentVersion).toBe(CONSENT_VERSION);
+    expect(calls[0].data.consentedAt).toBeInstanceOf(Date);
+  });
+});

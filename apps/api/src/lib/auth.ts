@@ -6,14 +6,14 @@ export const ACCEPTED_ALGS = ['ES256', 'RS256'];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * Claims every API call requires on top of a valid signature: a real signed-in user (role
- * `authenticated`, UUID subject) who is **not** an anonymous guest. Sign-in is email OTP only.
+ * Claims every API call requires on top of a valid signature: role `authenticated` and a UUID subject.
+ * Guest (anonymous) accounts are allowed (guest-first, PLAN.md §7) and flagged so routes like the
+ * community can require a saved account (`requireSavedAccount`).
  */
-export function assertUserClaims(payload: JWTPayload): string {
+export function assertUserClaims(payload: JWTPayload): { userId: string; isGuest: boolean } {
   if (typeof payload.sub !== 'string' || !UUID.test(payload.sub)) throw new Error('token has no valid subject');
   if (payload.role !== 'authenticated') throw new Error('token role is not authenticated');
-  if (payload.is_anonymous === true) throw new Error('anonymous sessions are not accepted');
-  return payload.sub;
+  return { userId: payload.sub, isGuest: payload.is_anonymous === true };
 }
 
 /**
@@ -29,7 +29,7 @@ export function supabaseVerifier(supabaseUrl: string) {
 export function tokenVerifier(issuer: string, keys: Parameters<typeof jwtVerify>[1]) {
   return async (token: string) => {
     const { payload } = await jwtVerify(token, keys as never, { issuer, audience: 'authenticated', algorithms: ACCEPTED_ALGS });
-    return { userId: assertUserClaims(payload) };
+    return assertUserClaims(payload);
   };
 }
 

@@ -2,6 +2,7 @@ import { heroes, workoutTypes } from '@lb/content';
 import { gameDate, levelProgress, powerLevel } from '@lb/engine';
 import { dataColors, rankColor, statColors } from '@lb/tokens';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { View } from 'react-native';
 import { activeSlots, questRatio as questRatioOf } from '@lb/contracts';
 import { useGameDate, useNutritionDay } from '@/features/nutrition';
@@ -9,9 +10,10 @@ import { useQuestActions, useQuests } from '@/features/quests';
 import { SlotRow } from '@/features/quests/SlotRow';
 import { useLocalHunter, useMe, useProgression } from '@/features/progression';
 import { useSession } from '@/features/session';
-import { useToday, useTraining, useTrainingProfile, useWorkoutSession } from '@/features/training';
+import { useToday, useTraining, useTrainingProfile, useWorkoutHistory, useWorkoutSession } from '@/features/training';
 import { useAnalyticsConsent } from '@/lib/analytics';
 import { env } from '@/lib/env';
+import { storage } from '@/lib/storage';
 import { greeting, useQuestDeadline } from '@/lib/time';
 import { useTheme } from '@/theme';
 import { Appear, Bar, Button, Card, CountUp, Icon, Pill, PressableScale, Screen, SectionHeader, StatRow, SystemWindow, Text } from '@/ui';
@@ -83,6 +85,7 @@ export default function HomeScreen() {
 
       {/* Hunter card */}
       <ConsentCard />
+      <SaveProgressCard />
       <Appear index={1}>
         <PressableScale haptic="tap" scaleTo={0.98} onPress={() => router.push('/profile')} accessibilityRole="button" accessibilityLabel="Open hunter profile">
         <Card tint={hero.accent}>
@@ -239,6 +242,31 @@ function ConsentCard() {
       <View style={{ flexDirection: 'row', gap: spacing[2] }}>
         <View style={{ flex: 1 }}><Button size="md" label="Allow" onPress={() => set('granted')} /></View>
         <View style={{ flex: 1 }}><Button variant="secondary" size="md" label="No thanks" onPress={() => set('denied')} /></View>
+      </View>
+    </Card>
+  );
+}
+
+const SAVE_DISMISSED = 'lb.savePrompt.dismissedAt';
+const SAVE_SNOOZE_MS = 3 * 24 * 60 * 60_000;
+
+/** "Save your progress, Hunter" (PLAN.md §7): guests are asked after their first workout; "Later" snoozes 3 days. */
+function SaveProgressCard() {
+  const { c, spacing } = useTheme();
+  const isGuest = useSession((s) => s.isGuest);
+  const { workouts } = useWorkoutHistory();
+  const [dismissedAt, setDismissedAt] = useState(() => storage.getNumber(SAVE_DISMISSED) ?? 0);
+  if (!isGuest || workouts.length === 0 || Date.now() - dismissedAt < SAVE_SNOOZE_MS) return null;
+  return (
+    <Card tint={c.accent}>
+      <Text variant="label" color={c.accentGlow}>SYSTEM</Text>
+      <Text variant="headline">Save your progress, Hunter</Text>
+      <Text variant="callout" dim>You’re training as a guest. Add your email to keep your rank, XP and workouts if you lose or change your phone.</Text>
+      <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+        <View style={{ flex: 1 }}><Button size="md" label="Save progress" onPress={() => router.push('/sign-in?mode=save')} /></View>
+        <View style={{ flex: 1 }}>
+          <Button variant="secondary" size="md" label="Later" onPress={() => { const now = Date.now(); storage.set(SAVE_DISMISSED, now); setDismissedAt(now); }} />
+        </View>
       </View>
     </Card>
   );

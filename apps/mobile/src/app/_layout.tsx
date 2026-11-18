@@ -2,6 +2,7 @@ import '@/global.css';
 import { DelaGothicOne_400Regular } from '@expo-google-fonts/dela-gothic-one';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { Rajdhani_600SemiBold, Rajdhani_700Bold } from '@expo-google-fonts/rajdhani';
+import { CONSENT_VERSION } from '@lb/contracts';
 import { colors } from '@lb/tokens';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
@@ -13,6 +14,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { CinematicOverlay } from '@/features/celebrations';
 import { useMe } from '@/features/progression';
 import { useAuthBootstrap, useSession } from '@/features/session';
+import { useTrainingRestore } from '@/features/training/sync';
 import { track } from '@/lib/analytics';
 import { reportError, startMonitoring } from '@/lib/monitoring';
 import { queryClient, queryPersister } from '@/lib/query';
@@ -50,7 +52,9 @@ const navTheme = {
 
 function Bootstrap() {
   useAuthBootstrap();
+  useTrainingRestore();
   const status = useSession((s) => s.status);
+  const isGuest = useSession((s) => s.isGuest);
   const [fontsLoaded] = useFonts({
     DelaGothicOne_400Regular, Rajdhani_600SemiBold, Rajdhani_700Bold,
     Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold,
@@ -61,6 +65,9 @@ function Bootstrap() {
   // If the API is unreachable, keep the user in the app (offline cache) rather than forcing onboarding.
   const onboarded = me.data ? me.data.onboarded : true;
   const hasSession = status === 'signedIn' || status === 'demo';
+  // Existing hunters re-confirm when the privacy/health-data terms change. `undefined` = a profile cached by an
+  // older build (field unknown): wait for the server's answer instead of flashing the consent screen.
+  const needsConsent = status === 'signedIn' && onboarded && !!me.data && me.data.consentVersion !== undefined && me.data.consentVersion !== CONSENT_VERSION;
 
   useEffect(() => {
     if (!ready) return;
@@ -72,7 +79,7 @@ function Bootstrap() {
   return (
     <>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.dark.background }, animation: 'fade' }}>
-        <Stack.Protected guard={hasSession && onboarded}>
+        <Stack.Protected guard={hasSession && onboarded && !needsConsent}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="programs" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="exercises" options={{ animation: 'slide_from_right' }} />
@@ -87,11 +94,15 @@ function Bootstrap() {
           <Stack.Screen name="dev/aura" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="dev/trainer" options={{ animation: 'slide_from_right' }} />
         </Stack.Protected>
+        <Stack.Protected guard={needsConsent}>
+          <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
+        </Stack.Protected>
         <Stack.Protected guard={hasSession && !onboarded}>
           <Stack.Screen name="awakening" />
         </Stack.Protected>
-        <Stack.Protected guard={status === 'signedOut'}>
-          <Stack.Screen name="sign-in" />
+        {/* after a sign-out: the start screen; for guests: "Save your progress" / "Sign in" as a modal */}
+        <Stack.Protected guard={status === 'signedOut' || (status === 'signedIn' && isGuest)}>
+          <Stack.Screen name="sign-in" options={status === 'signedOut' ? undefined : { presentation: 'modal', animation: 'slide_from_bottom' }} />
         </Stack.Protected>
       </Stack>
       <CinematicOverlay />

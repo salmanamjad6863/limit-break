@@ -81,6 +81,9 @@ export const WorkoutSummaryDto = z.object({
   notes: z.string().nullable(),
   /** editable/deletable for 7 days (leaderboard integrity) */
   editableUntil: isoDate,
+  /** program rotation (quick sessions: the quick-session id in dayId) */
+  programId: z.string().nullable().optional(),
+  dayId: z.string().nullable().optional(),
 });
 export type WorkoutSummaryDto = z.infer<typeof WorkoutSummaryDto>;
 
@@ -122,3 +125,28 @@ export type ManualWorkoutInput = z.infer<typeof ManualWorkoutInput>;
 export const ExerciseNoteInput = z.object({ note: z.string().max(300) });
 export const ExerciseNotesResponse = z.object({ notes: z.record(z.string(), z.string()) });
 export type ExerciseNotesResponse = z.infer<typeof ExerciseNotesResponse>;
+
+/**
+ * Everything the on-device training state needs, restored after signing in on a new phone
+ * (the player's defaults, the program rotation, notes and pain flags).
+ */
+export const TrainingStateResponse = z.object({
+  activeProgramId: z.string().nullable(),
+  /** program sessions finished since the program was picked → which day is next */
+  completedSessions: z.number().int(),
+  /** most recent workouts (newest first) */
+  recent: z.array(WorkoutSummaryDto),
+  /** best e1RM per exercise (kg) */
+  bestE1rm: z.record(z.string(), z.number()),
+  /** last working set per exercise, to pre-fill the logger */
+  lastSet: z.record(z.string(), z.object({ reps: z.number().nullable(), loadKg: z.number().nullable() })),
+  avoid: z.array(z.string()),
+  notes: z.record(z.string(), z.string()),
+});
+export type TrainingStateResponse = z.infer<typeof TrainingStateResponse>;
+
+export const ActiveProgramInput = z.object({ programId: z.string().min(1).max(60) });
+export type ActiveProgramInput = z.infer<typeof ActiveProgramInput>;
+
+export const AvoidExerciseInput = z.object({ exerciseId: z.string().min(1).max(80), avoid: z.boolean() });
+export type AvoidExerciseInput = z.infer<typeof AvoidExerciseInput>;

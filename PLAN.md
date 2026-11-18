@@ -315,7 +315,7 @@ The goal is to make the user *feel the anime moment* in the first 60 seconds, co
 | 14 | **STATUS WINDOW REVEAL**: full-screen animated stats, rank E, class, first Daily Quest | Peak emotion | → Paywall (trial) → Home |
 
 **Paywall:** soft, with a 7-day trial on the annual plan and clear "continue free" text. A/B test it via RevenueCat Paywalls or Superwall.
-**Account:** allow guest mode first. Ask for Sign in with Apple / Google after the first workout ("Save your progress, Hunter").
+**Account:** guest mode first (Supabase anonymous account). After the first workout, ask "Save your progress, Hunter": an email + one-time code turns the guest into a saved account (same account, no migration). Returning users sign in with an email code. Sign in with Apple / Google are added later as extra options (docs/launch/AUTH.md).
 
 ---
 
@@ -519,7 +519,7 @@ Anime terms stay as flavour inside screens (Gates, Mana, the System), never as t
 - Coach consultant: program templates v1. XP/level simulation to tune the curve.
 
 ### Phase 1: MVP (10–12 weeks) → soft launch (PH, BR, MX or one small English-speaking market)
-- Awakening onboarding (all 14 steps), guest mode, then Apple/Google sign-in.
+- Awakening onboarding (all 14 steps), guest mode, then email-code sign-in (Apple/Google later).
 - Status screen with Rive avatar (E and D rank looks) and The Guide (core expressions).
 - Daily Quests, Main Quests and Side Quests; streaks + shields; Penalty Zone.
 - 8–10 program templates (home + gym, Beginner → Intermediate), 250 exercises with demos.

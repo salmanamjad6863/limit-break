@@ -7,6 +7,7 @@ import { useFeature } from '@/features/paywall';
 import { rankedPrograms, useTraining, useTrainingProfile } from '@/features/training';
 import { useTheme } from '@/theme';
 import { Appear, Card, Icon, Page, Pill, PressableScale, ScreenHeader, Text } from '@/ui';
+import { useSetProgram } from '@/features/training/sync';
 
 const LEVEL: Record<string, string> = { beginner: 'Beginner', novice: 'Novice', intermediate: 'Intermediate', advanced: 'Advanced' };
 const LOC: Record<string, string> = { HOME: 'Home', GYM: 'Gym', HYBRID: 'Hybrid' };
@@ -15,7 +16,7 @@ export default function ProgramsScreen() {
   const { c, spacing } = useTheme();
   const profile = useTrainingProfile();
   const active = useTraining((s) => s.activeProgramId);
-  const setProgram = useTraining((s) => s.setProgram);
+  const setProgram = useSetProgram();
   const ranked = rankedPrograms(profile);
   const recommended = ranked[0]?.program.id;
   // SYSTEMS.md §7.1: the gate is real but open while PAYWALL_ENABLED=false

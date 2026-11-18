@@ -5,6 +5,7 @@ import { catalog, exerciseById, muscleLabel, patternLabel, useTraining, useTrain
 import { ExerciseMedia, hasDemo, MuscleMap } from '@/features/visuals';
 import { useTheme } from '@/theme';
 import { Appear, Card, Icon, Page, Pill, PressableScale, ScreenHeader, SectionHeader, Text } from '@/ui';
+import { usePainFlags } from '@/features/training/sync';
 
 const EQUIP: Record<string, string> = {
   pull_up_bar: 'Pull-up bar', bands: 'Bands', dumbbells: 'Dumbbells', kettlebell: 'Kettlebell', bench: 'Bench', barbell: 'Barbell',
@@ -19,7 +20,7 @@ export default function ExerciseDetail() {
   const best = useTraining((s) => (ex ? s.bestE1rm[ex.id] : undefined));
   const last = useTraining((s) => (ex ? s.lastSet[ex.id] : undefined));
   const avoided = useTraining((s) => (ex ? s.avoid.includes(ex.id) : false));
-  const unflag = useTraining((s) => s.unflagPain);
+  const unflag = usePainFlags().unflagPain;
   if (!ex) return <Redirect href="/train" />;
 
   const equipment = [...ex.equipment, ...(ex.anyOf?.length ? [ex.anyOf.map((e) => EQUIP[e] ?? e).join(' or ')] : [])];

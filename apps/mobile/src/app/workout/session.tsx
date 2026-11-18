@@ -17,6 +17,7 @@ import { TextField } from '@/ui/form';
 import { useTheme } from '@/theme';
 import { Button, Card, Icon, Page, Pill, PressableScale, Text } from '@/ui';
 import { Ring } from '@/ui/fx';
+import { usePainFlags } from '@/features/training/sync';
 
 export default function WorkoutSession() {
   const { c, spacing, radius } = useTheme();
@@ -28,7 +29,7 @@ export default function WorkoutSession() {
   const clearRest = useWorkoutSession((s) => s.clearRest);
   const end = useWorkoutSession((s) => s.end);
   const lastSet = useTraining((s) => s.lastSet);
-  const flagPain = useTraining((s) => s.flagPain);
+  const { flagPain } = usePainFlags();
   const [now, setNow] = useState(Date.now());
   const [showHow, setShowHow] = useState(false);
   const [sheet, setSheet] = useState<'none' | 'swap' | 'pain' | 'exit' | 'note'>('none');
