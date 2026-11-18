@@ -12,6 +12,7 @@ import { nutritionRoutes } from './modules/nutrition/routes';
 import { profileRoutes } from './modules/profile/routes';
 import { progressionRoutes } from './modules/progression/routes';
 import { questRoutes } from './modules/quests/routes';
+import { socialRoutes } from './modules/social/routes';
 import { trainingRoutes } from './modules/training/routes';
 import { workoutRoutes } from './modules/workouts/routes';
 
@@ -41,7 +42,8 @@ export function createApp(deps: Deps) {
     .route('/progression', progressionRoutes)
     .route('/quests', questRoutes)
     .route('/nutrition', nutritionRoutes)
-    .route('/community', communityRoutes);
+    .route('/community', communityRoutes)
+    .route('/social', socialRoutes);
 
   app.onError((err, c) => {
     if (err instanceof HTTPException) return c.json({ error: err.message }, err.status);

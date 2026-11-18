@@ -4,6 +4,7 @@ import { Alert, View } from 'react-native';
 import { useBlock, useCommunityMe, useFollow, useHunter, useReport } from '@/features/community/api';
 import { Avatar } from '@/features/community/Avatar';
 import { heroColor, PostCard } from '@/features/community/PostCard';
+import { useOpenConversation } from '@/features/social/api';
 import { useTheme } from '@/theme';
 import { Button, Card, Page, Pill, ScreenHeader, Text } from '@/ui';
 
@@ -16,9 +17,11 @@ export default function HunterScreen() {
   const follow = useFollow();
   const block = useBlock();
   const report = useReport();
+  const dm = useOpenConversation();
   const h = q.data?.hunter;
   const isMe = !!h && me.data?.handle === h.handle;
   const hero = heroes.find((x) => x.id === h?.heroId);
+  const canDm = !!q.data?.iFollow && !!q.data?.followsMe && !me.data?.isGuest && !me.data?.isMinor;
 
   return (
     <Page header={<ScreenHeader title={h ? `@${h.handle}` : ''} />}>
@@ -44,10 +47,17 @@ export default function HunterScreen() {
             {isMe ? (
               <Button variant="secondary" size="md" label="Edit community profile" onPress={() => router.push('/community/handle')} />
             ) : me.data?.can.follow ? (
-              <Button size="md" variant={q.data?.iFollow ? 'secondary' : 'primary'} label={q.data?.iFollow ? 'Following' : 'Follow'} loading={follow.isPending}
-                onPress={() => follow.mutate({ userId: h.userId, follow: !q.data?.iFollow })} />
+              <View style={{ gap: spacing[2] }}>
+                <Button size="md" variant={q.data?.iFollow ? 'secondary' : 'primary'} label={q.data?.iFollow ? 'Following' : 'Follow'} loading={follow.isPending}
+                  onPress={() => follow.mutate({ userId: h.userId, follow: !q.data?.iFollow })} />
+                {canDm ? (
+                  <Button size="md" variant="secondary" icon="chatbubble-outline" label="Message" loading={dm.isPending}
+                    onPress={() => dm.mutate(h.userId, { onSuccess: (convo) => router.push(`/social/messages/${convo.id}`) })} />
+                ) : null}
+              </View>
             ) : null}
             {follow.isError ? <Text variant="caption" color={c.danger}>{(follow.error as Error).message}</Text> : null}
+            {dm.isError ? <Text variant="caption" color={c.danger}>{(dm.error as Error).message}</Text> : null}
           </Card>
 
           {q.data?.posts.map((p) => <PostCard key={p.id} post={p} canReact={!!me.data?.can.react} />)}

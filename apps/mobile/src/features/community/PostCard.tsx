@@ -2,6 +2,7 @@ import { heroes } from '@lb/content';
 import type { HunterCardDto, PostDto, Sticker } from '@lb/contracts';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { Image } from 'expo-image';
 import { ActionSheetIOS, Alert, Platform, View } from 'react-native';
 import { exerciseName } from '@/features/training/catalog';
 import { useTheme } from '@/theme';
@@ -109,6 +110,18 @@ export function PostCard({ post, canReact, showComments = true }: { post: PostDt
         </View>
       ) : null}
       <Text variant="body">{post.body ?? ms?.body ?? ''}</Text>
+
+      {(post.media ?? []).filter((m) => m.status !== 'rejected' && (m.status === 'visible' || post.mine)).length ? (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
+          {(post.media ?? []).filter((m) => m.status !== 'rejected' && (m.status === 'visible' || post.mine)).map((m) => (
+            <View key={m.id} style={{ width: '48%', aspectRatio: m.width && m.height ? m.width / m.height : 1, borderRadius: radius.md, overflow: 'hidden', backgroundColor: c.surfaceRaised }}>
+              {m.url ? <Image source={{ uri: m.url }} style={{ width: '100%', height: '100%' }} contentFit="cover" /> : (
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><Text variant="caption" muted>{m.status}</Text></View>
+              )}
+            </View>
+          ))}
+        </View>
+      ) : null}
 
       {post.workout ? (
         <View style={{ padding: spacing[3], borderRadius: radius.md, backgroundColor: c.surfaceRaised, gap: spacing[1] }}>

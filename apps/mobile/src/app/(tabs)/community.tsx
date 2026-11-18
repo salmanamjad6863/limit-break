@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { Avatar } from '@/features/community/Avatar';
 import { LiveHall, LiveTopHunters } from '@/features/community/Live';
+import { LiveGuild } from '@/features/social/LiveGuild';
 import { useSession } from '@/features/session';
 import { BOARDS, DEMO_LEADERS, DEMO_ME_ON_BOARD, DEMO_POSTS, type BoardId } from '@/features/community/demo';
 import { useTheme } from '@/theme';
@@ -17,6 +18,7 @@ export default function CommunityScreen() {
   const live = useSession((s) => s.status === 'signedIn');
   const Hall = live ? LiveHall : DemoHall;
   const TopHunters = live ? LiveTopHunters : DemoTopHunters;
+  const GuildPane = live ? LiveGuild : DemoGuild;
   return (
     <Screen title="Community" subtitle="Hunters worldwide, levelling up together." accent="#F5C451" right={live ? undefined : <Pill icon="sparkles" label="Preview" />}>
       <Appear index={1}>
@@ -27,7 +29,7 @@ export default function CommunityScreen() {
         />
       </Appear>
       <View key={view} style={{ gap: spacing[5] }}>
-        {view === 'hall' ? <Hall /> : view === 'top' ? <TopHunters /> : <Guild />}
+        {view === 'hall' ? <Hall /> : view === 'top' ? <TopHunters /> : <GuildPane />}
       </View>
     </Screen>
   );
@@ -195,9 +197,9 @@ function DemoTopHunters() {
   );
 }
 
-/* ---------------- Guild ---------------- */
-function Guild() {
-  const { c, spacing } = useTheme();
+/* ---------------- Guild (demo / offline preview) ---------------- */
+function DemoGuild() {
+  const { spacing } = useTheme();
   const members = [
     { name: 'Kaze', pct: 1.18, color: '#3DDC97' },
     { name: 'Aiko', pct: 0.96, color: '#38C6F4' },
@@ -234,7 +236,7 @@ function Guild() {
         <Button variant="secondary" icon="person-add-outline" label="Invite a friend" />
       </Appear>
       <Appear index={4}>
-        <Text variant="caption" muted style={{ textAlign: 'center' }}>Preview: guilds, raids and friend streaks arrive in the next update.</Text>
+        <Text variant="caption" muted style={{ textAlign: 'center' }}>Preview: sign in to use live guilds, raids, friend streaks and leagues.</Text>
       </Appear>
     </>
   );

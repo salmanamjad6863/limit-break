@@ -10,7 +10,7 @@
 
 ## 2. Backend
 - [ ] Supabase project (free tier is fine for soft launch). Enable asymmetric JWT signing keys.
-- [ ] Run migrations: `pnpm db:migrate` → `0001`…`0011` (0008 also creates the private `trial-videos` bucket; 0009 restore state; 0010 community; 0011 AP/cardio integrity).
+- [ ] Run migrations: `pnpm db:migrate` → `0001`…`0013` (0008 `trial-videos` bucket; 0009 restore; 0010 community; 0011 integrity; 0012 social; 0013 league settle + DM read markers + guild Realtime RLS). Also create private Storage bucket **`community-media`** for photo posts.
 - [ ] Deploy the API (`apps/api`) and set environment variables:
 
 | Variable | Needed for |

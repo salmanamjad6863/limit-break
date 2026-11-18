@@ -6,16 +6,18 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type {
   CommentDto, CommunityMeResponse, CreateCommentInput, CreatePostInput, FeedResponse, FeedTab, HunterCardDto,
-  MilestonePayload, ModerationItem, PostDto, PublicProfileResponse, ReportInput, Sticker, UpdateCommunityProfileInput, WorkoutCard,
+  MilestonePayload, ModerationItem, PostDto, PostMediaDto, PublicProfileResponse, ReportInput, SignPostMediaResponse, Sticker,
+  UpdateCommunityProfileInput, WorkoutCard,
 } from '@lb/contracts';
 import type { PrismaClient } from '@lb/db';
 import { displayStat, powerLevel } from '@lb/engine';
+import type { Deps } from '../../lib/types';
 import { getWorkout } from '../workouts/service';
 import { moderate, localCheck, type Classifier, type ModerationVerdict } from './moderation';
 import { isMinor, limits, permissions, type TrustInput } from './trust';
 
 export class CommunityError extends Error {
-  constructor(public status: 400 | 403 | 404 | 409 | 429, message: string) {
+  constructor(public status: 400 | 403 | 404 | 409 | 429 | 503, message: string) {
     super(message);
   }
 }
@@ -27,6 +29,8 @@ export interface CommunityCtx {
   moderatorIds?: string[];
   classifier?: Classifier;
   extraWords?: string[];
+  /** private object storage for photo posts; absent = photos can't be uploaded or shown */
+  storage?: Deps['storage'];
 }
 
 type Rank = HunterCardDto['rank'];
@@ -39,7 +43,7 @@ const DAY = 86_400_000;
 
 /* ---------------- viewer ---------------- */
 
-async function viewer(ctx: CommunityCtx) {
+export async function viewer(ctx: CommunityCtx) {
   const { prisma, userId } = ctx;
   const [profile, pub, workouts, upheld] = await Promise.all([
     prisma.profile.findUnique({ where: { id: userId }, select: { createdAt: true, birthDate: true, state: { select: { level: true, rank: true } } } }),
@@ -125,10 +129,35 @@ export async function hunterCards(prisma: PrismaClient, ids: string[]): Promise<
 
 type PostRow = Awaited<ReturnType<PrismaClient['post']['findMany']>>[number];
 
-async function toDtos(prisma: PrismaClient, userId: string, rows: PostRow[]): Promise<PostDto[]> {
-  const [cards, mine] = await Promise.all([
+export const MEDIA_BUCKET = 'community-media';
+export const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+/** Signed read URLs for photos live this long: long enough for a feed session, too short to share around. */
+const MEDIA_READ_SECONDS = 600;
+const MAX_MEDIA = 4;
+
+/** Photos of these posts as the viewer may see them: visible ones, plus the author's own pending ones. */
+async function mediaFor(prisma: PrismaClient, userId: string, rows: PostRow[], storage?: CommunityCtx['storage']): Promise<Map<string, PostMediaDto[]>> {
+  const out = new Map<string, PostMediaDto[]>();
+  if (!rows.length) return out;
+  const authorOf = new Map(rows.map((r) => [r.id, r.authorId]));
+  const media = await prisma.postMedia.findMany({ where: { postId: { in: rows.map((r) => r.id) } }, orderBy: { createdAt: 'asc' } });
+  await Promise.all(media.map(async (m) => {
+    const own = authorOf.get(m.postId) === userId;
+    if (m.status !== 'visible' && !(own && m.status === 'pending')) return;
+    const url = storage ? await storage.signRead(MEDIA_BUCKET, m.storageKey, MEDIA_READ_SECONDS).catch(() => null) : null;
+    (out.get(m.postId) ?? out.set(m.postId, []).get(m.postId)!).push({ id: m.id, url, width: m.width, height: m.height, status: m.status as PostMediaDto['status'] });
+  }));
+  // Promise.all finished in arbitrary order: restore upload order
+  const order = new Map(media.map((m, i) => [m.id, i]));
+  for (const list of out.values()) list.sort((a, b) => order.get(a.id)! - order.get(b.id)!);
+  return out;
+}
+
+async function toDtos(prisma: PrismaClient, userId: string, rows: PostRow[], storage?: CommunityCtx['storage']): Promise<PostDto[]> {
+  const [cards, mine, media] = await Promise.all([
     hunterCards(prisma, rows.map((r) => r.authorId)),
     rows.length ? prisma.reaction.findMany({ where: { userId, postId: { in: rows.map((r) => r.id) } } }) : Promise.resolve([]),
+    mediaFor(prisma, userId, rows, storage),
   ]);
   const myReaction = new Map(mine.map((m) => [m.postId, m.sticker as Sticker]));
   return rows.flatMap((r) => {
@@ -137,7 +166,7 @@ async function toDtos(prisma: PrismaClient, userId: string, rows: PostRow[]): Pr
     const payload = (r.payload ?? {}) as { milestone?: MilestonePayload; workout?: WorkoutCard };
     return [{
       id: r.id, type: r.type as PostDto['type'], author, body: r.body,
-      milestone: payload.milestone ?? null, workout: payload.workout ?? null,
+      milestone: payload.milestone ?? null, workout: payload.workout ?? null, media: media.get(r.id) ?? [],
       visibility: r.visibility as PostDto['visibility'], status: r.status as PostDto['status'],
       commentsMode: r.commentsMode as PostDto['commentsMode'],
       respectCount: r.respectCount, commentCount: r.commentCount,
@@ -219,7 +248,7 @@ export async function feed(ctx: CommunityCtx, tab: FeedTab, cursor?: string): Pr
     const ordered = capPerAuthor(ranked, PAGE, 2);
     const pageRows = ordered.slice(offset, offset + PAGE);
     const next = offset + pageRows.length;
-    return { posts: await toDtos(prisma, userId, pageRows), nextCursor: next < ordered.length ? `${snapshot}:${next}` : null };
+    return { posts: await toDtos(prisma, userId, pageRows, ctx.storage), nextCursor: next < ordered.length ? `${snapshot}:${next}` : null };
   }
 
   // cursor "createdAtISO|id": ties on the same millisecond are ordered by id, so nothing is skipped
@@ -237,7 +266,7 @@ export async function feed(ctx: CommunityCtx, tab: FeedTab, cursor?: string): Pr
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: PAGE,
   });
   const last = rows.at(-1);
-  return { posts: await toDtos(prisma, userId, rows), nextCursor: rows.length === PAGE && last ? `${last.createdAt.toISOString()}|${last.id}` : null };
+  return { posts: await toDtos(prisma, userId, rows, ctx.storage), nextCursor: rows.length === PAGE && last ? `${last.createdAt.toISOString()}|${last.id}` : null };
 }
 
 /**
@@ -280,17 +309,42 @@ async function audit(prisma: PrismaClient, targetType: string, targetId: string,
   });
 }
 
+/** Storage keys come from POST /community/media/sign: `community/{userId}/{file}.jpg`, nothing else. */
+export const mediaKeyPrefix = (userId: string) => `community/${userId}/`;
+const validMediaKey = (userId: string, key: string) =>
+  key.startsWith(mediaKeyPrefix(userId)) && /^[A-Za-z0-9_-]{1,80}\.(jpe?g|png|webp)$/.test(key.slice(mediaKeyPrefix(userId).length));
+
+/**
+ * PLACEHOLDER image moderation until a vision provider is wired in (SYSTEMS.md §5.5, photos are public-tier).
+ * No pixels are inspected: hunters at T2+ (public-post trust) are let through when their text passed, anyone
+ * below that is held for a moderator. Returns the status the photos and the post should start with.
+ */
+export function moderateImages(trustLevel: number, textAllowed: boolean): { allow: boolean } {
+  return { allow: textAllowed && trustLevel >= 2 };
+}
+
 export async function createPost(ctx: CommunityCtx, input: CreatePostInput & { body: string }): Promise<PostDto> {
   const { prisma, userId } = ctx;
   const existing = await prisma.post.findUnique({ where: { id: input.id } });
   if (existing) {
     if (existing.authorId !== userId || existing.status === 'removed') throw new CommunityError(409, 'post id already used');
-    return (await toDtos(prisma, userId, [existing]))[0]!;
+    return (await toDtos(prisma, userId, [existing], ctx.storage))[0]!;
   }
   const v = await viewer(ctx);
   if (!v.can.post) throw new CommunityError(403, v.nextUnlock ?? 'posting is not available on your account');
   const visibility = input.visibility ?? 'followers';
   if (visibility === 'public' && !v.can.postPublic) throw new CommunityError(403, 'public posts unlock at Trusted (level 10, 14 days)');
+  const media = input.media ?? [];
+  if (media.length) {
+    // photos are public-tier content whatever the post's own audience
+    if (!v.can.postPublic) throw new CommunityError(403, 'photo posts unlock at Trusted (level 10, 14 days)');
+    if (media.length > MAX_MEDIA) throw new CommunityError(400, `at most ${MAX_MEDIA} photos per post`);
+    if (new Set(media.map((m) => m.id)).size !== media.length || new Set(media.map((m) => m.storageKey)).size !== media.length) {
+      throw new CommunityError(400, 'duplicate photo');
+    }
+    if (!media.every((m) => validMediaKey(userId, m.storageKey))) throw new CommunityError(400, 'invalid photo key');
+    if (await prisma.postMedia.count({ where: { id: { in: media.map((m) => m.id) } } })) throw new CommunityError(409, 'photo id already used');
+  }
   const recent = await prisma.post.count({ where: { authorId: userId, type: 'progress', createdAt: { gte: new Date(Date.now() - DAY) } } });
   if (recent >= limits(v.trustLevel).postsPerDay) throw new CommunityError(429, 'daily post limit reached; try again tomorrow');
 
@@ -301,14 +355,28 @@ export async function createPost(ctx: CommunityCtx, input: CreatePostInput & { b
     workout = { workoutId: w.id, name: w.name, minutes: w.minutes, workingSets: w.workingSets, volumeKg: w.volumeKg, prs: w.prs };
   }
   const verdict = await moderate(input.body, { classifier: ctx.classifier, trustLevel: v.trustLevel, extraWords: ctx.extraWords });
+  // the post stays pending until the text AND every photo is cleared
+  const images = media.length ? moderateImages(v.trustLevel, verdict.allow) : { allow: true };
   const row = await prisma.post.create({
     data: {
       id: input.id, authorId: userId, type: 'progress', body: input.body, payload: workout ? { workout } : undefined,
-      visibility, status: verdict.allow ? 'visible' : 'pending', commentsMode: input.commentsMode ?? 'all', authorRank: v.rank,
+      visibility, status: verdict.allow && images.allow ? 'visible' : 'pending', commentsMode: input.commentsMode ?? 'all', authorRank: v.rank,
+      ...(media.length
+        ? { media: { create: media.map((m) => ({ id: m.id, storageKey: m.storageKey, width: m.width, height: m.height, status: images.allow ? 'visible' : 'pending' })) } }
+        : {}),
     },
   });
   await audit(prisma, 'post', row.id, verdict);
-  return (await toDtos(prisma, userId, [row]))[0]!;
+  return (await toDtos(prisma, userId, [row], ctx.storage))[0]!;
+}
+
+/** A signed, one-time upload target for one photo. Only hunters who may post photos get one. */
+export async function signPostMedia(ctx: CommunityCtx, id: string): Promise<SignPostMediaResponse> {
+  const v = await viewer(ctx);
+  if (!v.can.postPublic) throw new CommunityError(403, 'photo posts unlock at Trusted (level 10, 14 days)');
+  if (!ctx.storage) throw new CommunityError(503, 'photo uploads are not configured');
+  const storageKey = `${mediaKeyPrefix(ctx.userId)}${id}.jpg`;
+  return { id, uploadUrl: await ctx.storage.signUpload(MEDIA_BUCKET, storageKey), storageKey, maxBytes: MAX_PHOTO_BYTES };
 }
 
 export async function deletePost(ctx: CommunityCtx, postId: string) {
@@ -321,7 +389,7 @@ export async function deletePost(ctx: CommunityCtx, postId: string) {
 /** One post for the post screen (deep links, notifications). */
 export async function getPost(ctx: CommunityCtx, postId: string): Promise<PostDto> {
   const { post } = await postVisibleTo(ctx, postId);
-  return (await toDtos(ctx.prisma, ctx.userId, [post]))[0]!;
+  return (await toDtos(ctx.prisma, ctx.userId, [post], ctx.storage))[0]!;
 }
 
 /**
@@ -586,7 +654,7 @@ export async function publicProfile(ctx: CommunityCtx, handle: string): Promise<
   ]);
   return {
     hunter: card.get(pub.userId)!, bio: pub.bio, followers, following, iFollow, followsMe: !!followsMe,
-    posts: await toDtos(prisma, userId, rows),
+    posts: await toDtos(prisma, userId, rows, ctx.storage),
   };
 }
 
@@ -626,6 +694,8 @@ export async function moderationDecision(ctx: CommunityCtx, targetType: 'post' |
     if (targetType === 'post') {
       const { count } = await tx.post.updateMany({ where: { id: targetId, status: { not: 'removed' } }, data: { status: next } });
       if (!count) throw new CommunityError(404, 'post not found');
+      // the moderator reviewed the whole post: its pending photos follow the decision
+      await tx.postMedia.updateMany({ where: { postId: targetId, status: 'pending' }, data: { status: action === 'approve' ? 'visible' : 'rejected' } });
     } else {
       const c = await tx.comment.findUnique({ where: { id: targetId } });
       if (!c || c.status === 'removed') throw new CommunityError(404, 'comment not found');

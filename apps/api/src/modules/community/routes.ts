@@ -1,5 +1,5 @@
 import { zValidator } from '@hono/zod-validator';
-import { BoardId, CreateCommentInput, CreatePostInput, Division, FeedTab, ModerationDecisionInput, ReactInput, ReportInput, UpdateCommunityProfileInput } from '@lb/contracts';
+import { BoardId, CreateCommentInput, CreatePostInput, Division, FeedTab, ModerationDecisionInput, ReactInput, ReportInput, SignPostMediaInput, UpdateCommunityProfileInput } from '@lb/contracts';
 import { Hono, type Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
@@ -19,7 +19,7 @@ const guard = async <T>(fn: () => Promise<T>): Promise<T> => {
 };
 const ctx = (c: Context<AppEnv>): s.CommunityCtx => {
   const d = c.get('deps');
-  return { prisma: d.prisma, userId: c.get('userId'), isGuest: c.get('isGuest'), moderatorIds: d.moderatorIds, classifier: d.classifier, extraWords: d.communityWordlist };
+  return { prisma: d.prisma, userId: c.get('userId'), isGuest: c.get('isGuest'), moderatorIds: d.moderatorIds, classifier: d.classifier, extraWords: d.communityWordlist, storage: d.storage };
 };
 const uuid = z.object({ id: z.uuid() });
 
@@ -33,6 +33,7 @@ export const communityRoutes = new Hono<AppEnv>()
   .use(requireAuth)
   .on(['POST', 'PUT', 'DELETE'], '*', writes)
   .use('/reports', userRateLimit('community-reports', { limit: 20, windowMs: 3_600_000 }))
+  .use('/media/*', userRateLimit('community-media', { limit: 20, windowMs: 60_000 }))
   .use('/boards/*', userRateLimit('community-boards', { limit: 30, windowMs: 60_000 }))
   .get('/me', async (c) => c.json(await guard(() => s.getCommunityMe(ctx(c)))))
   .put('/me', zValidator('json', UpdateCommunityProfileInput), async (c) => c.json(await guard(() => s.updateCommunityProfile(ctx(c), c.req.valid('json')))))
@@ -41,6 +42,7 @@ export const communityRoutes = new Hono<AppEnv>()
     return c.json(await guard(() => s.feed(ctx(c), q.tab, q.cursor)));
   })
   .post('/posts', zValidator('json', CreatePostInput), async (c) => c.json(await guard(() => s.createPost(ctx(c), c.req.valid('json')))))
+  .post('/media/sign', zValidator('json', SignPostMediaInput), async (c) => c.json(await guard(() => s.signPostMedia(ctx(c), c.req.valid('json').id))))
   .get('/posts/:id', zValidator('param', uuid), async (c) => c.json(await guard(() => s.getPost(ctx(c), c.req.valid('param').id))))
   .delete('/posts/:id', zValidator('param', uuid), async (c) => c.json(await guard(() => s.deletePost(ctx(c), c.req.valid('param').id))))
   .put('/posts/:id/reaction', zValidator('param', uuid), zValidator('json', ReactInput), async (c) =>

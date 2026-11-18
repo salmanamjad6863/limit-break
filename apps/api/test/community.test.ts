@@ -1,4 +1,4 @@
-import { CreatePostInput, Handle } from '@lb/contracts';
+import { CreatePostInput, Handle, SignPostMediaInput } from '@lb/contracts';
 import { describe, expect, it } from 'vitest';
 import { localCheck, moderate } from '../src/modules/community/moderation';
 import { isMinor, permissions, trustLevel, type TrustInput } from '../src/modules/community/trust';
@@ -105,5 +105,106 @@ describe('global feed paging (max 2 per author per page)', async () => {
       if (new Set(out.slice(i).map((p) => p.authorId)).size > 2) expect(Math.max(...counts.values())).toBeLessThanOrEqual(2);
     }
     expect(capPerAuthor(ranked, 5, 2)).toEqual(out);
+  });
+});
+
+describe('photo posts', async () => {
+  const { createPost, signPostMedia, moderateImages, mediaKeyPrefix } = await import('../src/modules/community/service');
+  const ME = '00000000-0000-4000-8000-000000000001';
+  const POST = '00000000-0000-4000-8000-0000000000a1';
+  const M1 = '00000000-0000-4000-8000-0000000000b1';
+  const M2 = '00000000-0000-4000-8000-0000000000b2';
+
+  /** `trust2` = 20 days old, level 12, 10 workouts (T2); otherwise a 4-day-old T1 hunter. */
+  function fake(trust2: boolean) {
+    const created: any[] = [];
+    const media: any[] = [];
+    const prisma: any = {
+      profile: {
+        findUnique: async () => ({ createdAt: daysAgo(trust2 ? 20 : 4), birthDate: new Date('1995-05-05'), state: { level: trust2 ? 12 : 3, rank: 'D' } }),
+      },
+      publicProfile: {
+        findUnique: async () => ({ userId: ME, handle: 'kaze', isPublic: true, bio: null }),
+        findMany: async () => [{ userId: ME, handle: 'kaze', profile: { heroId: null, heroClass: null, state: { level: 12, rank: 'D', str: 10, agi: 10, end: 10, vit: 10, spi: 10 } } }],
+      },
+      workoutSession: { count: async () => 10 },
+      $queryRaw: async () => [{ n: 0 }],
+      post: {
+        findUnique: async () => null,
+        count: async () => 0,
+        create: async ({ data }: any) => {
+          const { media: m, ...row } = data;
+          const r = { respectCount: 0, commentCount: 0, createdAt: NOW, ...row };
+          created.push({ ...r, media: m?.create ?? [] });
+          for (const x of m?.create ?? []) media.push({ ...x, postId: row.id, createdAt: NOW });
+          return r;
+        },
+      },
+      postMedia: {
+        count: async ({ where }: any) => media.filter((m) => where.id.in.includes(m.id)).length,
+        findMany: async ({ where }: any) => media.filter((m) => where.postId.in.includes(m.postId)),
+      },
+      reaction: { findMany: async () => [] },
+      moderationAction: { create: async () => ({}) },
+    };
+    const storage = {
+      signUpload: async (bucket: string, path: string) => `https://up.test/${bucket}/${path}`,
+      signRead: async (bucket: string, path: string) => `https://read.test/${bucket}/${path}`,
+    };
+    return { created, prisma, storage, ctx: { prisma, userId: ME, isGuest: false, storage } as any };
+  }
+  const photo = (id: string, key = `${mediaKeyPrefix(ME)}${id}.jpg`) => ({ id, storageKey: key, width: 1080, height: 1350 });
+
+  it('contracts: up to 4 photos, default none', () => {
+    expect(CreatePostInput.parse({ id: POST, body: 'hi' }).media).toEqual([]);
+    expect(CreatePostInput.safeParse({ id: POST, body: 'hi', media: Array.from({ length: 5 }, () => photo(M1)) }).success).toBe(false);
+    expect(SignPostMediaInput.safeParse({ id: M1 }).success).toBe(true);
+  });
+
+  it('image moderation stub: T2+ with clean text passes, anything lower is held', () => {
+    expect(moderateImages(2, true).allow).toBe(true);
+    expect(moderateImages(3, true).allow).toBe(true);
+    expect(moderateImages(1, true).allow).toBe(false);
+    expect(moderateImages(2, false).allow).toBe(false);
+  });
+
+  it('T2 hunters post photos: rows are created visible and the DTO carries signed read URLs', async () => {
+    const f = fake(true);
+    const dto = await createPost(f.ctx, CreatePostInput.parse({ id: POST, body: 'back day', visibility: 'public', media: [photo(M1), photo(M2)] }) as any);
+    expect(f.created[0].media.map((m: any) => m.status)).toEqual(['visible', 'visible']);
+    expect(f.created[0].status).toBe('visible');
+    expect(dto.media.map((m) => m.id)).toEqual([M1, M2]);
+    expect(dto.media[0]).toMatchObject({ status: 'visible', width: 1080, url: `https://read.test/community-media/community/${ME}/${M1}.jpg` });
+  });
+
+  it('without storage the photo is still listed, with a null url', async () => {
+    const f = fake(true);
+    const dto = await createPost({ ...f.ctx, storage: undefined }, CreatePostInput.parse({ id: POST, body: 'legs', media: [photo(M1)] }) as any);
+    expect(dto.media[0]!.url).toBeNull();
+  });
+
+  it('photos need public-post trust (T2), whatever the post audience', async () => {
+    const f = fake(false);
+    await expect(createPost(f.ctx, CreatePostInput.parse({ id: POST, body: 'legs', media: [photo(M1)] }) as any)).rejects.toMatchObject({ status: 403 });
+    expect(f.created).toHaveLength(0);
+    // text-only posts are unaffected
+    await expect(createPost(f.ctx, CreatePostInput.parse({ id: POST, body: 'legs' }) as any)).resolves.toMatchObject({ media: [] });
+  });
+
+  it('storage keys must live under community/{userId}/', async () => {
+    const f = fake(true);
+    for (const key of [`community/${'00000000-0000-4000-8000-0000000000ff'}/${M1}.jpg`, `trial-videos/${ME}/x.jpg`, `${mediaKeyPrefix(ME)}../x.jpg`, `${mediaKeyPrefix(ME)}a/b.jpg`]) {
+      await expect(createPost(f.ctx, CreatePostInput.parse({ id: POST, body: 'hi', media: [photo(M1, key)] }) as any), key).rejects.toMatchObject({ status: 400 });
+    }
+    expect(f.created).toHaveLength(0);
+  });
+
+  it('signs an upload at community/{userId}/{id}.jpg in the community-media bucket; T1 and no-storage are refused', async () => {
+    const f = fake(true);
+    await expect(signPostMedia(f.ctx, M1)).resolves.toEqual({
+      id: M1, storageKey: `community/${ME}/${M1}.jpg`, uploadUrl: `https://up.test/community-media/community/${ME}/${M1}.jpg`, maxBytes: 8 * 1024 * 1024,
+    });
+    await expect(signPostMedia({ ...f.ctx, storage: undefined }, M1)).rejects.toMatchObject({ status: 503 });
+    await expect(signPostMedia(fake(false).ctx, M1)).rejects.toMatchObject({ status: 403 });
   });
 });

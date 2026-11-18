@@ -7,6 +7,7 @@ import { computeWorkoutRewards, gameDate, levelFromXp, rpeZone, type FinishedSet
 import { apForLevelUp } from '../progression/ap';
 import { recomputeStats } from '../progression/service';
 import { isUniqueViolation } from '../../lib/db';
+import { onWeeklyXp } from '../social/hooks';
 
 export class WorkoutError extends Error {
   constructor(public status: 400 | 403 | 404 | 409, message: string) {
@@ -53,7 +54,13 @@ export function checkFinishTimes(input: { startedAt: string; finishedAt: string 
  */
 export async function finishWorkout(prisma: PrismaClient, userId: string, input: FinishWorkoutInput): Promise<FinishWorkoutResponse> {
   try {
-    return await finishWorkoutTx(prisma, userId, input);
+    const res = await finishWorkoutTx(prisma, userId, input);
+    // a fresh finish that earned XP feeds this week's duels, raid and league (best-effort, never fails the workout)
+    if (!res.duplicate && res.granted > 0) {
+      const row = await prisma.workoutSession.findUnique({ where: { id: input.id }, select: { localDate: true } });
+      if (row) await onWeeklyXp(prisma, userId, row.localDate, res.granted);
+    }
+    return res;
   } catch (e) {
     if (!isUniqueViolation(e)) throw e;
     // a concurrent retry of the same finish won the race: answer with its result

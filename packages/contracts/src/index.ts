@@ -7,3 +7,4 @@ export * from './features';
 export * from './progression';
 export * from './quests';
 export * from './community';
+export * from './social';

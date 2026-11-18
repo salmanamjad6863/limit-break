@@ -8,6 +8,7 @@ import { sideQuests } from '@lb/content';
 import { mergeTests } from '../progression/service';
 import { grantXp } from '../progression/xp';
 import { isUniqueViolation } from '../../lib/db';
+import { onDailyQuestComplete } from '../social/hooks';
 
 type Tx = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'>;
 
@@ -122,7 +123,13 @@ export const QUEST_GRACE_UNTIL_HOUR = 12;
 /** Records progress; on completion grants XP once (daily 50 + streak bonus, penalty 20, side 15 × max 3/day). */
 export async function updateQuest(prisma: PrismaClient, userId: string, questId: string, progress: Record<string, number>, now = new Date()): Promise<QuestProgressResponse> {
   try {
-    return await updateQuestTx(prisma, userId, questId, progress, now);
+    const res = await updateQuestTx(prisma, userId, questId, progress, now);
+    // first completion of the Daily Quest only (the reward list is empty on a repeat): advance Friend Streaks
+    if (res.quest.kind === 'DAILY' && res.quest.templateId === 'daily' && res.rewards.some((r) => (r as { type?: string }).type === 'questComplete')) {
+      const row = await prisma.questInstance.findFirst({ where: { id: questId, userId }, select: { localDate: true } });
+      if (row) await onDailyQuestComplete(prisma, userId, row.localDate);
+    }
+    return res;
   } catch (e) {
     if (!isUniqueViolation(e)) throw e;
     // a concurrent request completed (and paid) this quest first: answer like the duplicate it is

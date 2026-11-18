@@ -53,6 +53,17 @@ export const WorkoutCard = z.object({
 });
 export type WorkoutCard = z.infer<typeof WorkoutCard>;
 
+/** A photo on a progress post. `url` is a short-lived signed read URL (null when it can't be signed). */
+export const PostMediaDto = z.object({
+  id: z.string(),
+  url: z.string().nullable(),
+  width: z.number().int(),
+  height: z.number().int(),
+  /** the author sees their own photos while they're pending */
+  status: z.enum(['pending', 'visible', 'rejected']),
+});
+export type PostMediaDto = z.infer<typeof PostMediaDto>;
+
 export const PostDto = z.object({
   id: z.string(),
   type: z.enum(['milestone', 'progress']),
@@ -60,6 +71,7 @@ export const PostDto = z.object({
   body: z.string().nullable(),
   milestone: MilestonePayload.nullable(),
   workout: WorkoutCard.nullable(),
+  media: z.array(PostMediaDto).default([]),
   visibility: Visibility,
   /** the author's own posts can be "pending" while moderation reviews them */
   status: z.enum(['pending', 'visible', 'hidden']),
@@ -83,8 +95,30 @@ export const CreatePostInput = z.object({
   commentsMode: CommentsMode.default('all'),
   /** attach one of your own workouts as a card */
   workoutId: z.uuid().nullable().default(null),
+  /** up to 4 photos uploaded via POST /community/media/sign; needs public-post trust (T2) */
+  media: z
+    .array(z.object({
+      id: z.uuid(),
+      storageKey: z.string().min(1).max(200),
+      width: z.number().int().positive(),
+      height: z.number().int().positive(),
+    }))
+    .max(4)
+    .default([]),
 });
 export type CreatePostInput = z.input<typeof CreatePostInput>;
+
+/** Ask for a signed upload target for one photo (private `community-media` bucket; never proxied by the API). */
+export const SignPostMediaInput = z.object({ id: z.uuid() });
+export type SignPostMediaInput = z.input<typeof SignPostMediaInput>;
+export const SignPostMediaResponse = z.object({
+  id: z.string(),
+  uploadUrl: z.string(),
+  /** pass back in CreatePostInput.media[].storageKey */
+  storageKey: z.string(),
+  maxBytes: z.number().int(),
+});
+export type SignPostMediaResponse = z.infer<typeof SignPostMediaResponse>;
 
 export const CommentDto = z.object({
   id: z.string(),

@@ -120,6 +120,22 @@ model Profile {
   blocking      Block[]           @relation("blocker")
   blockedBy     Block[]           @relation("blocked")
   reports       Report[]
+  followRequestsOut FollowRequest[] @relation("followReqFrom")
+  followRequestsIn  FollowRequest[] @relation("followReqTo")
+  guildMemberships  GuildMember[]
+  guildMessages     GuildMessage[]
+  guildsLed         Guild[]         @relation("guildLeader")
+  duelsChallenged   Duel[]          @relation("duelChallenger")
+  duelsOpposed      Duel[]          @relation("duelOpponent")
+  raidParts         RaidContribution[]
+  leagueParts       LeagueMember[]
+  conversationsA    Conversation[]  @relation("convoA")
+  conversationsB    Conversation[]  @relation("convoB")
+  messages          Message[]
+  friendStreaksA    FriendStreak[]  @relation("streakA")
+  friendStreaksB    FriendStreak[]  @relation("streakB")
+  shieldsGiven      FriendShieldGift[] @relation("shieldGiver")
+  shieldsReceived   FriendShieldGift[] @relation("shieldReceiver")
 }
 
 model HunterState {
@@ -479,10 +495,26 @@ model Post {
   createdAt    DateTime  @default(now())
   comments     Comment[]
   reactions    Reaction[]
+  media        PostMedia[]
   author       Profile   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([status, createdAt])
   @@index([authorId, createdAt])
+}
+
+/// photo attachments on progress posts (SYSTEMS.md §5.2); status pending until image moderation
+model PostMedia {
+  id         String   @id @db.Uuid
+  postId     String   @db.Uuid
+  storageKey String
+  width      Int
+  height     Int
+  /// pending | visible | rejected
+  status     String   @default("pending")
+  createdAt  DateTime @default(now())
+  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
 }
 
 model Comment {
@@ -557,4 +589,200 @@ model ModerationAction {
   createdAt  DateTime @default(now())
 
   @@index([targetType, targetId])
+}
+
+/* ---------------- Sprint 10: friends, guilds, raids, leagues, DMs (SYSTEMS.md §5.6) ---------------- */
+
+/// private-profile follow request (accepted → Follow row)
+model FollowRequest {
+  fromId    String   @db.Uuid
+  toId      String   @db.Uuid
+  createdAt DateTime @default(now())
+  from      Profile  @relation("followReqFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to        Profile  @relation("followReqTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@id([fromId, toId])
+  @@index([toId, createdAt])
+}
+
+/// mutual-follow shared Daily Quest streak
+model FriendStreak {
+  userA        String   @db.Uuid
+  userB        String   @db.Uuid
+  current      Int      @default(0)
+  longest      Int      @default(0)
+  lastBothDate String?
+  updatedAt    DateTime @updatedAt
+  a            Profile  @relation("streakA", fields: [userA], references: [id], onDelete: Cascade)
+  b            Profile  @relation("streakB", fields: [userB], references: [id], onDelete: Cascade)
+
+  @@id([userA, userB])
+}
+
+/// one Streak Shield gift per friend per calendar month
+model FriendShieldGift {
+  giverId    String   @db.Uuid
+  receiverId String   @db.Uuid
+  /// YYYY-MM
+  month      String
+  createdAt  DateTime @default(now())
+  giver      Profile  @relation("shieldGiver", fields: [giverId], references: [id], onDelete: Cascade)
+  receiver   Profile  @relation("shieldReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@id([giverId, receiverId, month])
+}
+
+model Duel {
+  id                 String    @id @db.Uuid
+  challengerId       String    @db.Uuid
+  opponentId         String    @db.Uuid
+  /// pending | active | completed | declined | cancelled
+  status             String
+  startsAt           DateTime
+  endsAt             DateTime
+  challengerXp       Int       @default(0)
+  opponentXp         Int       @default(0)
+  challengerBaseline Int
+  opponentBaseline   Int
+  completedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  challenger         Profile   @relation("duelChallenger", fields: [challengerId], references: [id], onDelete: Cascade)
+  opponent           Profile   @relation("duelOpponent", fields: [opponentId], references: [id], onDelete: Cascade)
+
+  @@index([challengerId, status])
+  @@index([opponentId, status])
+}
+
+model Guild {
+  id        String        @id @db.Uuid
+  name      String
+  /// short join code (uppercase)
+  code      String        @unique
+  isPublic  Boolean       @default(true)
+  language  String?
+  timezone  String        @default("UTC")
+  leaderId  String        @db.Uuid
+  createdAt DateTime      @default(now())
+  leader    Profile       @relation("guildLeader", fields: [leaderId], references: [id], onDelete: Cascade)
+  members   GuildMember[]
+  messages  GuildMessage[]
+  raids     Raid[]
+
+  @@index([isPublic, createdAt])
+}
+
+model GuildMember {
+  guildId  String   @db.Uuid
+  userId   String   @db.Uuid
+  /// leader | officer | member
+  role     String
+  joinedAt DateTime @default(now())
+  guild    Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  user     Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([guildId, userId])
+  @@unique([userId])
+  @@index([guildId])
+}
+
+model GuildMessage {
+  id        String   @id @db.Uuid
+  guildId   String   @db.Uuid
+  authorId  String   @db.Uuid
+  body      String
+  /// pending | visible | hidden
+  status    String
+  createdAt DateTime @default(now())
+  guild     Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  author    Profile  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([guildId, createdAt])
+}
+
+model Raid {
+  id          String             @id @db.Uuid
+  guildId     String             @db.Uuid
+  /// Monday game-date of the raid week (YYYY-MM-DD)
+  weekStart   String
+  bossHp      Int
+  damageTotal Int                @default(0)
+  clearedAt   DateTime?
+  createdAt   DateTime           @default(now())
+  guild       Guild              @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  parts       RaidContribution[]
+
+  @@unique([guildId, weekStart])
+  @@index([weekStart])
+}
+
+model RaidContribution {
+  raidId     String  @db.Uuid
+  userId     String  @db.Uuid
+  xp         Int     @default(0)
+  expectedXp Int
+  raid       Raid    @relation(fields: [raidId], references: [id], onDelete: Cascade)
+  user       Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([raidId, userId])
+}
+
+model LeagueGroup {
+  id        String         @id @db.Uuid
+  weekStart String
+  /// Bronze … Mythic
+  tier      String
+  /// bucket index within the tier for that week
+  index     Int
+  /// set once the week is over and every member's final `place` is written
+  settledAt DateTime?
+  members   LeagueMember[]
+
+  @@unique([weekStart, tier, index])
+  @@index([weekStart, tier])
+}
+
+model LeagueMember {
+  groupId String      @db.Uuid
+  userId  String      @db.Uuid
+  xp      Int         @default(0)
+  place   Int?
+  group   LeagueGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user    Profile     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, userId])
+  @@unique([userId, groupId])
+  @@index([userId])
+}
+
+/// DM thread between two mutual follows (both 18+)
+model Conversation {
+  id        String    @id @db.Uuid
+  userA     String    @db.Uuid
+  userB     String    @db.Uuid
+  /// open | request
+  status    String    @default("open")
+  /// when userA / userB last opened the thread (unread = peer messages after this)
+  readAtA   DateTime?
+  readAtB   DateTime?
+  createdAt DateTime  @default(now())
+  a         Profile   @relation("convoA", fields: [userA], references: [id], onDelete: Cascade)
+  b         Profile   @relation("convoB", fields: [userB], references: [id], onDelete: Cascade)
+  messages  Message[]
+
+  @@unique([userA, userB])
+  @@index([userB])
+}
+
+model Message {
+  id             String       @id @db.Uuid
+  conversationId String       @db.Uuid
+  senderId       String       @db.Uuid
+  body           String
+  /// pending | visible | hidden
+  status         String
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         Profile      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
 }
