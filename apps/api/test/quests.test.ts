@@ -1,7 +1,8 @@
 import { addDays, gameDate } from '@lb/engine';
 import { describe, expect, it } from 'vitest';
 import { createApp } from '../src/app';
-import { fakeDb, USER } from './fakeDb';
+import { fakeDb, USER, uuid } from './fakeDb';
+import { updateQuest } from '../src/modules/quests/service';
 
 const app = (prisma: any) => createApp({ prisma, paywallEnabled: false, verifyToken: async () => ({ userId: USER }) });
 const req = (prisma: any, path: string, body?: unknown) =>
@@ -74,5 +75,25 @@ describe('Quests API', () => {
     expect(b.prophecy).toBe(true);
     expect(b.won).toBe(false);
     expect((await req(prisma, '/quests/boss/claim', {})).status).toBe(409);
+  });
+
+  it("progress queued offline across the rollover still counts for yesterday's quest until midday, while unresolved", async () => {
+    const D = '2026-11-17';
+    const quest = () => ({ id: uuid(300), userId: USER, templateId: 'side-x', kind: 'SIDE', localDate: D, targets: {}, progress: {}, status: 'ACTIVE', completedAt: null });
+    const nextDay = (hhmm: string) => new Date(`2026-11-18T${hhmm}:00Z`);
+    // 08:00 the next day, yesterday not resolved yet → accepted, XP on the quest's own day
+    const a = fakeDb({ streak: { lastResolved: '2026-11-16' } });
+    a.db.quests.push(quest());
+    const r = await updateQuest(a.prisma, USER, uuid(300), { done: 1 }, nextDay('08:00'));
+    expect(r.quest.status).toBe('COMPLETED');
+    expect(a.db.ledger[0]).toMatchObject({ localDate: D, amount: 15 });
+    // after midday → expired
+    const b = fakeDb({ streak: { lastResolved: '2026-11-16' } });
+    b.db.quests.push(quest());
+    await expect(updateQuest(b.prisma, USER, uuid(300), { done: 1 }, nextDay('12:30'))).rejects.toMatchObject({ status: 409 });
+    // the day was already resolved into the streak → expired
+    const c = fakeDb({ streak: { lastResolved: D } });
+    c.db.quests.push(quest());
+    await expect(updateQuest(c.prisma, USER, uuid(300), { done: 1 }, nextDay('08:00'))).rejects.toMatchObject({ status: 409 });
   });
 });

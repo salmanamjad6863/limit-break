@@ -2,15 +2,16 @@
  * Data export and permanent account deletion (App Store 5.1.1(v), Google Play, GDPR).
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
 import { Platform, Share } from 'react-native';
 import { useLocalHunter } from '@/features/progression/localHunter';
 import { useProgress } from '@/features/progression/progressStore';
 import { useNutritionLocal } from '@/features/nutrition/local';
 import { useQuestLocal } from '@/features/quests/localStore';
 import { signOut, useSession } from '@/features/session';
+import { SIGNED_OUT_FLAG } from '@/features/session/auth';
 import { useTraining } from '@/features/training/store';
 import { api, unwrap } from '@/lib/api';
+import { storage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { clearLocalData } from './localData';
 
@@ -54,12 +55,16 @@ export function useAccountActions() {
     mutationFn: async () => {
       if (status === 'signedIn') {
         await unwrap(await api.me.$delete({ json: { confirm: 'DELETE' } }));
-        await supabase?.auth.signOut().catch(() => {});
+        // The account is gone: land on the sign-in screen (with "start as a new hunter"), never an automatic guest.
+        storage.set(SIGNED_OUT_FLAG, true);
+        // 'local' removes the session from this device first, whatever the server answers (the user no longer exists).
+        await supabase?.auth.signOut({ scope: 'local' }).catch(() => {});
       }
       clearLocalData();
       qc.clear();
+      // No router.replace here: '/' is guarded off when signed out; SIGNED_OUT_FLAG + the session
+      // listener send the user to the sign-in screen (with "start as a new hunter").
     },
-    onSuccess: () => router.replace('/'),
   });
 
   /** Unsynced offline changes (paused mutations) would be lost by signing out; the UI warns first. */

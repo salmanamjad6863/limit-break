@@ -3,8 +3,10 @@ import type {
   EditWorkoutInput, EditWorkoutResponse, FinishWorkoutInput, FinishWorkoutResponse, ManualWorkoutInput, WorkoutDetailDto, WorkoutSummaryDto,
 } from '@lb/contracts';
 import type { PrismaClient } from '@lb/db';
-import { apBetween, computeWorkoutRewards, gameDate, levelFromXp, rpeZone, type FinishedSet } from '@lb/engine';
+import { computeWorkoutRewards, gameDate, levelFromXp, rpeZone, type FinishedSet } from '@lb/engine';
+import { apForLevelUp } from '../progression/ap';
 import { recomputeStats } from '../progression/service';
+import { isUniqueViolation } from '../../lib/db';
 
 export class WorkoutError extends Error {
   constructor(public status: 400 | 403 | 404 | 409, message: string) {
@@ -26,14 +28,50 @@ export function isPlausibleSet(s: FinishWorkoutInput['sets'][number], bodyweight
   return true;
 }
 
+/** Clock skew we tolerate on client timestamps. */
+const FUTURE_SLACK_MS = 5 * 60_000;
+/** Longer sessions are almost always a forgotten Finish: the duration is clamped (minutes shown in history). */
+export const MAX_SESSION_MS = 6 * 3_600_000;
+
+/**
+ * finishedAt decides the game day (and so the daily XP cap): it must be real. Rejects the future, finishing
+ * before starting, and anything older than the edit window; clamps absurd durations.
+ */
+export function checkFinishTimes(input: { startedAt: string; finishedAt: string }, now = new Date()): { startedAt: Date; finishedAt: Date } {
+  const finishedAt = new Date(input.finishedAt);
+  let startedAt = new Date(input.startedAt);
+  if (finishedAt.getTime() > now.getTime() + FUTURE_SLACK_MS) throw new WorkoutError(400, 'finishedAt is in the future; check the phone clock');
+  if (finishedAt.getTime() < startedAt.getTime()) throw new WorkoutError(400, 'finishedAt is before startedAt');
+  if (finishedAt.getTime() < now.getTime() - EDIT_WINDOW_DAYS * DAY) throw new WorkoutError(400, `workouts older than ${EDIT_WINDOW_DAYS} days can't be logged`);
+  if (finishedAt.getTime() - startedAt.getTime() > MAX_SESSION_MS) startedAt = new Date(finishedAt.getTime() - MAX_SESSION_MS);
+  return { startedAt, finishedAt };
+}
+
 /**
  * Server-authoritative workout finish (ARCHITECTURE.md §7): idempotent by workout id.
  * Persists the session + sets, computes XP/PRs/level with the shared engine, writes the ledger.
  */
 export async function finishWorkout(prisma: PrismaClient, userId: string, input: FinishWorkoutInput): Promise<FinishWorkoutResponse> {
+  try {
+    return await finishWorkoutTx(prisma, userId, input);
+  } catch (e) {
+    if (!isUniqueViolation(e)) throw e;
+    // a concurrent retry of the same finish won the race: answer with its result
+    const existing = await prisma.event.findUnique({ where: { id: input.id } });
+    if (existing?.userId === userId) return { ...(existing.payload as unknown as FinishWorkoutResponse), duplicate: true };
+    throw new WorkoutError(409, 'workout id already used');
+  }
+}
+
+/** Remote Supabase (Tokyo) + recomputeStats regularly needs more than Prisma's 5 s default. */
+const TX = { maxWait: 10_000, timeout: 20_000 } as const;
+
+async function finishWorkoutTx(prisma: PrismaClient, userId: string, input: FinishWorkoutInput): Promise<FinishWorkoutResponse> {
   return prisma.$transaction(async (tx) => {
     const existing = await tx.event.findUnique({ where: { id: input.id } });
+    if (existing && existing.userId !== userId) throw new WorkoutError(409, 'workout id already used');
     if (existing) return { ...(existing.payload as unknown as FinishWorkoutResponse), duplicate: true };
+    const times = checkFinishTimes(input);
 
     const profile = await tx.profile.findUnique({ where: { id: userId }, select: { timezone: true } });
     const state = await tx.hunterState.findUnique({ where: { userId } });
@@ -42,7 +80,7 @@ export async function finishWorkout(prisma: PrismaClient, userId: string, input:
       where: { userId, weightKg: { not: null } }, orderBy: { measuredAt: 'desc' }, select: { weightKg: true },
     });
     const bodyweightKg = weight?.weightKg ?? 75;
-    const localDate = gameDate(new Date(input.finishedAt), profile.timezone);
+    const localDate = gameDate(times.finishedAt, profile.timezone);
 
     const records = await tx.personalRecord.findMany({ where: { userId }, select: { exerciseId: true, e1rmKg: true } });
     const bestE1rm: Record<string, number> = {};
@@ -69,15 +107,18 @@ export async function finishWorkout(prisma: PrismaClient, userId: string, input:
       currentXp: state.xp,
     });
 
+    const ap = apForLevelUp(state, r.levelTo);
+    const rewards = r.rewards.map((x) => (x.type === 'levelUp' ? { ...x, ap: ap.ap } : x));
     const response: FinishWorkoutResponse = {
-      workoutId: input.id, granted: r.granted, totalXp: r.newXp, level: r.levelTo, prs: r.prs, rewards: r.rewards, duplicate: false,
+      workoutId: input.id, granted: r.granted, totalXp: r.newXp, level: r.levelTo, prs: r.prs, rewards, duplicate: false,
     };
 
     await tx.workoutSession.create({
       data: {
         id: input.id, userId, plannedWorkoutId: input.plannedWorkoutId, localDate,
-        startedAt: new Date(input.startedAt), finishedAt: new Date(input.finishedAt), plannedHardSets: input.plannedHardSets,
+        startedAt: times.startedAt, finishedAt: times.finishedAt, plannedHardSets: input.plannedHardSets,
         cardioMinutes: input.cardio.reduce((m, c) => m + c.minutes, 0),
+        cardio: input.cardio.length ? (input.cardio.map((c) => ({ minutes: c.minutes, rpe: c.rpe })) as never) : undefined,
         kind: input.kind, source: 'app', name: input.name, notes: input.notes, programId: input.programId, dayId: input.dayId,
         sessionRpe: input.sessionRpe, xpGranted: r.granted,
       },
@@ -93,7 +134,7 @@ export async function finishWorkout(prisma: PrismaClient, userId: string, input:
     }
     await tx.event.create({
       data: {
-        id: input.id, userId, type: 'workout.finished', localDate, clientTs: new Date(input.finishedAt),
+        id: input.id, userId, type: 'workout.finished', localDate, clientTs: times.finishedAt,
         payload: response as never, flagged: plausible.length !== input.sets.length,
       },
     });
@@ -103,17 +144,17 @@ export async function finishWorkout(prisma: PrismaClient, userId: string, input:
     if (improved.length) {
       await tx.personalRecord.createMany({
         data: improved.map(([exerciseId, e1rmKg]) => ({
-          userId, exerciseId, e1rmKg, setId: input.sets.find((s) => s.exerciseId === exerciseId)!.id, achievedAt: new Date(input.finishedAt),
+          userId, exerciseId, e1rmKg, setId: input.sets.find((s) => s.exerciseId === exerciseId)!.id, achievedAt: times.finishedAt,
         })),
       });
     }
     await tx.hunterState.update({
       where: { userId },
-      data: { xp: r.newXp, level: r.levelTo, apUnspent: { increment: r.apGained } },
+      data: { xp: r.newXp, level: r.levelTo, ...ap.data },
     });
     await recomputeStats(tx, userId);
     return response;
-  });
+  }, TX);
 }
 
 type Tx = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0];
@@ -194,7 +235,8 @@ async function assertEditable(tx: Tx, userId: string, s: SessionRow) {
 
 /**
  * Applies an XP change for a workout as a diff (never re-grants): ledger row ±delta,
- * HunterState xp/level. AP already granted is kept if the level drops (no clawback of spent points).
+ * HunterState xp/level. AP already granted is kept if the level drops (no clawback of spent points),
+ * and climbing back to a level already paid for grants nothing.
  */
 async function applyDelta(tx: Tx, i: { userId: string; eventId: string; localDate: string; delta: number; reason: string; payload: unknown }) {
   const state = await tx.hunterState.findUnique({ where: { userId: i.userId } });
@@ -202,10 +244,19 @@ async function applyDelta(tx: Tx, i: { userId: string; eventId: string; localDat
   await tx.event.create({ data: { id: i.eventId, userId: i.userId, type: i.reason, localDate: i.localDate, clientTs: new Date(), payload: i.payload as never } });
   if (i.delta !== 0) await tx.xpLedger.create({ data: { eventId: i.eventId, userId: i.userId, localDate: i.localDate, amount: i.delta, reason: i.reason } });
   const xp = Math.max(0, state.xp + i.delta);
-  const from = levelFromXp(state.xp);
   const to = levelFromXp(xp);
-  await tx.hunterState.update({ where: { userId: i.userId }, data: { xp, level: to, ...(to > from ? { apUnspent: { increment: apBetween(from, to) } } : {}) } });
+  // AP only for levels never reached before: no farming by editing down and back up (or delete + re-finish)
+  await tx.hunterState.update({ where: { userId: i.userId }, data: { xp, level: to, ...apForLevelUp(state, to).data } });
   return { totalXp: xp, level: to };
+}
+
+/** The cardio entries as finished (same XP as finish); older rows without them fall back to total minutes × session RPE. */
+function cardioOf(s: SessionRow, sessionRpe: number | null) {
+  const stored = (s as { cardio?: unknown }).cardio;
+  if (Array.isArray(stored)) {
+    return (stored as { minutes: number; rpe: number }[]).filter((c) => typeof c?.minutes === 'number' && typeof c?.rpe === 'number').map((c) => ({ minutes: c.minutes, zone: rpeZone(c.rpe) }));
+  }
+  return s.cardioMinutes > 0 ? [{ minutes: s.cardioMinutes, zone: rpeZone(sessionRpe ?? s.sessionRpe ?? 7) }] : [];
 }
 
 /** Best e1RM per exercise, ignoring the PRs this workout itself set (so edits can lower them). */
@@ -233,7 +284,7 @@ export async function editWorkout(prisma: PrismaClient, userId: string, id: stri
     const plausible = input.sets.filter((x) => isPlausibleSet(x, bw));
     const r = computeWorkoutRewards({
       sets: toFinished(plausible), plannedHardSets: s.plannedHardSets,
-      cardio: s.cardioMinutes > 0 ? [{ minutes: s.cardioMinutes, zone: rpeZone(input.sessionRpe ?? s.sessionRpe ?? 7) }] : [],
+      cardio: cardioOf(s, input.sessionRpe),
       bestE1rm: best, bodyweightKg: bw, xpEarnedToday: (day._sum.amount ?? 0) - s.xpGranted, currentXp: (state?.xp ?? 0) - s.xpGranted,
     });
     const delta = r.granted - s.xpGranted;
@@ -261,7 +312,7 @@ export async function editWorkout(prisma: PrismaClient, userId: string, id: stri
     await tx.event.update({ where: { id: input.editId }, data: { payload: response as never } });
     await recomputeStats(tx, userId);
     return response;
-  });
+  }, TX);
 }
 
 export async function deleteWorkout(prisma: PrismaClient, userId: string, id: string) {
@@ -273,7 +324,7 @@ export async function deleteWorkout(prisma: PrismaClient, userId: string, id: st
     const totals = await applyDelta(tx, { userId, eventId: crypto.randomUUID(), localDate: s.localDate, delta: -s.xpGranted, reason: 'workout:delete', payload: { workoutId: id } });
     await recomputeStats(tx, userId);
     return { removedXp: s.xpGranted, ...totals };
-  });
+  }, TX);
 }
 
 /** Training done without the app: real-minutes XP (§4.1), unverified (excluded from leaderboards: ledger reason "manual"). */
@@ -302,7 +353,7 @@ export async function logManual(prisma: PrismaClient, userId: string, input: Man
     const response = { workoutId: input.id, granted: r.granted, ...totals };
     await tx.event.update({ where: { id: input.id }, data: { payload: response as never } });
     return response;
-  });
+  }, TX);
 }
 
 export async function getNotes(prisma: PrismaClient, userId: string) {

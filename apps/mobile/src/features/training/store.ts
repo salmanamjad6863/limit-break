@@ -25,6 +25,8 @@ export interface CompletedWorkout {
   sessionRpe?: number | null;
   plannedHardSets?: number;
   cardioMinutes?: number;
+  /** cardio entries as finished, so edits recompute XP exactly like finish */
+  cardio?: { minutes: number; rpe: number }[];
   programId: string | null;
   dayId: string | null;
   minutes: number;

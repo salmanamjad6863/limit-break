@@ -118,3 +118,40 @@ describe('weeklyTargets', () => {
     expect(m.carbsG).toBe((2000 - 720 - 540) / 4);
   });
 });
+
+describe('low-intake safety rule (§2.8) and "was this a full day?" (§2.3)', () => {
+  const today = '2026-06-15';
+  const day = (back: number, kcal: number, o: Partial<IntakeDay> = {}): IntakeDay => ({ date: iso(today, -back), kcal, meals: 3, markedComplete: false, ...o });
+
+  it('flags 3 very low logged days in the last 7, ignoring partly logged days', () => {
+    const low = [day(1, 700), day(2, 800), day(3, 900), day(4, 2000)];
+    expect(nutritionPlan({ profile: fixture, weighIns: [], intake: low, today }).lowIntake).toBe(true);
+    const partial = [day(1, 300, { meals: 1 }), day(2, 300, { meals: 1 }), day(3, 300, { meals: 1 })];
+    expect(nutritionPlan({ profile: fixture, weighIns: [], intake: partial, today }).lowIntake).toBe(false);
+    const old = [day(9, 700), day(10, 700), day(11, 700)];
+    expect(nutritionPlan({ profile: fixture, weighIns: [], intake: old, today }).lowIntake).toBe(false);
+  });
+
+  it('pauses deficit increases while the rule fires', () => {
+    const intake = [day(1, 700), day(2, 700), day(3, 700)];
+    const latest = { effectiveFrom: iso(today, -7), kcal: 2300, proteinG: 160, fatG: 70, carbsG: 250, fiberG: 30, goal: 'cut' as const, ratePerWeek: -0.005 };
+    const r = weeklyTargets({ profile: fixture, weighIns: [], intake, today, latest });
+    expect(r.plan.lowIntake).toBe(true);
+    expect(r.macros.kcal).toBe(2300);
+    expect(r.plan.target.appliedRails).toContain('lowIntakePause');
+  });
+
+  it('weekly check-in only counts a complete day under 800 kcal once confirmed', () => {
+    const base = [day(1, 2000), day(2, 2000), day(3, 2000)];
+    const weighIns: WeighIn[] = Array.from({ length: 14 }, (_, d) => ({ date: iso(today, d - 13), kg: 80 - 0.05 * d }));
+    const args = { weighIns, kcalTarget: 2000, goal: 'cut' as const, ratePerWeek: -0.005, trendKg: 80, today };
+    expect(weeklyCheckIn({ ...args, intake: [...base, day(4, 600, { markedComplete: true })] }).validDays).toBe(3);
+    expect(weeklyCheckIn({ ...args, intake: [...base, day(4, 600, { markedComplete: true, lowDayConfirmed: true })] }).validDays).toBe(4);
+  });
+
+  it('adds water for training hours', () => {
+    const a = nutritionPlan({ profile: fixture, weighIns: [], intake: [], today });
+    const b = nutritionPlan({ profile: fixture, weighIns: [], intake: [], today, trainingHoursToday: 1 });
+    expect(b.macros.waterMl - a.macros.waterMl).toBe(500);
+  });
+});

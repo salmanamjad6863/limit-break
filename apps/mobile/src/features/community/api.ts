@@ -17,6 +17,7 @@ export const communityKeys = {
   me: ['community', 'me'] as const,
   feed: (tab: FeedTab) => ['community', 'feed', tab] as const,
   comments: (postId: string) => ['community', 'comments', postId] as const,
+  post: (postId: string) => ['community', 'post', postId] as const,
   hunter: (handle: string) => ['community', 'hunter', handle] as const,
   board: (board: BoardId, division: Division) => ['community', 'board', board, division] as const,
 };
@@ -64,6 +65,7 @@ export function useFeed(tab: FeedTab) {
 
 /** Patch one post in every cached feed and profile (optimistic reactions, comment counts). */
 function patchPost(qc: ReturnType<typeof useQueryClient>, postId: string, fn: (p: PostDto) => PostDto) {
+  qc.setQueryData<PostDto>(communityKeys.post(postId), (p) => (p ? fn(p) : p));
   qc.setQueriesData<InfiniteData<FeedResponse>>({ queryKey: ['community', 'feed'] }, (d) =>
     d ? { ...d, pages: d.pages.map((pg) => ({ ...pg, posts: pg.posts.map((p) => (p.id === postId ? fn(p) : p)) })) } : d,
   );
@@ -89,18 +91,54 @@ export function useDeletePost() {
   });
 }
 
+/** Find the freshest cached copy of a post (feeds, profiles or the post screen). */
+export function cachedPost(qc: ReturnType<typeof useQueryClient>, postId: string): PostDto | undefined {
+  const single = qc.getQueryData<PostDto>(communityKeys.post(postId));
+  if (single) return single;
+  for (const [, d] of qc.getQueriesData<InfiniteData<FeedResponse>>({ queryKey: ['community', 'feed'] })) {
+    const p = d?.pages.flatMap((pg) => pg.posts).find((x) => x.id === postId);
+    if (p) return p;
+  }
+  for (const [, d] of qc.getQueriesData<PublicProfileResponse>({ queryKey: ['community', 'hunter'] })) {
+    const p = d?.posts.find((x) => x.id === postId);
+    if (p) return p;
+  }
+  return undefined;
+}
+
+/** One post: instant from any cached feed, then fresh from the server (works from deep links too). */
+export function usePost(postId: string) {
+  const on = useSignedIn();
+  const qc = useQueryClient();
+  return useQuery({
+    queryKey: communityKeys.post(postId), enabled: on && !!postId,
+    initialData: () => cachedPost(qc, postId),
+    initialDataUpdatedAt: 0, // always refetch once: counts may have moved
+    queryFn: async () => unwrapCommunity<PostDto>(await api.community.posts[':id'].$get({ param: { id: postId } })),
+  });
+}
+
 export function useReact() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ post, sticker }: { post: PostDto; sticker: Sticker | null }) =>
+    mutationFn: async ({ postId, sticker }: { postId: string; sticker: Sticker | null }) =>
       sticker
-        ? unwrapCommunity(await api.community.posts[':id'].reaction.$put({ param: { id: post.id }, json: { sticker } }))
-        : unwrapCommunity(await api.community.posts[':id'].reaction.$delete({ param: { id: post.id } })),
-    onMutate: ({ post, sticker }) => {
-      const delta = (sticker ? 1 : 0) - (post.myReaction ? 1 : 0);
-      patchPost(qc, post.id, (p) => ({ ...p, myReaction: sticker, respectCount: Math.max(0, p.respectCount + delta) }));
+        ? unwrapCommunity(await api.community.posts[':id'].reaction.$put({ param: { id: postId }, json: { sticker } }))
+        : unwrapCommunity(await api.community.posts[':id'].reaction.$delete({ param: { id: postId } })),
+    onMutate: async ({ postId, sticker }) => {
+      // stop in-flight refetches from overwriting the optimistic value, and diff against the cache, not a prop
+      await qc.cancelQueries({ queryKey: communityKeys.all });
+      const before = cachedPost(qc, postId);
+      if (!before) return { before };
+      const delta = (sticker ? 1 : 0) - (before.myReaction ? 1 : 0);
+      patchPost(qc, postId, (p) => ({ ...p, myReaction: sticker, respectCount: Math.max(0, p.respectCount + delta) }));
+      return { before };
     },
-    onError: (_e, { post }) => patchPost(qc, post.id, () => post),
+    // undo only this change: keep anything else that moved meanwhile (e.g. a new comment)
+    onError: (_e, { postId }, ctx) => {
+      if (ctx?.before) patchPost(qc, postId, (p) => ({ ...p, myReaction: ctx.before!.myReaction, respectCount: ctx.before!.respectCount }));
+    },
+    onSettled: (_r, _e, { postId }) => void qc.invalidateQueries({ queryKey: communityKeys.post(postId) }),
   });
 }
 

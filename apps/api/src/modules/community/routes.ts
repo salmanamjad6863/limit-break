@@ -5,6 +5,7 @@ import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import type { AppEnv } from '../../lib/types';
 import { requireAuth } from '../../middleware/auth';
+import { userRateLimit } from '../../middleware/rateLimit';
 import { board } from './boards';
 import * as s from './service';
 
@@ -26,8 +27,13 @@ const uuid = z.object({ id: z.uuid() });
  * Guests can read (feed, profiles, boards); every write checks the hunter's permissions
  * (saved account, handle, trust level, age) in the service.
  */
+const writes = userRateLimit('community-write', { limit: 60, windowMs: 60_000 });
+
 export const communityRoutes = new Hono<AppEnv>()
   .use(requireAuth)
+  .on(['POST', 'PUT', 'DELETE'], '*', writes)
+  .use('/reports', userRateLimit('community-reports', { limit: 20, windowMs: 3_600_000 }))
+  .use('/boards/*', userRateLimit('community-boards', { limit: 30, windowMs: 60_000 }))
   .get('/me', async (c) => c.json(await guard(() => s.getCommunityMe(ctx(c)))))
   .put('/me', zValidator('json', UpdateCommunityProfileInput), async (c) => c.json(await guard(() => s.updateCommunityProfile(ctx(c), c.req.valid('json')))))
   .get('/feed', zValidator('query', z.object({ tab: FeedTab.default('global'), cursor: z.string().max(40).optional() })), async (c) => {
@@ -35,6 +41,7 @@ export const communityRoutes = new Hono<AppEnv>()
     return c.json(await guard(() => s.feed(ctx(c), q.tab, q.cursor)));
   })
   .post('/posts', zValidator('json', CreatePostInput), async (c) => c.json(await guard(() => s.createPost(ctx(c), c.req.valid('json')))))
+  .get('/posts/:id', zValidator('param', uuid), async (c) => c.json(await guard(() => s.getPost(ctx(c), c.req.valid('param').id))))
   .delete('/posts/:id', zValidator('param', uuid), async (c) => c.json(await guard(() => s.deletePost(ctx(c), c.req.valid('param').id))))
   .put('/posts/:id/reaction', zValidator('param', uuid), zValidator('json', ReactInput), async (c) =>
     c.json(await guard(() => s.react(ctx(c), c.req.valid('param').id, c.req.valid('json').sticker))),

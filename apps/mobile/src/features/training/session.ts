@@ -37,6 +37,8 @@ export interface ActiveSession {
   coachNote: string | null;
   /** session note typed by the user (debrief) */
   notes?: string | null;
+  /** frozen on the first Save tap, so retries (even after the 03:00 rollover) keep the same game day */
+  finishedAt?: string | null;
 }
 
 interface SessionState {
@@ -50,6 +52,8 @@ interface SessionState {
   startRest: (seconds: number) => void;
   clearRest: () => void;
   end: () => void;
+  /** Freezes (once) and returns the finish time of the live session. */
+  freezeFinish: () => string;
 }
 
 /**
@@ -58,7 +62,7 @@ interface SessionState {
  */
 export const useWorkoutSession = create<SessionState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       active: null,
       start: (w, meta) =>
         set({
@@ -94,7 +98,8 @@ export const useWorkoutSession = create<SessionState>()(
               if (load != null) for (let i = next; i < pe.sets.length; i++) if (pe.sets[i]!.kind === 'working') pe.sets[i]!.loadKg = load;
             }
           }
-          return { active: { ...a, logs, exercises, coachNote } };
+          // logging another set reopens the session: the finish time is frozen again on the next Save
+          return { active: { ...a, logs, exercises, coachNote, finishedAt: null } };
         }),
       undoLast: (exIndex) =>
         set((s) => (s.active ? { active: { ...s.active, logs: { ...s.active.logs, [exIndex]: (s.active.logs[exIndex] ?? []).slice(0, -1) } } } : s)),
@@ -120,6 +125,13 @@ export const useWorkoutSession = create<SessionState>()(
       startRest: (seconds) => set((s) => (s.active ? { active: { ...s.active, restUntil: Date.now() + seconds * 1000, restTotal: seconds } } : s)),
       clearRest: () => set((s) => (s.active ? { active: { ...s.active, restUntil: null } } : s)),
       end: () => set({ active: null }),
+      freezeFinish: () => {
+        const a = get().active;
+        if (a?.finishedAt) return a.finishedAt;
+        const at = new Date().toISOString();
+        if (a) set({ active: { ...a, finishedAt: at } });
+        return at;
+      },
     }),
     { name: 'lb-active-session', storage: createJSONStorage(() => zustandStorage) },
   ),

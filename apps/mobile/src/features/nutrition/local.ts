@@ -19,7 +19,7 @@ export interface NutritionLocalState {
   /** barcode and custom foods the user has used (curated foods come from content) */
   foods: Record<string, FoodDto>;
   weighIns: { id: string; date: string; kg: number }[];
-  days: Record<string, { waterMl: number; markedComplete: boolean }>;
+  days: Record<string, { waterMl: number; markedComplete: boolean; lowDayConfirm?: boolean }>;
   targets: StoredTarget[];
   set: (patch: Partial<Omit<NutritionLocalState, 'set'>>) => void;
 }
@@ -66,15 +66,17 @@ function intakeDays(d: LocalData, today: string): IntakeDay[] {
     x.meals.add(l.meal);
     by.set(l.localDate, x);
   }
-  return [...by].map(([date, x]) => ({ date, kcal: x.kcal, meals: x.meals.size, markedComplete: d.days[date]?.markedComplete ?? false }));
+  return [...by].map(([date, x]) => ({ date, kcal: x.kcal, meals: x.meals.size, markedComplete: d.days[date]?.markedComplete ?? false,
+    lowDayConfirmed: d.days[date]?.lowDayConfirm ?? false,
+  }));
 }
 
 /** Pure: weekly-stable plan + the target row to persist (applied by the caller outside render). */
-export function localPlan(n: NutritionProfile, t: TrainingProfile, d: LocalData, today: string): { plan: NutritionPlanDto; storeTarget: StoredTarget | null } {
+export function localPlan(n: NutritionProfile, t: TrainingProfile, d: LocalData, today: string, trainingHoursToday = 0): { plan: NutritionPlanDto; storeTarget: StoredTarget | null } {
   const latest = [...d.targets].sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? 1 : -1))[0] ?? null;
   const r = weeklyTargets({
     profile: profileInput(n, t, d), weighIns: d.weighIns, intake: intakeDays(d, today), today, latest,
-    override: { proteinG: n.proteinOverrideG, fatG: n.fatOverrideG },
+    override: { proteinG: n.proteinOverrideG, fatG: n.fatOverrideG }, trainingHoursToday,
   });
   const m = r.macros;
   const pm = r.plan.macros;
@@ -83,7 +85,7 @@ export function localPlan(n: NutritionProfile, t: TrainingProfile, d: LocalData,
       kcal: Math.round(m.kcal), proteinG: Math.round(m.proteinG), fatG: Math.round(m.fatG), carbsG: Math.round(m.carbsG), fiberG: Math.round(m.fiberG),
       waterMl: Math.round(m.waterMl / 50) * 50, tdee: Math.round(r.plan.tdee), prior: Math.round(r.plan.prior), bmr: Math.round(r.plan.bmr),
       trendKg: round1(r.plan.trendKg), confidence: Math.round(r.plan.confidence * 100) / 100, calibrating: r.plan.calibrating,
-      validDays: r.plan.validDays, rails: r.plan.target.appliedRails, effectiveFrom: r.effectiveFrom,
+      validDays: r.plan.validDays, rails: r.plan.target.appliedRails, effectiveFrom: r.effectiveFrom, lowIntake: r.plan.lowIntake,
     },
     storeTarget: r.store
       ? { effectiveFrom: today, kcal: r.plan.target.kcal, proteinG: pm.proteinG, fatG: pm.fatG, carbsG: pm.carbsG, fiberG: pm.fiberG, goal: n.goal, ratePerWeek: n.ratePerWeek }
@@ -93,18 +95,18 @@ export function localPlan(n: NutritionProfile, t: TrainingProfile, d: LocalData,
 
 export const settingsOf = ({ birthDate: _b, ...s }: NutritionProfile) => s;
 
-export function localDay(n: NutritionProfile, t: TrainingProfile, d: LocalData, date: string, today: string) {
-  const { plan, storeTarget } = localPlan(n, t, d, today);
+export function localDay(n: NutritionProfile, t: TrainingProfile, d: LocalData, date: string, today: string, trainingHours = 0) {
+  const { plan, storeTarget } = localPlan(n, t, d, today, trainingHours);
   const logs = d.logs.filter((l) => l.localDate === date).sort((a, b) => a.loggedAt.localeCompare(b.loggedAt));
   const response: NutritionDayResponse = {
     date, logs, waterMl: d.days[date]?.waterMl ?? 0, markedComplete: d.days[date]?.markedComplete ?? false,
-    totals: totalsOf(logs), plan, settings: settingsOf(n),
+    lowDayConfirm: d.days[date]?.lowDayConfirm ?? false, totals: totalsOf(logs), plan, settings: settingsOf(n),
   };
   return { response, storeTarget };
 }
 
-export function localSummary(n: NutritionProfile, t: TrainingProfile, d: LocalData, today: string) {
-  const { plan, storeTarget } = localPlan(n, t, d, today);
+export function localSummary(n: NutritionProfile, t: TrainingProfile, d: LocalData, today: string, trainingHours = 0) {
+  const { plan, storeTarget } = localPlan(n, t, d, today, trainingHours);
   const trend = computeTrend(d.weighIns);
   const ids = new Map(d.weighIns.map((w) => [w.date, w.id]));
   const response: NutritionSummaryResponse = {

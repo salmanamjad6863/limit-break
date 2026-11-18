@@ -50,7 +50,8 @@ export type FoodLogPatch = z.infer<typeof FoodLogPatch>;
 export const FoodLogDto = FoodLogInput.omit({ id: true }).extend({ id: z.string() });
 export type FoodLogDto = z.infer<typeof FoodLogDto>;
 
-export const CopyInput = z.object({ fromDate: isoDate, toDate: isoDate, meal: Meal.optional() });
+/** copyId = client-generated idempotency key: a retried copy derives the same row ids and adds nothing twice. */
+export const CopyInput = z.object({ fromDate: isoDate, toDate: isoDate, meal: Meal.optional(), copyId: z.uuid().optional() });
 export type CopyInput = z.infer<typeof CopyInput>;
 
 export const WeighInInput = z.object({
@@ -65,6 +66,8 @@ export const DayFlagsInput = z.object({
   localDate: isoDate,
   waterMl: z.number().int().min(0).max(10_000).optional(),
   markedComplete: z.boolean().optional(),
+  /** "Was this a full day?" — confirms a complete day under 800 kcal is real so it counts (SYSTEMS.md §2.3) */
+  lowDayConfirm: z.boolean().optional(),
 });
 export type DayFlagsInput = z.infer<typeof DayFlagsInput>;
 
@@ -107,6 +110,8 @@ export const NutritionPlanDto = MacroTargets.extend({
   rails: z.array(z.string()),
   /** the date these weekly targets took effect */
   effectiveFrom: isoDate,
+  /** §2.8 safety rule fired: 3 of the last 7 days very low → supportive check-in, deficit increases paused */
+  lowIntake: z.boolean().default(false),
 });
 export type NutritionPlanDto = z.infer<typeof NutritionPlanDto>;
 
@@ -118,6 +123,8 @@ export const NutritionDayResponse = z.object({
   logs: z.array(FoodLogDto),
   waterMl: z.number().int(),
   markedComplete: z.boolean(),
+  /** the user confirmed this (complete, < 800 kcal) day was a full day */
+  lowDayConfirm: z.boolean().default(false),
   totals: Totals,
   plan: NutritionPlanDto,
   settings: NutritionSettings,

@@ -28,9 +28,6 @@ export function createApp(deps: Deps) {
     .use('/nutrition/foods', rateLimit('search', { limit: 90, windowMs: 60_000 }))
     .use('/progression/trials', rateLimit('trials', { limit: 10, windowMs: 60_000 }))
     .on('DELETE', '/me', rateLimit('account-delete', { limit: 5, windowMs: 3_600_000 }))
-    // community writes: abuse-resistant per-caller caps on top of the per-trust daily caps in the service
-    .on(['POST', 'PUT', 'DELETE'], '/community/*', rateLimit('community-write', { limit: 60, windowMs: 60_000 }))
-    .post('/community/reports', rateLimit('reports', { limit: 20, windowMs: 3_600_000 }))
     .get('/me/export', rateLimit('export', { limit: 5, windowMs: 3_600_000 }))
     .use(async (c, next) => {
       c.set('deps', deps);

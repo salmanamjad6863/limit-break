@@ -10,7 +10,7 @@
 
 ## 2. Backend
 - [ ] Supabase project (free tier is fine for soft launch). Enable asymmetric JWT signing keys.
-- [ ] Run migrations: `pnpm db:migrate` → `0001`…`0008` (0008 also creates the private `trial-videos` bucket).
+- [ ] Run migrations: `pnpm db:migrate` → `0001`…`0011` (0008 also creates the private `trial-videos` bucket; 0009 restore state; 0010 community; 0011 AP/cardio integrity).
 - [ ] Deploy the API (`apps/api`) and set environment variables:
 
 | Variable | Needed for |
@@ -46,6 +46,7 @@
 
 ## 5b. Known follow-ups before a policy change
 - [x] **Re-consent:** built. Bump `CONSENT_VERSION` (`packages/contracts/src/profile.ts`) when the privacy policy or terms change in a way that needs new consent; onboarded users then see the consent screen before the app (`POST /me/consent`).
+- [x] **Post–Sprint 9 audit:** community privacy/paging/counters, offline/session guards, AP/idempotency/nutrition safety (migration 0011). See `ARCHITECTURE.md` §12 sprint 9.5 and remaining gaps in `docs/HANDOFF.md`.
 - [ ] Trial-video retention job (see the [DECIDE] in PRIVACY.md) if you promise a deletion window.
 - [ ] Moderation queue UI in the web admin. The APIs are ready: `/progression/reviews` (trial videos) and `GET /community/moderation` + `POST /community/moderation/:type/:id` (posts/comments); reviewing now needs an API client.
 - [ ] Community moderation: set `ANTHROPIC_API_KEY` on the API (Claude Haiku 5.5 classifier) and `MODERATOR_IDS`. Without the key, posts from new accounts wait for a moderator. Add a maintained slur list via `COMMUNITY_WORDLIST`.

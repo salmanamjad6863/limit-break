@@ -125,6 +125,14 @@ export default function SignIn() {
     setCooldown(0);
   };
 
+  // A guest typed an email with no account: offer to save the guest progress to it instead.
+  const switchToSave = () => {
+    setMode('save');
+    setStep('email');
+    setError(null);
+    setCooldown(0);
+  };
+
   const locked = attempts >= MAX_ATTEMPTS;
   const copy = COPY[mode];
   const input = {
@@ -188,6 +196,7 @@ export default function SignIn() {
 
       {error ? <Text variant="caption" color={c.danger} accessibilityLiveRegion="polite">{error.message}</Text> : null}
       {error?.kind === 'exists' ? <Button variant="secondary" label="Sign in to that account" onPress={switchToSignIn} /> : null}
+      {error?.kind === 'noAccount' && isGuest ? <Button variant="secondary" label="Save your progress" onPress={switchToSave} /> : null}
 
       {step === 'email' ? (
         <View style={{ gap: spacing[3] }}>

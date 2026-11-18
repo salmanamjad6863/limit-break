@@ -6,10 +6,11 @@ import type { EditWorkoutResponse, LoggedSetInput, ManualWorkoutInput, WorkoutDe
 import { computeWorkoutRewards, gameDate, levelFromXp, rpeZone, type FinishedSet } from '@lb/engine';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { progressionKeys, useLocalHunter } from '@/features/progression';
+import { applyLocalXp, progressionKeys, useLocalHunter } from '@/features/progression';
 import { useSession } from '@/features/session';
 import { api, unwrap } from '@/lib/api';
 import { newId } from '@/lib/id';
+import { withKeys } from '@/lib/mutation';
 import { exerciseById } from './catalog';
 import { useTrainingProfile } from './profile';
 import { useTraining, type CompletedSet, type CompletedWorkout } from './store';
@@ -67,12 +68,38 @@ const finishedOf = (sets: readonly LoggedSetInput[]): FinishedSet[] =>
     return { exerciseId: s.exerciseId, reps: s.reps, loadKg: s.weightKg, rir: s.rir, durationS: s.durationS, isWarmup: s.isWarmup, bwFactor: ex.bwFactor, kind: ex.kind };
   });
 
+/**
+ * Best e1RM per exercise ignoring what workout `id` itself set (demo mirror of the server's bestExcluding),
+ * so an edit can lower or remove its own PR instead of being compared against itself.
+ */
+function bestExcludingLocal(id: string, bodyweightKg: number): Record<string, number> {
+  const t = useTraining.getState();
+  const h = t.history.find((x) => x.id === id);
+  const best = { ...t.bestE1rm };
+  if (!h?.sets?.length) return best;
+  const asLogged = (sets: CompletedSet[]): FinishedSet[] =>
+    finishedOf(sets.map((x, i) => ({
+      id: x.id, exerciseId: x.exerciseId, order: i, reps: x.reps, weightKg: x.loadKg, rir: x.rir, rpe: null, durationS: x.durationS,
+      distanceM: null, isWarmup: x.isWarmup, setType: x.setType ?? 'normal', completedAt: '',
+    })));
+  const bestOf = (sets: FinishedSet[]) =>
+    computeWorkoutRewards({ sets, plannedHardSets: 0, cardio: [], bestE1rm: {}, bodyweightKg, xpEarnedToday: 0, currentXp: 0 }).bestE1rm;
+  const own = bestOf(asLogged(h.sets));
+  const others = bestOf(t.history.filter((x) => x.id !== id).flatMap((x) => asLogged(x.sets ?? [])));
+  for (const [ex, v] of Object.entries(own)) {
+    if ((best[ex] ?? 0) > v + 1e-6) continue; // the stored best came from elsewhere
+    if (others[ex] != null) best[ex] = others[ex]!;
+    else delete best[ex];
+  }
+  return best;
+}
+
 /** Applies an XP difference to the on-device hunter (demo mode mirror of the server's applyDelta). */
 function applyLocalDelta(delta: number) {
   const me = useLocalHunter.getState().me;
   if (!me?.state || delta === 0) return;
-  const xp = Math.max(0, me.state.xp + delta);
-  useLocalHunter.getState().setMe({ ...me, state: { ...me.state, xp, level: levelFromXp(xp) } });
+  // level-ups grant AP only for levels never reached before (same rule as the server)
+  useLocalHunter.getState().setMe({ ...me, state: applyLocalXp(me.state, me.state.xp + delta).state });
 }
 
 export function useHistoryActions() {
@@ -86,22 +113,27 @@ export function useHistoryActions() {
   };
 
   const edit = useMutation({
-    mutationFn: async ({ id, sets, notes, sessionRpe }: { id: string; sets: LoggedSetInput[]; notes: string | null; sessionRpe: number | null }): Promise<EditWorkoutResponse> => {
+    mutationFn: async ({ id, editId, sets, notes, sessionRpe }: { id: string; editId: string; sets: LoggedSetInput[]; notes: string | null; sessionRpe: number | null }): Promise<EditWorkoutResponse> => {
       const t = useTraining.getState();
       const h = t.history.find((x) => x.id === id);
       let response: EditWorkoutResponse;
       if (signedIn) {
-        response = await unwrap<EditWorkoutResponse>(await api.workouts[':id'].$patch({ param: { id }, json: { editId: newId(), sets, notes, sessionRpe } }));
+        response = await unwrap<EditWorkoutResponse>(await api.workouts[':id'].$patch({ param: { id }, json: { editId, sets, notes, sessionRpe } }));
       } else {
         if (!h) throw new Error('workout not found');
         const me = useLocalHunter.getState().me;
+        const best = bestExcludingLocal(id, profile.weightKg);
         const r = computeWorkoutRewards({
           sets: finishedOf(sets), plannedHardSets: h.plannedHardSets ?? sets.filter((s) => !s.isWarmup).length,
-          cardio: h.cardioMinutes ? [{ minutes: h.cardioMinutes, zone: rpeZone(sessionRpe ?? 7) }] : [],
-          bestE1rm: t.bestE1rm, bodyweightKg: profile.weightKg, xpEarnedToday: (t.xpByDate[h.date] ?? 0) - h.xp, currentXp: (me?.state?.xp ?? 0) - h.xp,
+          cardio: h.cardio?.length
+            ? h.cardio.map((c) => ({ minutes: c.minutes, zone: rpeZone(c.rpe) }))
+            : h.cardioMinutes ? [{ minutes: h.cardioMinutes, zone: rpeZone(sessionRpe ?? 7) }] : [],
+          bestE1rm: best, bodyweightKg: profile.weightKg, xpEarnedToday: (t.xpByDate[h.date] ?? 0) - h.xp, currentXp: (me?.state?.xp ?? 0) - h.xp,
         });
         const delta = r.granted - h.xp;
         applyLocalDelta(delta);
+        useTraining.setState({ bestE1rm: { ...best, ...r.bestE1rm } });
+        t.updateWorkout(id, { prs: r.prs });
         useTraining.setState((s) => ({ xpByDate: { ...s.xpByDate, [h.date]: Math.max(0, (s.xpByDate[h.date] ?? 0) + delta) } }));
         const xp = useLocalHunter.getState().me?.state?.xp ?? 0;
         response = { xp: r.granted, delta, totalXp: xp, level: levelFromXp(xp) };
@@ -134,8 +166,8 @@ export function useHistoryActions() {
   });
 
   const logManual = useMutation({
-    mutationFn: async (input: Omit<ManualWorkoutInput, 'id'>): Promise<number> => {
-      const full: ManualWorkoutInput = { ...input, id: newId() };
+    mutationFn: async (full: ManualWorkoutInput): Promise<number> => {
+      const input = full;
       const t = useTraining.getState();
       let granted: number;
       if (signedIn) {
@@ -167,5 +199,6 @@ export function useHistoryActions() {
     },
   });
 
-  return { edit, remove, logManual, setNote };
+  // ids are stamped when the user taps, so a retried request reuses them (no double XP)
+  return { edit: withKeys(edit, () => ({ editId: newId() })), remove, logManual: withKeys(logManual, () => ({ id: newId() })), setNote };
 }

@@ -2,6 +2,7 @@
  * Nutrition ("Mana") — SYSTEMS.md §2. Diary, foods, weigh-ins, weekly targets and the check-in.
  * All maths lives in @lb/engine so the offline app computes identical numbers.
  */
+import { createHash } from 'node:crypto';
 import { curatedFoodById, curatedFoods, normalizeOffProduct, offProductUrl, OFF_USER_AGENT } from '@lb/content';
 import type {
   CopyInput, DayFlagsInput, FoodDto, FoodLogDto, FoodLogInput, FoodLogPatch, Meal, NutritionDayResponse, NutritionPlanDto,
@@ -58,6 +59,25 @@ const totalsOf = (logs: readonly { food: FoodDto; grams: number }[]): Totals => 
   return { kcal: Math.round(t.kcal), protein: round1(t.protein), carbs: round1(t.carbs), fat: round1(t.fat), fiber: round1(t.fiber) };
 };
 
+/** Hours trained on a game day (water target +0.5 L/h, §2.5). */
+async function trainingHoursOn(prisma: PrismaClient, userId: string, localDate: string) {
+  const rows = await prisma.workoutSession.findMany({ where: { userId, localDate }, select: { kind: true, startedAt: true, finishedAt: true, cardioMinutes: true } });
+  const minutes = rows.reduce(
+    (m, r) => m + (r.kind === 'manual' ? r.cardioMinutes : r.finishedAt ? Math.min(360, (r.finishedAt.getTime() - r.startedAt.getTime()) / 60000) : 0),
+    0,
+  );
+  return Math.round((minutes / 60) * 4) / 4;
+}
+
+/** Deterministic uuid (v5-style, sha1) so a retried copy re-derives the same row ids. */
+function uuidFrom(key: string) {
+  const h = createHash('sha1').update(`limitbreak:${key}`).digest();
+  h[6] = (h[6]! & 0x0f) | 0x50;
+  h[8] = (h[8]! & 0x3f) | 0x80;
+  const x = h.subarray(0, 16).toString('hex');
+  return `${x.slice(0, 8)}-${x.slice(8, 12)}-${x.slice(12, 16)}-${x.slice(16, 20)}-${x.slice(20, 32)}`;
+}
+
 /** Everything the planner needs, loaded once. */
 async function context(prisma: PrismaClient, userId: string) {
   const p = await loadProfile(prisma, userId);
@@ -94,11 +114,11 @@ async function context(prisma: PrismaClient, userId: string) {
 
 /** Weekly-stable targets; stores a new NutritionTarget when the week (or the goal) changes. */
 /** `adaptive` = premium feature `adaptiveTdee`: without it, targets use the standard formula (no intake learning). */
-async function planFor(prisma: PrismaClient, userId: string, c: Awaited<ReturnType<typeof context>>, adaptive = true): Promise<NutritionPlanDto> {
+async function planFor(prisma: PrismaClient, userId: string, c: Awaited<ReturnType<typeof context>>, adaptive = true, trainingHoursToday = 0): Promise<NutritionPlanDto> {
   const latest: StoredTarget | null = c.latest
     ? { effectiveFrom: c.latest.effectiveFrom, kcal: c.latest.kcal, proteinG: c.latest.proteinG, fatG: c.latest.fatG, carbsG: c.latest.carbsG, fiberG: c.latest.fiberG, goal: c.latest.goal as StoredTarget['goal'], ratePerWeek: c.latest.ratePerWeek }
     : null;
-  const r = weeklyTargets({ profile: c.profile, weighIns: c.weighIns, intake: adaptive ? c.intake : [], today: c.today, latest, override: { proteinG: c.settings.proteinOverrideG, fatG: c.settings.fatOverrideG } });
+  const r = weeklyTargets({ profile: c.profile, weighIns: c.weighIns, intake: adaptive ? c.intake : [], today: c.today, latest, override: { proteinG: c.settings.proteinOverrideG, fatG: c.settings.fatOverrideG }, trainingHoursToday });
   if (r.store) {
     const m = r.plan.macros;
     await prisma.nutritionTarget.create({
@@ -110,7 +130,7 @@ async function planFor(prisma: PrismaClient, userId: string, c: Awaited<ReturnTy
     kcal: Math.round(m.kcal), proteinG: Math.round(m.proteinG), fatG: Math.round(m.fatG), carbsG: Math.round(m.carbsG), fiberG: Math.round(m.fiberG), waterMl: Math.round(m.waterMl / 50) * 50,
     tdee: Math.round(r.plan.tdee), prior: Math.round(r.plan.prior), bmr: Math.round(r.plan.bmr), trendKg: round1(r.plan.trendKg),
     confidence: Math.round(r.plan.confidence * 100) / 100, calibrating: r.plan.calibrating, validDays: r.plan.validDays,
-    rails: r.plan.target.appliedRails, effectiveFrom: r.effectiveFrom,
+    rails: r.plan.target.appliedRails, effectiveFrom: r.effectiveFrom, lowIntake: r.plan.lowIntake,
   };
 }
 
@@ -122,7 +142,11 @@ export async function getDay(prisma: PrismaClient, userId: string, date?: string
     .sort((a, b) => a.loggedAt.getTime() - b.loggedAt.getTime())
     .map((l) => ({ id: l.id, food: foodOf(l.food), grams: l.grams, meal: l.meal as Meal, servingLabel: l.servingLabel, localDate: l.localDate, loggedAt: l.loggedAt.toISOString() }));
   const flags = c.flags.find((f) => f.localDate === day);
-  return { date: day, logs, waterMl: flags?.waterMl ?? 0, markedComplete: flags?.markedComplete ?? false, totals: totalsOf(logs), plan: await planFor(prisma, userId, c, adaptive), settings: c.settings };
+  const plan = await planFor(prisma, userId, c, adaptive, await trainingHoursOn(prisma, userId, day));
+  return {
+    date: day, logs, waterMl: flags?.waterMl ?? 0, markedComplete: flags?.markedComplete ?? false, lowDayConfirm: flags?.lowDayConfirm ?? false,
+    totals: totalsOf(logs), plan, settings: c.settings,
+  };
 }
 
 /** Curated foods come from content (trusted); OFF foods are shared; custom/quick foods stay private. */
@@ -133,6 +157,16 @@ async function upsertFood(prisma: PrismaClient, userId: string, f: FoodDto) {
   const existing = await prisma.food.findUnique({ where: { id: src.id } });
   if (existing) {
     if (existing.ownerId && existing.ownerId !== userId) throw new NutritionError(403, 'not your food');
+    // the owner edited their custom/quick food: keep the stored row in sync (shared OFF/curated rows never change here)
+    if (existing.ownerId === userId && !curated) {
+      await prisma.food.update({
+        where: { id: src.id },
+        data: {
+          name: src.name, brand: src.brand ?? null, kcal100: src.per100.kcal, p100: src.per100.protein, c100: src.per100.carbs, f100: src.per100.fat,
+          fiber100: src.per100.fiber ?? null, servings: src.servings,
+        },
+      });
+    }
     return;
   }
   await prisma.food.create({
@@ -175,15 +209,24 @@ export async function deleteLog(prisma: PrismaClient, userId: string, id: string
   return { ok: true };
 }
 
-/** Copy a whole day or one meal to another day (new ids, logged now). */
+/**
+ * Copy a whole day or one meal to another day (logged now). Idempotent by copyId: each new row id is derived
+ * from (copyId, source row id), so a retried request inserts nothing twice.
+ */
 export async function copyLogs(prisma: PrismaClient, userId: string, input: CopyInput) {
   const src = await prisma.foodLog.findMany({ where: { userId, localDate: input.fromDate, ...(input.meal ? { meal: input.meal } : {}) } });
   if (!src.length) throw new NutritionError(404, 'nothing to copy');
   const now = new Date();
+  const copyId = input.copyId ?? crypto.randomUUID();
+  // never copy rows an earlier run of this same copy created (copying a day onto itself)
+  const rows = src.filter((l) => !src.some((o) => uuidFrom(`copy:${userId}:${copyId}:${o.id}`) === l.id));
   await prisma.foodLog.createMany({
-    data: src.map((l) => ({ id: crypto.randomUUID(), userId, foodId: l.foodId, grams: l.grams, meal: l.meal, servingLabel: l.servingLabel, localDate: input.toDate, loggedAt: now })),
+    data: rows.map((l) => ({
+      id: uuidFrom(`copy:${userId}:${copyId}:${l.id}`), userId, foodId: l.foodId, grams: l.grams, meal: l.meal, servingLabel: l.servingLabel, localDate: input.toDate, loggedAt: now,
+    })),
+    skipDuplicates: true,
   });
-  return { copied: src.length };
+  return { copied: rows.length };
 }
 
 export async function searchFoods(prisma: PrismaClient, userId: string, q: string): Promise<FoodDto[]> {
@@ -256,14 +299,18 @@ export async function deleteWeighIn(prisma: PrismaClient, userId: string, id: st
 }
 
 export async function setDayFlags(prisma: PrismaClient, userId: string, input: DayFlagsInput) {
-  const data = { ...(input.waterMl != null ? { waterMl: input.waterMl } : {}), ...(input.markedComplete != null ? { markedComplete: input.markedComplete } : {}) };
+  const data = {
+    ...(input.waterMl != null ? { waterMl: input.waterMl } : {}),
+    ...(input.markedComplete != null ? { markedComplete: input.markedComplete } : {}),
+    ...(input.lowDayConfirm != null ? { lowDayConfirm: input.lowDayConfirm } : {}),
+  };
   await prisma.nutritionDay.upsert({ where: { userId_localDate: { userId, localDate: input.localDate } }, create: { userId, localDate: input.localDate, ...data }, update: data });
   return { ok: true };
 }
 
 export async function getSummary(prisma: PrismaClient, userId: string, adaptive = true): Promise<NutritionSummaryResponse> {
   const c = await context(prisma, userId);
-  const plan = await planFor(prisma, userId, c, adaptive);
+  const plan = await planFor(prisma, userId, c, adaptive, await trainingHoursOn(prisma, userId, c.today));
   const trend = computeTrend(c.weighIns);
   const ids = new Map(c.weighIns.map((w) => [w.date, w.id]));
   const age = ageOn(c.profile.birthDate, c.today);

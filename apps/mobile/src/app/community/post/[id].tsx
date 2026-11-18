@@ -1,9 +1,8 @@
-import type { CommentDto, FeedResponse, PostDto } from '@lb/contracts';
-import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
+import type { CommentDto } from '@lb/contracts';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, TextInput, View } from 'react-native';
-import { useComments, useCommunityMe, useCreateComment, useDeleteComment, useReport } from '@/features/community/api';
+import { useComments, useCommunityMe, useCreateComment, useDeleteComment, useHunter, usePost, useReport } from '@/features/community/api';
 import { Avatar } from '@/features/community/Avatar';
 import { ago, heroColor, PostCard } from '@/features/community/PostCard';
 import { useTheme } from '@/theme';
@@ -13,7 +12,6 @@ import { Button, Page, PressableScale, ScreenHeader, Text } from '@/ui';
 export default function PostScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { c, spacing, radius, type } = useTheme();
-  const qc = useQueryClient();
   const me = useCommunityMe();
   const comments = useComments(id);
   const create = useCreateComment(id);
@@ -22,22 +20,16 @@ export default function PostScreen() {
   const [body, setBody] = useState('');
   const [replyTo, setReplyTo] = useState<CommentDto | null>(null);
 
-  // the post comes from whichever feed or profile opened it
-  const post = useMemo(() => {
-    for (const [, d] of qc.getQueriesData<InfiniteData<FeedResponse>>({ queryKey: ['community', 'feed'] })) {
-      const p = d?.pages.flatMap((pg) => pg.posts).find((x) => x.id === id);
-      if (p) return p;
-    }
-    for (const [, d] of qc.getQueriesData<{ posts: PostDto[] }>({ queryKey: ['community', 'hunter'] })) {
-      const p = d?.posts.find((x) => x.id === id);
-      if (p) return p;
-    }
-    return null;
-  }, [qc, id]);
+  const postQ = usePost(id);
+  const post = postQ.data ?? null;
+  const author = useHunter(post && !post.mine && post.commentsMode === 'followers' ? post.author.handle : '');
+  const followsAuthor = !!author.data?.iFollow;
 
   const top = (comments.data ?? []).filter((x) => !x.parentId);
   const replies = (pid: string) => (comments.data ?? []).filter((x) => x.parentId === pid);
-  const canComment = !!me.data?.can.comment && post?.commentsMode !== 'off';
+  // mirrors the server rules so the box never offers a comment that would be refused
+  const canComment = !!post && post.status === 'visible' && !!me.data?.can.comment
+    && (post.mine || post.commentsMode === 'all' || (post.commentsMode === 'followers' && followsAuthor));
 
   const row = (cm: CommentDto, nested = false) => (
     <View key={cm.id} style={{ flexDirection: 'row', gap: spacing[2], marginLeft: nested ? spacing[8] : 0 }}>
@@ -78,7 +70,7 @@ export default function PostScreen() {
         ) : undefined}>
         {post ? <PostCard post={post} canReact={!!me.data?.can.react} showComments={false} /> : null}
         {comments.isLoading ? <Text dim>Loading comments…</Text> : null}
-        {comments.isError ? <Text color={c.danger}>This post isn’t available.</Text> : null}
+        {postQ.isError ? <Text color={c.danger}>This post isn’t available.</Text> : null}
         {top.map((cm) => (
           <View key={cm.id} style={{ gap: spacing[3] }}>
             {row(cm)}
@@ -86,10 +78,15 @@ export default function PostScreen() {
           </View>
         ))}
         {comments.data && !comments.data.length ? <Text dim>No comments yet.</Text> : null}
-        {!canComment && me.data ? (
-          <Text variant="caption" muted>{post?.commentsMode === 'off' ? 'Comments are turned off.' : me.data.nextUnlock ?? 'Comments aren’t available on your account.'}</Text>
+        {!canComment && me.data && post ? (
+          <Text variant="caption" muted>
+            {post.commentsMode === 'off' ? 'Comments are turned off.'
+              : post.commentsMode === 'followers' && !post.mine && !followsAuthor ? 'Only followers can comment on this post.'
+              : post.status !== 'visible' ? 'Comments open once this post is approved.'
+              : me.data.nextUnlock ?? 'Comments aren’t available on your account.'}
+          </Text>
         ) : null}
-        {!post && !comments.isLoading ? <Button variant="ghost" label="Back" onPress={() => router.back()} /> : null}
+        {!post && !postQ.isLoading ? <Button variant="ghost" label="Back" onPress={() => router.back()} /> : null}
       </Page>
     </KeyboardAvoidingView>
   );

@@ -20,6 +20,7 @@ function nutritionDb(opts: { goal?: string; rate?: number; premium?: boolean } =
     logs: [] as any[],
     days: [] as any[],
     targets: [] as any[],
+    sessions: [] as any[],
   };
   const withFood = (l: any) => ({ ...l, food: db.foods.find((f) => f.id === l.foodId) });
   const prisma: any = {
@@ -34,12 +35,19 @@ function nutritionDb(opts: { goal?: string; rate?: number; premium?: boolean } =
       findUnique: async ({ where }: any) => db.foods.find((f) => (where.id ? f.id === where.id : f.barcode === where.barcode)) ?? null,
       findMany: async ({ where }: any) => db.foods.filter((f) => f.ownerId === USER || db.logs.some((l) => l.foodId === f.id && l.userId === USER)),
       create: async ({ data }: any) => db.foods.push({ brand: null, barcode: null, fiber100: null, ownerId: null, ...data }),
+      update: async ({ where, data }: any) => Object.assign(db.foods.find((f) => f.id === where.id), data),
     },
+    workoutSession: { findMany: async ({ where }: any) => db.sessions.filter((x) => matches(x, where)) },
     foodLog: {
       findMany: async ({ where, include }: any) => db.logs.filter((l) => matches(l, where)).map((l) => (include ? withFood(l) : l)),
       findUnique: async ({ where, include }: any) => { const l = db.logs.find((x) => x.id === where.id); return l ? (include ? withFood(l) : l) : null; },
       create: async ({ data }: any) => db.logs.push(data),
-      createMany: async ({ data }: any) => db.logs.push(...data),
+      createMany: async ({ data, skipDuplicates }: any) => {
+        for (const d of data) {
+          if (db.logs.some((l) => l.id === d.id)) { if (skipDuplicates) continue; throw Object.assign(new Error('unique'), { code: 'P2002' }); }
+          db.logs.push(d);
+        }
+      },
       update: async ({ where, data }: any) => Object.assign(db.logs.find((l) => l.id === where.id), data),
       delete: async ({ where }: any) => { db.logs = db.logs.filter((l) => l.id !== where.id); },
     },
@@ -76,6 +84,7 @@ describe('Nutrition API', () => {
     expect(day.plan.kcal).toBe(2073);
     expect(day.plan.proteinG).toBe(160);
     expect(day.plan.calibrating).toBe(true);
+    expect(day.plan.lowIntake).toBe(false);
     expect(db.targets).toHaveLength(1);
     await call(app(prisma), 'GET', '/nutrition/day');
     expect(db.targets).toHaveLength(1); // stable within the week
@@ -105,6 +114,52 @@ describe('Nutrition API', () => {
     db.logs.push({ id: uuid(77), userId: OTHER, foodId: 'rice-white-cooked', grams: 1, meal: 'lunch', localDate: today(), loggedAt: new Date() });
     expect((await call(a, 'DELETE', `/nutrition/logs/${uuid(77)}`)).status).toBe(404);
     expect((await call(a, 'DELETE', `/nutrition/logs/${uuid(1)}`)).status).toBe(200);
+  });
+
+  it('copy is idempotent by copyId: a retried copy adds nothing twice', async () => {
+    const { db, prisma } = nutritionDb();
+    const a = app(prisma);
+    await call(a, 'POST', '/nutrition/logs', log(1));
+    await call(a, 'POST', '/nutrition/logs', log(2, 100));
+    const body = { fromDate: today(), toDate: shift(today(), 1), copyId: uuid(600) };
+    expect(((await (await call(a, 'POST', '/nutrition/copy', body)).json()) as any).copied).toBe(2);
+    await call(a, 'POST', '/nutrition/copy', body); // retry after a timeout
+    expect(db.logs.filter((l) => l.localDate === shift(today(), 1))).toHaveLength(2);
+    // copying a day onto itself, retried, never re-copies its own copies
+    const self = { fromDate: today(), toDate: today(), copyId: uuid(601) };
+    await call(a, 'POST', '/nutrition/copy', self);
+    await call(a, 'POST', '/nutrition/copy', self);
+    expect(db.logs.filter((l) => l.localDate === today())).toHaveLength(4);
+    // a new copy (new copyId) is a real second copy
+    await call(a, 'POST', '/nutrition/copy', { ...body, copyId: uuid(602) });
+    expect(db.logs.filter((l) => l.localDate === shift(today(), 1))).toHaveLength(6);
+  });
+
+  it('water target adds 0.5 L per hour trained today', async () => {
+    const { db, prisma } = nutritionDb();
+    const a = app(prisma);
+    const before = ((await (await call(a, 'GET', '/nutrition/day')).json()) as any).plan.waterMl;
+    db.sessions.push({ userId: USER, localDate: today(), kind: 'program', startedAt: new Date(Date.now() - 3_600_000), finishedAt: new Date(), cardioMinutes: 0 });
+    const after = ((await (await call(a, 'GET', '/nutrition/day')).json()) as any).plan.waterMl;
+    expect(after - before).toBe(500);
+  });
+
+  it('low-intake safety rule (§2.8): flagged on the day, deficit not deepened', async () => {
+    const { db, prisma } = nutritionDb();
+    db.foods.push({ id: 'rice-white-cooked', name: 'Rice', kcal100: 130, p100: 2.4, c100: 28.6, f100: 0.2, fiber100: 0.3, servings: [], source: 'usda', verified: true, ownerId: null, brand: null, barcode: null });
+    for (let d = 1; d <= 3; d++) {
+      for (const meal of ['breakfast', 'lunch']) db.logs.push({ id: `${d}-${meal}`, userId: USER, foodId: 'rice-white-cooked', grams: 250, meal, localDate: shift(today(), -d), loggedAt: new Date() });
+    }
+    const day = (await (await call(app(prisma), 'GET', '/nutrition/day')).json()) as any;
+    expect(day.plan.lowIntake).toBe(true);
+  });
+
+  it('"was this a full day?" confirmation is saved per day', async () => {
+    const { db, prisma } = nutritionDb();
+    const a = app(prisma);
+    await call(a, 'POST', '/nutrition/day', { localDate: today(), markedComplete: true, lowDayConfirm: true });
+    expect(db.days[0]).toMatchObject({ markedComplete: true, lowDayConfirm: true });
+    expect(((await (await call(a, 'GET', '/nutrition/day')).json()) as any).lowDayConfirm).toBe(true);
   });
 
   it('search ranks curated foods and your history; empty query returns your most-used foods', async () => {
@@ -144,6 +199,18 @@ describe('Nutrition API', () => {
     db.foods[0].ownerId = OTHER;
     expect((await call(app(prisma), 'POST', '/nutrition/logs', { ...log(9), food: shake })).status).toBe(403);
     expect((await call(app(prisma), 'POST', '/nutrition/foods', { ...shake, id: 'shake' })).status).toBe(400);
+  });
+
+  it('editing your custom food updates the stored row', async () => {
+    const { db, prisma } = nutritionDb();
+    const shake = { id: `custom:${uuid(6)}`, name: 'My shake', per100: { kcal: 80, protein: 10, carbs: 6, fat: 1.5 }, servings: [], source: 'custom', verified: false };
+    await call(app(prisma), 'POST', '/nutrition/foods', shake);
+    await call(app(prisma), 'POST', '/nutrition/foods', { ...shake, name: 'Shake v2', per100: { ...shake.per100, kcal: 95, protein: 12 } });
+    expect(db.foods).toHaveLength(1);
+    expect(db.foods[0]).toMatchObject({ name: 'Shake v2', kcal100: 95, p100: 12 });
+    // logging with the edited snapshot also syncs it
+    await call(app(prisma), 'POST', '/nutrition/logs', { ...log(10), food: { ...shake, name: 'Shake v3' } });
+    expect(db.foods[0].name).toBe('Shake v3');
   });
 
   it('weigh-ins feed the trend; water and complete flags save per day', async () => {

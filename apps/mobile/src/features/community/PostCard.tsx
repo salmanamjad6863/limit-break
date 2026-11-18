@@ -125,7 +125,7 @@ export function PostCard({ post, canReact, showComments = true }: { post: PostDt
       {picking ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
           {(Object.keys(STICKER_META) as Sticker[]).map((s) => (
-            <PressableScale key={s} haptic="press" onPress={() => { setPicking(false); react.mutate({ post, sticker: post.myReaction === s ? null : s }); }}
+            <PressableScale key={s} haptic="press" onPress={() => { setPicking(false); react.mutate({ postId: post.id, sticker: post.myReaction === s ? null : s }); }}
               accessibilityRole="button" accessibilityLabel={STICKER_META[s].label}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: spacing[2], paddingVertical: 6, borderRadius: radius.pill, borderWidth: 1, borderColor: post.myReaction === s ? STICKER_META[s].color : c.border, backgroundColor: c.surface }}>
               <Icon name={STICKER_META[s].icon} size={14} color={STICKER_META[s].color} />
@@ -137,7 +137,7 @@ export function PostCard({ post, canReact, showComments = true }: { post: PostDt
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[5], marginTop: spacing[1] }}>
         <PressableScale haptic="tap" disabled={!canReact || post.status !== 'visible'}
-          onPress={() => react.mutate({ post, sticker: post.myReaction ? null : 'respect' })}
+          onPress={() => react.mutate({ postId: post.id, sticker: post.myReaction ? null : 'respect' })}
           onLongPress={() => setPicking((v) => !v)}
           accessibilityRole="button" accessibilityLabel={mine ? `Remove ${mine.label}` : 'Give Respect (long-press for more)'}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>

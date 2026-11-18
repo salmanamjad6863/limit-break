@@ -10,7 +10,8 @@ import { useQuestLocal } from '@/features/quests/localStore';
 import { useWorkoutSession } from '@/features/training/session';
 import { useTraining } from '@/features/training/store';
 import { useAnalyticsConsent } from '@/lib/analytics';
-import { queryClient, queryPersister } from '@/lib/query';
+import { QUERY_CACHE_KEY, queryClient, queryPersister } from '@/lib/query';
+import { storage } from '@/lib/storage';
 import { useVoicePref } from '@/lib/voice';
 
 /** Every persisted store that can hold personal data. */
@@ -24,6 +25,9 @@ export function clearLocalData() {
     store.persist?.clearStorage();
     store.setState(store.getInitialState() as never, true);
   }
+  // Queries and (paused) mutations, in memory and on disk. The key is removed synchronously so nothing of this
+  // account can be restored even if the app is killed right now.
   queryClient.clear();
+  storage.remove(QUERY_CACHE_KEY);
   void queryPersister.removeClient();
 }

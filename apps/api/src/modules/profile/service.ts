@@ -105,6 +105,7 @@ export async function completeOnboarding(prisma: PrismaClient, userId: string, i
         userId,
         xp: start.xp,
         level: levelFromXp(start.xp),
+        apGrantedLevel: levelFromXp(start.xp),
         str: start.stats.STR,
         agi: start.stats.AGI,
         end: start.stats.END,

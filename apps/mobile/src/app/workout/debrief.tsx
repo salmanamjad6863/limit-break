@@ -19,6 +19,7 @@ export default function Debrief() {
   const { c, spacing, radius } = useTheme();
   const active = useWorkoutSession((s) => s.active);
   const end = useWorkoutSession((s) => s.end);
+  const freezeFinish = useWorkoutSession((s) => s.freezeFinish);
   const finish = useFinishWorkout();
   const [rpe, setRpe] = useState<number | null>(null);
   const [notes, setNotes] = useState('');
@@ -98,7 +99,8 @@ export default function Debrief() {
             icon="checkmark"
             loading={finish.isPending}
             disabled={!stats || stats.sets === 0}
-            onPress={() => active && finish.mutate({ session: active, input: toFinishInput({ ...active, notes }, rpe) }, {
+            // finishedAt is frozen on the first tap: a retry after the 03:00 rollover keeps the same game day
+            onPress={() => active && finish.mutate({ session: active, input: toFinishInput({ ...active, notes, finishedAt: freezeFinish() }, rpe) }, {
               // end the live session as soon as it's saved, so leaving the results screen can never re-save it
               onSuccess: (r) => { setResult(r); end(); },
             })}

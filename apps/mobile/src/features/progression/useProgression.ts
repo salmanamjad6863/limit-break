@@ -8,6 +8,7 @@ import { api, unwrap } from '@/lib/api';
 import { useTraining } from '@/features/training/store';
 import { useTrainingProfile } from '@/features/training/profile';
 import { useMe } from './api';
+import { hunterAge } from './localHunter';
 import { progressionKeys } from './keys';
 import { useProgress } from './progressStore';
 
@@ -54,7 +55,7 @@ export function useProgression(): { data: ProgressionResponse | undefined; isLoa
     const recent = history.filter((h) => now - Date.parse(`${h.date}T12:00:00`) <= 28 * DAY);
     const program = recent.filter((h) => h.kind === 'program');
     const last = Math.max(0, ...history.map((h) => Date.parse(`${h.date}T12:00:00`)), ...attempts.map((a) => Date.parse(a.at)));
-    const age = 28; // demo profile has no birth date; median adult band
+    const age = hunterAge(me); // nutrition birth date, same rule as the server
     const b = computeTrueStats(
       {
         sex: profile.sex, ageYears: age, bodyweightKg: profile.weightKg, experience: profile.experience, tests, bestE1rm,

@@ -1,8 +1,8 @@
 import type { FinishWorkoutInput, FinishWorkoutResponse, Reward } from '@lb/contracts';
-import { computeWorkoutRewards, gameDate, levelFromXp, rpeZone, type FinishedSet } from '@lb/engine';
+import { computeWorkoutRewards, gameDate, rpeZone, type FinishedSet } from '@lb/engine';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCelebrations } from '@/features/celebrations';
-import { chainLevelsFrom, progressionKeys, useLocalHunter, useMe, useProgress } from '@/features/progression';
+import { applyLocalXp, chainLevelsFrom, progressionKeys, useLocalHunter, useMe, useProgress } from '@/features/progression';
 import { useSession as useAuthSession } from '@/features/session';
 import { api, unwrap } from '@/lib/api';
 import { exerciseById } from './catalog';
@@ -31,7 +31,7 @@ export function toFinishInput(a: ActiveSession, sessionRpe: number | null, cardi
   const plannedHardSets = a.exercises.reduce((n, pe) => n + pe.sets.filter((s) => s.kind === 'working').length, 0);
   return {
     id: a.id, plannedWorkoutId: null, programId: a.programId, dayId: a.dayId, sessionRpe, cardio,
-    startedAt: a.startedAt, finishedAt: new Date().toISOString(), plannedHardSets, sets,
+    startedAt: a.startedAt, finishedAt: a.finishedAt ?? new Date().toISOString(), plannedHardSets, sets,
     kind: a.kind, name: a.name, notes: a.notes?.trim() || null,
   };
 }
@@ -75,7 +75,9 @@ export function useFinishWorkout() {
         rewards = res.rewards;
         qc.invalidateQueries({ queryKey: progressionKeys.me() });
       } else if (me?.state) {
-        setLocal({ ...me, state: { ...me.state, xp: local.newXp, level: levelFromXp(local.newXp), apUnspent: me.state.apUnspent + local.apGained } });
+        const next = applyLocalXp(me.state, local.newXp);
+        setLocal({ ...me, state: next.state });
+        rewards = local.rewards.map((r) => (r.type === 'levelUp' ? { ...r, ap: next.ap } : r));
       }
 
       const working = finished.filter((s) => !s.isWarmup);
@@ -94,6 +96,7 @@ export function useFinishWorkout() {
         minutes, workingSets: working.length, volumeKg, xp: granted, prs,
         source: 'app', notes: input.notes, sessionRpe: input.sessionRpe, plannedHardSets: input.plannedHardSets,
         cardioMinutes: input.cardio.reduce((m, c) => m + c.minutes, 0),
+        cardio: input.cardio.map((c) => ({ minutes: c.minutes, rpe: c.rpe })),
         sets: input.sets.map((s) => ({
           id: s.id, exerciseId: s.exerciseId, reps: s.reps, loadKg: s.weightKg, rir: s.rir, durationS: s.durationS, isWarmup: s.isWarmup, setType: s.setType,
         })),

@@ -10,9 +10,16 @@
 import { z } from 'zod';
 import { storage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
+import { useSession } from './store';
 
 /** Set by an explicit sign-out; cleared when a guest starts or anyone signs in. */
 export const SIGNED_OUT_FLAG = 'lb.session.signedOut';
+/**
+ * Whether the last session was a saved (email) account. If such a session ends without a deliberate sign-out
+ * (refresh token revoked, "sign out of all devices" on another phone), the user gets the sign-in screen,
+ * not a silent new guest.
+ */
+export const LAST_WAS_SAVED_FLAG = 'lb.session.lastWasSaved';
 
 export const EmailSchema = z
   .string()
@@ -31,7 +38,7 @@ export const CodeSchema = z
 export const RESEND_SECONDS = 60;
 
 export class AuthError extends Error {
-  constructor(public kind: 'invalid' | 'rate' | 'expired' | 'exists' | 'network' | 'unknown', message: string) {
+  constructor(public kind: 'invalid' | 'rate' | 'expired' | 'exists' | 'noAccount' | 'network' | 'unknown', message: string) {
     super(message);
   }
 }
@@ -57,12 +64,26 @@ function client() {
   return supabase;
 }
 
-/** Sends a one-time code to the email. New emails get an account; existing ones just sign in. */
+/**
+ * Sends a one-time code to the email.
+ * - after a sign-out (no session): new emails get an account; existing ones just sign in
+ * - from a guest session: existing accounts only. Signing in replaces the guest's progress on this phone,
+ *   so a typo must not create an empty account; a guest who wants an account uses "Save your progress".
+ */
 export async function requestCode(rawEmail: string): Promise<string> {
   const parsed = EmailSchema.safeParse(rawEmail);
   if (!parsed.success) throw new AuthError('invalid', parsed.error.issues[0]?.message ?? 'Enter a valid email address.');
-  const { error } = await client().auth.signInWithOtp({ email: parsed.data, options: { shouldCreateUser: true } });
-  if (error) throw toAuthError(error);
+  const { status, isGuest } = useSession.getState();
+  const shouldCreateUser = !(status === 'signedIn' && isGuest);
+  const { error } = await client().auth.signInWithOtp({ email: parsed.data, options: { shouldCreateUser } });
+  if (error) {
+    // GoTrue answers 422 `otp_disabled` ("Signups not allowed for otp") when create_user is false and no user exists.
+    const code = (error as { code?: string }).code ?? '';
+    if (!shouldCreateUser && (code === 'otp_disabled' || code === 'user_not_found' || code === 'signup_disabled')) {
+      throw new AuthError('noAccount', 'No account uses this email. To keep your guest progress, use "Save your progress" instead.');
+    }
+    throw toAuthError(error);
+  }
   return parsed.data;
 }
 
@@ -78,6 +99,7 @@ export async function verifyCode(email: string, rawCode: string): Promise<void> 
 /** Starts a guest account (Supabase anonymous sign-in). Rate-limited per IP by Supabase. */
 export async function startGuest(): Promise<void> {
   storage.remove(SIGNED_OUT_FLAG);
+  storage.remove(LAST_WAS_SAVED_FLAG);
   const { error } = await client().auth.signInAnonymously();
   if (error) throw toAuthError(error);
 }
@@ -107,11 +129,25 @@ export async function verifySaveCode(email: string, rawCode: string): Promise<vo
 /**
  * Signs out. 'local' revokes this device's refresh token on the server; 'global' revokes every session
  * of the account (use after a lost phone). Local data is wiped by the SIGNED_OUT handler.
+ * - 'local' always ends the session on this device (auth-js removes it before calling the server; offline,
+ *   only the server-side revoke is skipped and the refresh token simply expires there)
+ * - 'global' needs a connection: if the server can't be reached nothing changes and a clear error is thrown
+ * Either way the sign-out flag only stays set if this device really has no session any more.
  */
 export async function signOut(scope: 'local' | 'global' = 'local'): Promise<void> {
-  // After a deliberate sign-out, show the sign-in screen instead of silently starting a new guest.
+  const c = client();
+  // Set before the call: the SIGNED_OUT handler reads it to show the sign-in screen instead of a new guest.
   storage.set(SIGNED_OUT_FLAG, true);
-  const { error } = await client().auth.signOut({ scope });
-  // Offline or already-revoked token: the session is still removed from this device.
-  if (error && scope === 'global') throw toAuthError(error);
+  let error: unknown = null;
+  try {
+    ({ error } = await c.auth.signOut({ scope }));
+  } catch (e) {
+    error = e;
+  }
+  const { data } = await c.auth.getSession().catch(() => ({ data: { session: null } }));
+  if (data.session) {
+    // Still signed in (global sign-out while offline): keep the flag consistent with reality.
+    storage.remove(SIGNED_OUT_FLAG);
+    throw error ? toAuthError(error) : new AuthError('unknown', 'Sign-out failed. Try again.');
+  }
 }

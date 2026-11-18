@@ -3,6 +3,7 @@ import type { FitnessTests, ProgressionResponse, TrialAttemptInput, TrialAttempt
 import type { PrismaClient } from '@lb/db';
 import { computeTrueStats, evaluateTrial, gameDate, RANK_REQUIREMENTS, scoreTrialEvents, trialStatus, XP, type HeroClass, type Rank } from '@lb/engine';
 import { grantXp } from './xp';
+import { isUniqueViolation } from '../../lib/db';
 
 type Tx = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'>;
 
@@ -109,8 +110,23 @@ export class TrialError extends Error {
 
 /** Server-scored Rank Trial (SYSTEMS.md §4.4). Idempotent by attempt id. */
 export async function attemptTrial(prisma: PrismaClient, userId: string, input: TrialAttemptInput): Promise<TrialAttemptResponse> {
+  try {
+    return await attemptTrialTx(prisma, userId, input);
+  } catch (e) {
+    if (!isUniqueViolation(e)) throw e;
+    // two copies of the same attempt raced: the loser answers with the winner's stored result
+    const existing = await prisma.event.findUnique({ where: { id: input.id } });
+    if (existing?.userId === userId && existing.payload && (existing.payload as { attemptId?: string }).attemptId) {
+      return { ...(existing.payload as unknown as TrialAttemptResponse), duplicate: true };
+    }
+    throw new TrialError('not-eligible', 'this attempt is already being scored');
+  }
+}
+
+async function attemptTrialTx(prisma: PrismaClient, userId: string, input: TrialAttemptInput): Promise<TrialAttemptResponse> {
   return prisma.$transaction(async (tx) => {
     const existing = await tx.event.findUnique({ where: { id: input.id } });
+    if (existing && existing.userId !== userId) throw new TrialError('not-eligible', 'attempt id already used');
     if (existing) return { ...(existing.payload as unknown as TrialAttemptResponse), duplicate: true };
 
     const now = new Date();

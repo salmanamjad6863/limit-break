@@ -42,57 +42,62 @@ const eligible = (ranks: string[]) => Prisma.sql`
     AND p."birthDate" IS NOT NULL AND p."birthDate" <= (current_date - interval '18 years')
     AND COALESCE(hs."rank"::text, 'E') = ANY(${ranks})`;
 
-async function xpBoard(prisma: PrismaClient, start: string, end: string, ranks: string[], only?: string) {
-  return prisma.$queryRaw<Row[]>`
-    WITH elig AS (${eligible(ranks)})
-    SELECT x."userId"::text AS "userId", SUM(x."amount")::float AS "score"
-    FROM "XpLedger" x JOIN elig e ON e."userId" = x."userId"
-    WHERE x."localDate" >= ${start} AND x."localDate" < ${end}
-      ${only ? Prisma.sql`AND x."userId" = ${only}::uuid` : Prisma.empty}
-    GROUP BY x."userId"
-    HAVING SUM(x."amount") > 0
-    ORDER BY "score" DESC, MIN(x."createdAt") ASC
-    LIMIT ${LIMIT}`;
-}
+/** XP Champions: Σ granted XP this month (daily caps already applied). Returns the scored set, unordered. */
+const xpScores = (start: string, end: string, ranks: string[]) => Prisma.sql`
+  WITH elig AS (${eligible(ranks)})
+  SELECT x."userId"::text AS "userId", SUM(x."amount")::float AS "score", MIN(x."createdAt") AS "tie"
+  FROM "XpLedger" x JOIN elig e ON e."userId" = x."userId"
+  WHERE x."localDate" >= ${start} AND x."localDate" < ${end}
+  GROUP BY x."userId"
+  HAVING SUM(x."amount") > 0`;
 
 /**
  * Most Consistent: 100 × (0.6 × sessions done / sessions planned + 0.4 × quest days / days so far),
  * planned = the hunter's training weekdays that have passed this month. Needs ≥ 2 planned sessions
- * (≥ 8 for the final standings).
+ * (≥ 8 for the final standings). Tie-break: longest streak.
  */
-async function consistentBoard(prisma: PrismaClient, start: string, end: string, ranks: string[], minPlanned: number, only?: string) {
-  return prisma.$queryRaw<Row[]>`
-    WITH elig AS (${eligible(ranks)}),
-    days AS (
-      SELECT d::date AS d FROM generate_series(${start}::date, LEAST(${end}::date - 1, current_date), interval '1 day') d
-    ),
-    ndays AS (SELECT GREATEST(COUNT(*), 1)::float AS n FROM days),
-    planned AS (
-      SELECT e."userId", COUNT(*)::float AS n
-      FROM elig e JOIN "Profile" p ON p."id" = e."userId"
-      JOIN days ON EXTRACT(DOW FROM days.d)::int = ANY(p."trainingWeekdays")
-      GROUP BY e."userId"
-    ),
-    done AS (
-      SELECT s."userId", COUNT(DISTINCT s."localDate")::float AS n FROM "WorkoutSession" s
-      WHERE s."localDate" >= ${start} AND s."localDate" < ${end} AND s."kind" IN ('program', 'quick') AND s."source" = 'app'
-      GROUP BY s."userId"
-    ),
-    quests AS (
-      SELECT q."userId", COUNT(*)::float AS n FROM "QuestInstance" q
-      WHERE q."kind" = 'DAILY' AND q."status" = 'COMPLETED' AND q."localDate" >= ${start} AND q."localDate" < ${end}
-      GROUP BY q."userId"
-    )
-    SELECT pl."userId"::text AS "userId",
-      ROUND((100 * (0.6 * LEAST(1, COALESCE(dn.n, 0) / pl.n) + 0.4 * LEAST(1, COALESCE(qu.n, 0) / (SELECT n FROM ndays))))::numeric, 1)::float AS "score"
-    FROM planned pl
-    LEFT JOIN done dn ON dn."userId" = pl."userId"
-    LEFT JOIN quests qu ON qu."userId" = pl."userId"
-    LEFT JOIN "HunterState" hs ON hs."userId" = pl."userId"
-    WHERE pl.n >= ${minPlanned}
-      ${only ? Prisma.sql`AND pl."userId" = ${only}::uuid` : Prisma.empty}
-    ORDER BY "score" DESC, COALESCE(hs."longest", 0) DESC
-    LIMIT ${LIMIT}`;
+const consistentScores = (start: string, end: string, ranks: string[], minPlanned: number) => Prisma.sql`
+  WITH elig AS (${eligible(ranks)}),
+  days AS (
+    SELECT d::date AS d FROM generate_series(${start}::date, LEAST(${end}::date - 1, current_date), interval '1 day') d
+  ),
+  ndays AS (SELECT GREATEST(COUNT(*), 1)::float AS n FROM days),
+  planned AS (
+    SELECT e."userId", COUNT(*)::float AS n
+    FROM elig e JOIN "Profile" p ON p."id" = e."userId"
+    JOIN days ON EXTRACT(DOW FROM days.d)::int = ANY(p."trainingWeekdays")
+    GROUP BY e."userId"
+  ),
+  done AS (
+    SELECT s."userId", COUNT(DISTINCT s."localDate")::float AS n FROM "WorkoutSession" s
+    WHERE s."localDate" >= ${start} AND s."localDate" < ${end} AND s."kind" IN ('program', 'quick') AND s."source" = 'app'
+    GROUP BY s."userId"
+  ),
+  quests AS (
+    SELECT q."userId", COUNT(*)::float AS n FROM "QuestInstance" q
+    WHERE q."kind" = 'DAILY' AND q."status" = 'COMPLETED' AND q."localDate" >= ${start} AND q."localDate" < ${end}
+    GROUP BY q."userId"
+  )
+  SELECT pl."userId"::text AS "userId",
+    ROUND((100 * (0.6 * LEAST(1, COALESCE(dn.n, 0) / pl.n) + 0.4 * LEAST(1, COALESCE(qu.n, 0) / (SELECT n FROM ndays))))::numeric, 1)::float AS "score",
+    -COALESCE(hs."longest", 0) AS "tie"
+  FROM planned pl
+  LEFT JOIN done dn ON dn."userId" = pl."userId"
+  LEFT JOIN quests qu ON qu."userId" = pl."userId"
+  LEFT JOIN "HunterState" hs ON hs."userId" = pl."userId"
+  WHERE pl.n >= ${minPlanned}`;
+
+/** Top N, and one hunter's true place across the whole board (not just the top N). */
+async function ranked(prisma: PrismaClient, scores: Prisma.Sql, me: string | null) {
+  const top = await prisma.$queryRaw<Row[]>`
+    SELECT "userId", "score" FROM (${scores}) s ORDER BY "score" DESC, "tie" ASC, "userId" ASC LIMIT ${LIMIT}`;
+  const mine = me
+    ? await prisma.$queryRaw<(Row & { place: number })[]>`
+        SELECT * FROM (
+          SELECT "userId", "score", (RANK() OVER (ORDER BY "score" DESC))::int AS "place" FROM (${scores}) s
+        ) r WHERE r."userId" = ${me}`
+    : [];
+  return { top, mine: mine[0] };
 }
 
 export async function board(
@@ -109,16 +114,12 @@ export async function board(
     // needs stats re-tested ≥ 21 days apart; opens once the re-test history exists (Sprint 10)
     return { board: id, division, month, final, rows: [], me: null, meIneligible: 'Most Improved opens once hunters have re-tested (21 days after their first test).' };
   }
-  const run = (only?: string) =>
-    id === 'xp' ? xpBoard(prisma, start, end, ranks, only) : consistentBoard(prisma, start, end, ranks, final ? 8 : 2, only);
-  const rows = await run();
-  let meRow: Row | undefined = rows.find((r) => r.userId === viewer.userId);
-  let mePlace = meRow ? rows.indexOf(meRow) + 1 : 0;
-  if (!meRow && !viewer.ineligible) {
-    meRow = (await run(viewer.userId))[0];
-    // outside the top 100: place = everyone above me + 1 (approximate is fine for a live view)
-    if (meRow) mePlace = rows.filter((r) => r.score > meRow!.score).length + 1;
-  }
+  const scores = id === 'xp' ? xpScores(start, end, ranks) : consistentScores(start, end, ranks, final ? 8 : 2);
+  const { top: rows, mine } = await ranked(prisma, scores, viewer.ineligible ? null : viewer.userId);
+  const meRow: Row | undefined = mine ? { userId: mine.userId, score: mine.score } : undefined;
+  // ties share a place on the list too
+  const topPlace = (i: number) => rows.findIndex((r) => r.score === rows[i]!.score) + 1;
+  const mePlace = mine?.place ?? 0;
   const cards = await hunterCards(prisma, [...rows.map((r) => r.userId), ...(meRow ? [meRow.userId] : [])]);
   const toRow = (r: Row, place: number) => {
     const hunter = cards.get(r.userId);
@@ -126,7 +127,7 @@ export async function board(
   };
   return {
     board: id, division, month, final,
-    rows: rows.map((r, i) => toRow(r, i + 1)).filter((x): x is NonNullable<typeof x> => !!x),
+    rows: rows.map((r, i) => toRow(r, topPlace(i))).filter((x): x is NonNullable<typeof x> => !!x),
     me: meRow ? toRow(meRow, mePlace) : null,
     meIneligible: viewer.ineligible,
   };

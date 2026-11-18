@@ -45,7 +45,7 @@ async function viewer(ctx: CommunityCtx) {
     prisma.profile.findUnique({ where: { id: userId }, select: { createdAt: true, birthDate: true, state: { select: { level: true, rank: true } } } }),
     prisma.publicProfile.findUnique({ where: { userId } }),
     prisma.workoutSession.count({ where: { userId } }),
-    prisma.report.count({ where: { status: 'upheld', resolvedAt: { gte: new Date(Date.now() - 30 * DAY) }, OR: [{ targetType: 'profile', targetId: userId }, { targetType: { in: ['post', 'comment'] }, targetId: { in: await ownedTargetIds(prisma, userId) } }] } }),
+    upheldReportsAgainst(prisma, userId),
   ]);
   if (!profile) throw new CommunityError(404, 'profile not found');
   const input: TrustInput = {
@@ -62,14 +62,17 @@ async function viewer(ctx: CommunityCtx) {
   return { ...permissions(input), pub, rank: RANK(profile.state?.rank), input };
 }
 
-/** ids of this user's recent posts and comments (for upheld-report lookups) */
-async function ownedTargetIds(prisma: PrismaClient, userId: string) {
-  const since = new Date(Date.now() - 30 * DAY);
-  const [p, c] = await Promise.all([
-    prisma.post.findMany({ where: { authorId: userId, createdAt: { gte: since } }, select: { id: true } }),
-    prisma.comment.findMany({ where: { authorId: userId, createdAt: { gte: since } }, select: { id: true } }),
-  ]);
-  return [...p.map((x) => x.id), ...c.map((x) => x.id)];
+/** Upheld reports against this hunter (profile, posts or comments) in the last 30 days: one indexed query. */
+async function upheldReportsAgainst(prisma: PrismaClient, userId: string) {
+  const rows = await prisma.$queryRaw<{ n: number }[]>`
+    SELECT COUNT(*)::int AS n FROM "Report" r
+    WHERE r."status" = 'upheld' AND r."resolvedAt" >= now() - interval '30 days'
+      AND (
+        (r."targetType" = 'profile' AND r."targetId" = ${userId})
+        OR (r."targetType" = 'post' AND EXISTS (SELECT 1 FROM "Post" p WHERE p."id"::text = r."targetId" AND p."authorId" = ${userId}::uuid))
+        OR (r."targetType" = 'comment' AND EXISTS (SELECT 1 FROM "Comment" c WHERE c."id"::text = r."targetId" AND c."authorId" = ${userId}::uuid))
+      )`;
+  return rows[0]?.n ?? 0;
 }
 
 async function relations(prisma: PrismaClient, userId: string) {
@@ -199,39 +202,71 @@ export async function feed(ctx: CommunityCtx, tab: FeedTab, cursor?: string): Pr
   const base = visibleTo(userId, rel);
 
   if (tab === 'global') {
-    // hot = (respect + 2 × comments) / (ageHours + 2)^1.5 over the last 7 days, max 2 posts per author per page
-    const rows = await prisma.post.findMany({
-      where: { AND: [base, { visibility: 'public', status: 'visible', createdAt: { gte: new Date(Date.now() - 7 * DAY) } }] },
-      orderBy: { createdAt: 'desc' }, take: 300,
-    });
-    const now = Date.now();
-    const hot = (p: PostRow) => (p.respectCount + 2 * p.commentCount + 1) / Math.pow((now - p.createdAt.getTime()) / 3_600_000 + 2, 1.5);
-    const ranked = [...rows].sort((a, b) => hot(b) - hot(a));
-    const offset = Number(cursor ?? 0) || 0;
-    const pageRows: PostRow[] = [];
-    const perAuthor = new Map<string, number>();
-    const rest: PostRow[] = [];
-    for (const p of ranked.slice(offset)) {
-      if (pageRows.length >= PAGE) break;
-      const n = perAuthor.get(p.authorId) ?? 0;
-      if (n >= 2) { rest.push(p); continue; }
-      perAuthor.set(p.authorId, n + 1);
-      pageRows.push(p);
-    }
-    const consumed = offset + pageRows.length + rest.length;
-    return { posts: await toDtos(prisma, userId, pageRows), nextCursor: consumed < ranked.length ? String(consumed) : null };
+    // cursor "snapshotMs:offset": ranking uses a fixed "now" and only posts that existed then, so pages never shift
+    const [snapRaw, offRaw] = (cursor ?? '').split(':');
+    const snapshot = Number(snapRaw) || Date.now();
+    const offset = Number(offRaw) || 0;
+    const window = { AND: [base, { visibility: 'public', status: 'visible', createdAt: { gte: new Date(snapshot - 7 * DAY), lte: new Date(snapshot) } }] };
+    // candidates: the newest and the most-engaged of the week (an older popular post still ranks)
+    const [newest, engaged] = await Promise.all([
+      prisma.post.findMany({ where: window, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 200 }),
+      prisma.post.findMany({ where: window, orderBy: [{ respectCount: 'desc' }, { commentCount: 'desc' }, { id: 'desc' }], take: 200 }),
+    ]);
+    const rows = [...new Map([...newest, ...engaged].map((p) => [p.id, p])).values()];
+    // hot = (respect + 2 × comments + 1) / (ageHours + 2)^1.5
+    const hot = (p: PostRow) => (p.respectCount + 2 * p.commentCount + 1) / Math.pow((snapshot - p.createdAt.getTime()) / 3_600_000 + 2, 1.5);
+    const ranked = rows.sort((a, b) => hot(b) - hot(a) || b.id.localeCompare(a.id));
+    const ordered = capPerAuthor(ranked, PAGE, 2);
+    const pageRows = ordered.slice(offset, offset + PAGE);
+    const next = offset + pageRows.length;
+    return { posts: await toDtos(prisma, userId, pageRows), nextCursor: next < ordered.length ? `${snapshot}:${next}` : null };
   }
 
-  const before = cursor ? new Date(cursor) : undefined;
+  // cursor "createdAtISO|id": ties on the same millisecond are ordered by id, so nothing is skipped
+  const [cIso, cId] = (cursor ?? '').split('|');
+  const before = cIso ? new Date(cIso) : undefined;
+  const after = before && !Number.isNaN(before.getTime())
+    ? [{ OR: [{ createdAt: { lt: before } }, ...(cId ? [{ createdAt: before, id: { lt: cId } }] : [])] }]
+    : [];
   const scope =
     tab === 'following'
       ? { authorId: { in: [userId, ...rel.following] } }
       : { visibility: 'public', status: 'visible', authorRank: { in: tierOf(RANK(me?.rank)) } };
   const rows = await prisma.post.findMany({
-    where: { AND: [base, scope, ...(before && !Number.isNaN(before.getTime()) ? [{ createdAt: { lt: before } }] : [])] },
-    orderBy: { createdAt: 'desc' }, take: PAGE,
+    where: { AND: [base, scope, ...after] },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: PAGE,
   });
-  return { posts: await toDtos(prisma, userId, rows), nextCursor: rows.length === PAGE ? rows.at(-1)!.createdAt.toISOString() : null };
+  const last = rows.at(-1);
+  return { posts: await toDtos(prisma, userId, rows), nextCursor: rows.length === PAGE && last ? `${last.createdAt.toISOString()}|${last.id}` : null };
+}
+
+/**
+ * Re-orders a ranked list so no page has more than `max` posts from one author; extras move to the
+ * front of the next page (nothing is dropped). Deterministic for the same input, so offsets are stable.
+ */
+export function capPerAuthor<T extends { authorId: string }>(ranked: T[], pageSize: number, max: number): T[] {
+  const out: T[] = [];
+  let carry: T[] = [];
+  let rest = ranked;
+  while (carry.length || rest.length) {
+    const queue = [...carry, ...rest];
+    const page: T[] = [];
+    const deferred: T[] = [];
+    const per = new Map<string, number>();
+    let i = 0;
+    for (; i < queue.length && page.length < pageSize; i++) {
+      const p = queue[i]!;
+      const n = per.get(p.authorId) ?? 0;
+      if (n >= max) deferred.push(p);
+      else { per.set(p.authorId, n + 1); page.push(p); }
+    }
+    // a page that can't be filled (only one prolific author left) takes the rest as-is
+    if (!page.length) { out.push(...queue); break; }
+    out.push(...page);
+    carry = deferred;
+    rest = queue.slice(i);
+  }
+  return out;
 }
 
 /* ---------------- posts ---------------- */
@@ -249,7 +284,7 @@ export async function createPost(ctx: CommunityCtx, input: CreatePostInput & { b
   const { prisma, userId } = ctx;
   const existing = await prisma.post.findUnique({ where: { id: input.id } });
   if (existing) {
-    if (existing.authorId !== userId) throw new CommunityError(409, 'post id already used');
+    if (existing.authorId !== userId || existing.status === 'removed') throw new CommunityError(409, 'post id already used');
     return (await toDtos(prisma, userId, [existing]))[0]!;
   }
   const v = await viewer(ctx);
@@ -279,8 +314,14 @@ export async function createPost(ctx: CommunityCtx, input: CreatePostInput & { b
 export async function deletePost(ctx: CommunityCtx, postId: string) {
   const post = await ctx.prisma.post.findUnique({ where: { id: postId } });
   if (!post || post.authorId !== ctx.userId) throw new CommunityError(404, 'post not found');
-  await ctx.prisma.post.update({ where: { id: postId }, data: { status: 'removed' } });
+  await ctx.prisma.post.updateMany({ where: { id: postId, status: { not: 'removed' } }, data: { status: 'removed' } });
   return { ok: true };
+}
+
+/** One post for the post screen (deep links, notifications). */
+export async function getPost(ctx: CommunityCtx, postId: string): Promise<PostDto> {
+  const { post } = await postVisibleTo(ctx, postId);
+  return (await toDtos(ctx.prisma, ctx.userId, [post]))[0]!;
 }
 
 /**
@@ -328,24 +369,21 @@ export async function react(ctx: CommunityCtx, postId: string, sticker: Sticker)
   const { post } = await postVisibleTo(ctx, postId);
   if (post.status !== 'visible') throw new CommunityError(400, 'this post is not public yet');
   const { prisma, userId } = ctx;
-  await prisma.$transaction(async (tx) => {
-    const had = await tx.reaction.findUnique({ where: { postId_userId: { postId, userId } } });
-    if (had) await tx.reaction.update({ where: { postId_userId: { postId, userId } }, data: { sticker } });
-    else {
-      await tx.reaction.create({ data: { postId, userId, sticker } });
-      await tx.post.update({ where: { id: postId }, data: { respectCount: { increment: 1 } } });
-    }
-  });
+  // insert-if-absent: two taps at once can't both count (the primary key decides)
+  const inserted = await prisma.$executeRaw`
+    INSERT INTO "Reaction" ("postId", "userId", "sticker", "createdAt") VALUES (${postId}::uuid, ${userId}::uuid, ${sticker}, now())
+    ON CONFLICT ("postId", "userId") DO NOTHING`;
+  if (inserted === 1) await prisma.post.update({ where: { id: postId }, data: { respectCount: { increment: 1 } } });
+  else await prisma.reaction.updateMany({ where: { postId, userId }, data: { sticker } });
   return { ok: true };
 }
 
 export async function unreact(ctx: CommunityCtx, postId: string) {
   const { prisma, userId } = ctx;
   await prisma.$transaction(async (tx) => {
-    const had = await tx.reaction.findUnique({ where: { postId_userId: { postId, userId } } });
-    if (!had) return;
-    await tx.reaction.delete({ where: { postId_userId: { postId, userId } } });
-    await tx.post.update({ where: { id: postId }, data: { respectCount: { decrement: 1 } } });
+    // only the call that actually deleted the row decrements
+    const { count } = await tx.reaction.deleteMany({ where: { postId, userId } });
+    if (count) await tx.post.update({ where: { id: postId }, data: { respectCount: { decrement: 1 } } });
   });
   return { ok: true };
 }
@@ -362,9 +400,11 @@ export async function listComments(ctx: CommunityCtx, postId: string): Promise<C
     orderBy: { createdAt: 'asc' }, take: 200,
   });
   const cards = await hunterCards(ctx.prisma, rows.map((r) => r.authorId));
+  const shownTop = new Set(rows.filter((r) => !r.parentId && cards.has(r.authorId)).map((r) => r.id));
   return rows.flatMap((r) => {
     const author = cards.get(r.authorId);
-    return author ? [{ id: r.id, postId: r.postId, parentId: r.parentId, author, body: r.body, status: r.status as CommentDto['status'], mine: r.authorId === ctx.userId, createdAt: r.createdAt.toISOString() }] : [];
+    // a reply is only shown under a parent this viewer can see
+    return author && (!r.parentId || shownTop.has(r.parentId)) ? [{ id: r.id, postId: r.postId, parentId: r.parentId, author, body: r.body, status: r.status as CommentDto['status'], mine: r.authorId === ctx.userId, createdAt: r.createdAt.toISOString() }] : [];
   });
 }
 
@@ -372,8 +412,9 @@ export async function createComment(ctx: CommunityCtx, postId: string, input: Cr
   const { prisma, userId } = ctx;
   const dup = await prisma.comment.findUnique({ where: { id: input.id } });
   if (dup) {
-    if (dup.authorId !== userId) throw new CommunityError(409, 'comment id already used');
-    return (await listComments(ctx, postId)).find((c) => c.id === dup.id)!;
+    const again = dup.authorId === userId && dup.postId === postId ? (await listComments(ctx, postId)).find((c) => c.id === dup.id) : undefined;
+    if (!again) throw new CommunityError(409, 'comment id already used');
+    return again;
   }
   const v = await viewer(ctx);
   if (!v.can.comment) throw new CommunityError(403, v.nextUnlock ?? 'comments are not available on your account');
@@ -385,7 +426,8 @@ export async function createComment(ctx: CommunityCtx, postId: string, input: Cr
   }
   if (input.parentId) {
     const parent = await prisma.comment.findUnique({ where: { id: input.parentId } });
-    if (!parent || parent.postId !== postId || parent.parentId) throw new CommunityError(400, 'you can reply to a comment, not to a reply');
+    if (!parent || parent.postId !== postId || parent.status !== 'visible' || rel.hidden.includes(parent.authorId)) throw new CommunityError(404, 'comment not found');
+    if (parent.parentId) throw new CommunityError(400, 'you can reply to a comment, not to a reply');
   }
   const lastHour = await prisma.comment.count({ where: { authorId: userId, createdAt: { gte: new Date(Date.now() - 3_600_000) } } });
   if (lastHour >= limits(v.trustLevel).commentsPerHour) throw new CommunityError(429, 'too many comments; take a breather');
@@ -407,8 +449,10 @@ export async function deleteComment(ctx: CommunityCtx, commentId: string) {
   // the author of a comment, or of the post it's on, can remove it
   if (!c || (c.authorId !== userId && c.post.authorId !== userId)) throw new CommunityError(404, 'comment not found');
   await prisma.$transaction(async (tx) => {
-    await tx.comment.update({ where: { id: commentId }, data: { status: 'removed' } });
-    if (c.status === 'visible') await tx.post.update({ where: { id: c.postId }, data: { commentCount: { decrement: 1 } } });
+    // conditional updates: a double tap or a moderator acting at the same time can't decrement twice
+    const wasVisible = await tx.comment.updateMany({ where: { id: commentId, status: 'visible' }, data: { status: 'removed' } });
+    if (wasVisible.count) await tx.post.update({ where: { id: c.postId }, data: { commentCount: { decrement: 1 } } });
+    else await tx.comment.updateMany({ where: { id: commentId, status: { in: ['pending', 'hidden'] } }, data: { status: 'removed' } });
   });
   return { ok: true };
 }
@@ -425,9 +469,14 @@ export async function follow(ctx: CommunityCtx, targetId: string) {
   if (targetId === ctx.userId) throw new CommunityError(400, 'you can’t follow yourself');
   const v = await viewer(ctx);
   if (!v.can.follow) throw new CommunityError(403, v.nextUnlock ?? 'following is not available on your account');
-  await targetHunter(ctx.prisma, targetId);
+  const target = await targetHunter(ctx.prisma, targetId);
   const rel = await relations(ctx.prisma, ctx.userId);
   if (rel.hidden.includes(targetId)) throw new CommunityError(404, 'hunter not found');
+  // private profiles (and every under-18 profile, which is always private) can't be followed:
+  // a follow would unlock their followers-only posts. Follow requests come with Friends (Sprint 10).
+  if (!target.isPublic) throw new CommunityError(403, 'this hunter’s profile is private');
+  const targetProfile = await ctx.prisma.profile.findUnique({ where: { id: targetId }, select: { birthDate: true } });
+  if (isMinor(targetProfile?.birthDate ?? null) !== v.isMinor) throw new CommunityError(403, 'this hunter’s profile is private');
   const total = await ctx.prisma.follow.count({ where: { followerId: ctx.userId } });
   if (total >= 2000) throw new CommunityError(429, 'you follow the maximum number of hunters');
   await ctx.prisma.follow.upsert({
@@ -461,9 +510,25 @@ export async function unblock(ctx: CommunityCtx, targetId: string) {
 /** Three open reports hold a post or comment for review until a moderator decides. */
 const AUTO_HOLD_REPORTS = 3;
 
+/** You can only report what you can see. */
+async function assertReportable(ctx: CommunityCtx, input: ReportInput) {
+  if (input.targetType === 'post') return void (await postVisibleTo(ctx, input.targetId));
+  const rel = await relations(ctx.prisma, ctx.userId);
+  if (input.targetType === 'profile') {
+    const pub = await ctx.prisma.publicProfile.findUnique({ where: { userId: input.targetId } });
+    if (!pub || rel.hidden.includes(input.targetId)) throw new CommunityError(404, 'hunter not found');
+    return;
+  }
+  const c = await ctx.prisma.comment.findUnique({ where: { id: input.targetId } });
+  if (!c || c.status !== 'visible' || rel.hidden.includes(c.authorId)) throw new CommunityError(404, 'comment not found');
+  await postVisibleTo(ctx, c.postId);
+}
+
 export async function report(ctx: CommunityCtx, input: ReportInput) {
   if (ctx.isGuest) throw new CommunityError(403, 'save your account to report content');
   const { prisma, userId } = ctx;
+  if (!/^[0-9a-f-]{36}$/i.test(input.targetId)) throw new CommunityError(404, 'not found');
+  await assertReportable(ctx, input);
   try {
     await prisma.report.create({ data: { id: randomUUID(), reporterId: userId, targetType: input.targetType, targetId: input.targetId, reason: input.reason, details: input.details ?? null } });
   } catch (e) {
@@ -471,19 +536,29 @@ export async function report(ctx: CommunityCtx, input: ReportInput) {
     throw e;
   }
   if (input.targetType === 'post' || input.targetType === 'comment') {
-    const open = await prisma.report.count({ where: { targetType: input.targetType, targetId: input.targetId, status: 'open' } });
+    // only reports from established accounts (3+ days, 3+ workouts) can hold content automatically,
+    // so a few throwaway accounts can't take a post down
+    const counted = await prisma.$queryRaw<{ n: number }[]>`
+      SELECT COUNT(*)::int AS n FROM "Report" r JOIN "Profile" p ON p."id" = r."reporterId"
+      WHERE r."targetType" = ${input.targetType} AND r."targetId" = ${input.targetId} AND r."status" = 'open'
+        AND p."createdAt" <= now() - interval '3 days'
+        AND (SELECT COUNT(*) FROM "WorkoutSession" w WHERE w."userId" = p."id") >= 3`;
+    const open = counted[0]?.n ?? 0;
     if (open >= AUTO_HOLD_REPORTS) {
-      if (input.targetType === 'post') await prisma.post.updateMany({ where: { id: input.targetId, status: 'visible' }, data: { status: 'pending' } });
-      else {
-        const c = await prisma.comment.findUnique({ where: { id: input.targetId } });
-        if (c?.status === 'visible') {
-          await prisma.$transaction([
-            prisma.comment.update({ where: { id: c.id }, data: { status: 'pending' } }),
-            prisma.post.update({ where: { id: c.postId }, data: { commentCount: { decrement: 1 } } }),
-          ]);
-        }
+      let held = 0;
+      if (input.targetType === 'post') {
+        held = (await prisma.post.updateMany({ where: { id: input.targetId, status: 'visible' }, data: { status: 'pending' } })).count;
+      } else {
+        held = await prisma.$transaction(async (tx) => {
+          const { count } = await tx.comment.updateMany({ where: { id: input.targetId, status: 'visible' }, data: { status: 'pending' } });
+          if (count) {
+            const c = await tx.comment.findUnique({ where: { id: input.targetId }, select: { postId: true } });
+            if (c) await tx.post.update({ where: { id: c.postId }, data: { commentCount: { decrement: 1 } } });
+          }
+          return count;
+        });
       }
-      await prisma.moderationAction.create({ data: { id: randomUUID(), targetType: input.targetType, targetId: input.targetId, action: 'auto_hold', reason: `reports:${open}` } });
+      if (held) await prisma.moderationAction.create({ data: { id: randomUUID(), targetType: input.targetType, targetId: input.targetId, action: 'auto_hold', reason: `reports:${open}` } });
     }
   }
   return { ok: true };
@@ -547,14 +622,15 @@ export async function moderationDecision(ctx: CommunityCtx, targetType: 'post' |
   const { prisma, userId } = ctx;
   const next = action === 'approve' ? 'visible' : 'hidden';
   await prisma.$transaction(async (tx) => {
+    // conditional on the current status, so a concurrent delete/hide can't double-count
     if (targetType === 'post') {
-      const p = await tx.post.findUnique({ where: { id: targetId } });
-      if (!p || p.status === 'removed') throw new CommunityError(404, 'post not found');
-      await tx.post.update({ where: { id: targetId }, data: { status: next } });
+      const { count } = await tx.post.updateMany({ where: { id: targetId, status: { not: 'removed' } }, data: { status: next } });
+      if (!count) throw new CommunityError(404, 'post not found');
     } else {
       const c = await tx.comment.findUnique({ where: { id: targetId } });
       if (!c || c.status === 'removed') throw new CommunityError(404, 'comment not found');
-      await tx.comment.update({ where: { id: targetId }, data: { status: next } });
+      const { count } = await tx.comment.updateMany({ where: { id: targetId, status: c.status }, data: { status: next } });
+      if (!count) throw new CommunityError(409, 'the comment changed; reload the queue');
       const delta = (next === 'visible' ? 1 : 0) - (c.status === 'visible' ? 1 : 0);
       if (delta) await tx.post.update({ where: { id: c.postId }, data: { commentCount: { increment: delta } } });
     }

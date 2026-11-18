@@ -89,3 +89,21 @@ describe('community contracts', () => {
     expect(CreatePostInput.safeParse({ id: '6f1c2a9e-3b4d-4e5f-8a7b-9c0d1e2f3a4b', body: 'x'.repeat(501) }).success).toBe(false);
   });
 });
+
+describe('global feed paging (max 2 per author per page)', async () => {
+  const { capPerAuthor } = await import('../src/modules/community/service');
+  it('never drops posts, keeps the cap and is deterministic', () => {
+    // author "a" posts a lot and ranks high
+    const ranked = [...'aaaaabcaaddeffgaah'].map((authorId, i) => ({ authorId, id: String(i) }));
+    const out = capPerAuthor(ranked, 5, 2);
+    expect(out.map((p) => p.id).sort()).toEqual(ranked.map((p) => p.id).sort());
+    for (let i = 0; i + 5 <= out.length; i += 5) {
+      const page = out.slice(i, i + 5);
+      const counts = new Map<string, number>();
+      for (const p of page) counts.set(p.authorId, (counts.get(p.authorId) ?? 0) + 1);
+      // full pages respect the cap while other authors are still available
+      if (new Set(out.slice(i).map((p) => p.authorId)).size > 2) expect(Math.max(...counts.values())).toBeLessThanOrEqual(2);
+    }
+    expect(capPerAuthor(ranked, 5, 2)).toEqual(out);
+  });
+});

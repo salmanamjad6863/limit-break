@@ -9,8 +9,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocalHunter, useMe } from '@/features/progression';
 import { useSession } from '@/features/session';
 import { useTrainingProfile } from '@/features/training/profile';
+import { useTraining } from '@/features/training/store';
 import { api, ApiError, unwrap } from '@/lib/api';
 import { newId } from '@/lib/id';
+import { withKeys } from '@/lib/mutation';
 import { asDto, defaultNutrition, localDay, localSearch, localSummary, useNutritionLocal, type LocalData } from './local';
 import { track } from '@/lib/analytics';
 
@@ -47,6 +49,12 @@ function useLocalData(): LocalData {
   return useMemo(() => ({ logs, foods, weighIns, days, targets }), [logs, foods, weighIns, days, targets]);
 }
 
+/** Hours trained on a day (demo: from the on-device history) for the water target (+0.5 L/h, §2.5). */
+function useTrainingHours(date: string): number {
+  const minutes = useTraining((s) => s.history.reduce((m, h) => m + (h.date === date ? Math.min(360, h.minutes) : 0), 0));
+  return Math.round((minutes / 60) * 4) / 4;
+}
+
 /** Persists a newly started week's target outside render (the planner itself is pure). */
 function usePersistTarget(t: { effectiveFrom: string } | null | undefined) {
   useEffect(() => {
@@ -67,7 +75,8 @@ export function useNutritionDay(date: string): { data: NutritionDayResponse | un
     enabled: status === 'signedIn',
     queryFn: async () => unwrap<NutritionDayResponse>(await api.nutrition.day.$get({ query: { date } })),
   });
-  const local = useMemo(() => (status === 'demo' ? localDay(n, t, d, date, today) : undefined), [status, n, t, d, date, today]);
+  const hours = useTrainingHours(date);
+  const local = useMemo(() => (status === 'demo' ? localDay(n, t, d, date, today, hours) : undefined), [status, n, t, d, date, today, hours]);
   usePersistTarget(local?.storeTarget);
   return status === 'demo' ? { data: local?.response, isLoading: false } : { data: remote.data, isLoading: remote.isLoading };
 }
@@ -83,7 +92,8 @@ export function useNutritionSummary(): { data: NutritionSummaryResponse | undefi
     enabled: status === 'signedIn',
     queryFn: async () => unwrap<NutritionSummaryResponse>(await api.nutrition.summary.$get()),
   });
-  const local = useMemo(() => (status === 'demo' ? localSummary(n, t, d, today) : undefined), [status, n, t, d, today]);
+  const hours = useTrainingHours(today);
+  const local = useMemo(() => (status === 'demo' ? localSummary(n, t, d, today, hours) : undefined), [status, n, t, d, today, hours]);
   usePersistTarget(local?.storeTarget);
   return { data: status === 'demo' ? local?.response : remote.data };
 }
@@ -121,11 +131,11 @@ export function useNutritionActions() {
   };
 
   const addLog = useMutation({
-    mutationFn: async (input: Omit<FoodLogInput, 'id' | 'loggedAt'>) => {
-      const full: FoodLogInput = { ...input, id: newId(), loggedAt: new Date().toISOString() };
+    mutationFn: async (full: FoodLogInput) => {
+      const input = full;
       if (demo) {
         remember(input.food);
-        local().set({ logs: [...local().logs, full] });
+        if (!local().logs.some((l) => l.id === full.id)) local().set({ logs: [...local().logs, full] });
       } else await unwrap(await api.nutrition.logs.$post({ json: full }));
       track({ event: 'food_logged', source: input.food.source, meal: input.meal });
     },
@@ -146,12 +156,18 @@ export function useNutritionActions() {
     onSuccess: refresh,
   });
   const copy = useMutation({
-    mutationFn: async (input: CopyInput): Promise<number> => {
+    mutationFn: async (input: CopyInput & { copyId: string }): Promise<number> => {
       if (demo) {
         const src = local().logs.filter((l) => l.localDate === input.fromDate && (!input.meal || l.meal === input.meal));
         const now = new Date().toISOString();
-        local().set({ logs: [...local().logs, ...src.map((l) => ({ ...l, id: newId(), localDate: input.toDate, loggedAt: now }))] });
-        return src.length;
+        // same idempotency rule as the server: row ids derive from (copyId, source id)
+        const ids = new Set(local().logs.map((l) => l.id));
+        const fresh = src
+          .filter((l) => !l.id.startsWith(`${input.copyId}:`))
+          .map((l) => ({ ...l, id: `${input.copyId}:${l.id}`, localDate: input.toDate, loggedAt: now }))
+          .filter((l) => !ids.has(l.id));
+        local().set({ logs: [...local().logs, ...fresh] });
+        return fresh.length;
       }
       return (await unwrap<{ copied: number }>(await api.nutrition.copy.$post({ json: input }))).copied;
     },
@@ -160,15 +176,22 @@ export function useNutritionActions() {
   const setDay = useMutation({
     mutationFn: async (input: DayFlagsInput) => {
       if (demo) {
-        const cur = local().days[input.localDate] ?? { waterMl: 0, markedComplete: false };
-        local().set({ days: { ...local().days, [input.localDate]: { waterMl: input.waterMl ?? cur.waterMl, markedComplete: input.markedComplete ?? cur.markedComplete } } });
+        const cur = local().days[input.localDate] ?? { waterMl: 0, markedComplete: false, lowDayConfirm: false };
+        local().set({
+          days: {
+            ...local().days,
+            [input.localDate]: {
+              waterMl: input.waterMl ?? cur.waterMl, markedComplete: input.markedComplete ?? cur.markedComplete, lowDayConfirm: input.lowDayConfirm ?? cur.lowDayConfirm ?? false,
+            },
+          },
+        });
       } else await unwrap(await api.nutrition.day.$post({ json: input }));
     },
     onSuccess: refresh,
   });
   const addWeighIn = useMutation({
-    mutationFn: async (input: Omit<WeighInInput, 'id' | 'measuredAt'>) => {
-      const full: WeighInInput = { ...input, id: newId(), measuredAt: new Date().toISOString() };
+    mutationFn: async (full: WeighInInput) => {
+      const input = full;
       if (demo) {
         // one weigh-in per day: the newest replaces the old one
         const rest = local().weighIns.filter((w) => w.date !== input.localDate);
@@ -224,5 +247,13 @@ export function useNutritionActions() {
       return unwrap<FoodDto>(await api.nutrition.foods.barcode[':code'].$get({ param: { code } }));
     },
   });
-  return { addLog, patchLog, deleteLog, copy, setDay, addWeighIn, deleteWeighIn, updateSettings, createFood, lookupBarcode };
+  // ids (and their timestamps) are stamped when the user taps, so a retried request reuses them: no duplicate rows
+  return {
+    addLog: withKeys(addLog, () => ({ id: newId(), loggedAt: new Date().toISOString() })),
+    patchLog, deleteLog,
+    copy: withKeys(copy, () => ({ copyId: newId() })),
+    setDay,
+    addWeighIn: withKeys(addWeighIn, () => ({ id: newId(), measuredAt: new Date().toISOString() })),
+    deleteWeighIn, updateSettings, createFood, lookupBarcode,
+  };
 }

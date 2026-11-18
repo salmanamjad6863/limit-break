@@ -22,7 +22,7 @@ export interface CalorieTargetInput {
 export interface CalorieTargetResult {
   kcal: number;
   delta: number;
-  appliedRails: Array<'deficitCap' | 'floor' | 'under18' | 'weeklySmoothing' | 'maxCutBmi'>;
+  appliedRails: Array<'deficitCap' | 'floor' | 'under18' | 'weeklySmoothing' | 'maxCutBmi' | 'lowIntakePause'>;
 }
 
 /** Rates the UI may offer for a goal given the user's BMI and age. */

@@ -41,3 +41,20 @@ export const rateLimit = (name: string, rule: RateRule) =>
 
 /** Test helper. */
 export const resetRateLimits = () => buckets.clear();
+
+/**
+ * Per-user limit for routes behind requireAuth: keyed on the verified user id, so refreshing the token
+ * or rotating IPs doesn't reset it.
+ */
+export const userRateLimit = (name: string, rule: RateRule) =>
+  createMiddleware<AppEnv>(async (c, next) => {
+    const now = Date.now();
+    const key = `${name}:user:${c.get('userId')}`;
+    const b = buckets.get(key);
+    if (!b || b.resetAt <= now) buckets.set(key, { count: 1, resetAt: now + rule.windowMs });
+    else if (++b.count > rule.limit) {
+      c.header('Retry-After', String(Math.ceil((b.resetAt - now) / 1000)));
+      throw new HTTPException(429, { message: 'too many requests, slow down' });
+    }
+    await next();
+  });

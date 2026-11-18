@@ -6,7 +6,8 @@ import { computeTrend, weightSlopePerDay, type WeighIn } from '../body/trend';
 import type { Sex } from '../body';
 import { TDEE } from '../constants';
 import { DAY_MS } from '../math';
-import { bmr, tdeePrior, updateTdee, type IntakeDay, type Lifestyle, type PlannedSession } from './energy';
+import { bmr, isValidIntakeDay, tdeePrior, updateTdee, type IntakeDay, type Lifestyle, type PlannedSession } from './energy';
+import { needsLowIntakeCheckIn } from './food';
 import { calorieTarget, macroTargets, type CalorieTargetResult, type FatPreference, type Goal, type MacroTargets } from './targets';
 
 export interface NutritionProfileInput {
@@ -36,6 +37,8 @@ export interface NutritionPlan {
   validDays: number;
   target: CalorieTargetResult;
   macros: MacroTargets;
+  /** §2.8 safety rule: 3 of the last 7 logged days were very low → supportive check-in, no deficit increases */
+  lowIntake: boolean;
 }
 
 const dayNum = (iso: string) => Math.round(Date.parse(`${iso}T00:00:00Z`) / DAY_MS);
@@ -49,6 +52,19 @@ export function ageOn(birthDate: string, today: string): number {
 }
 
 /**
+ * §2.8: the last 7 game days before today that count as eaten-and-logged (marked complete, or ≥ 2 meals),
+ * fed to `needsLowIntakeCheckIn`. Partly logged days (one meal) are ignored so a forgotten dinner never trips it.
+ */
+export function lowIntakeCheck(intake: readonly IntakeDay[], today: string, bmrKcal: number): boolean {
+  const t = dayNum(today);
+  const days = intake
+    .filter((d) => dayNum(d.date) >= t - 7 && dayNum(d.date) < t && (d.markedComplete || d.meals >= TDEE.validDayMinMeals))
+    .sort((a, b) => (a.date < b.date ? -1 : 1))
+    .map((d) => d.kcal);
+  return needsLowIntakeCheckIn(days, bmrKcal);
+}
+
+/**
  * Builds today's targets. TDEE starts at the prior and is replayed day by day through the
  * recursive estimator (§2.3) over every day with data, so the result never depends on when
  * the app last ran.
@@ -59,6 +75,8 @@ export function nutritionPlan(i: {
   intake: readonly IntakeDay[];
   today: string;
   lastWeekTarget?: number | null;
+  /** hours trained today (water target +0.5 L/h, §2.5) */
+  trainingHoursToday?: number;
 }): NutritionPlan {
   const p = i.profile;
   const ageYears = ageOn(p.birthDate, i.today);
@@ -95,8 +113,12 @@ export function nutritionPlan(i: {
     tdee, bmr: b, sex: p.sex, ageYears, trendWeightKg: trendKg, heightCm: p.heightCm,
     goal: p.goal, ratePerWeek: p.ratePerWeek, lastWeekTarget: i.lastWeekTarget ?? null,
   });
-  const macros = macroTargets({ kcal: target.kcal, goal: p.goal, weightKg: trendKg, heightCm: p.heightCm, bodyFatPct: p.bodyFatPct ?? null, fatPreference: p.fatPreference });
-  return { ageYears, trendKg, bmr: b, prior, tdee, confidence, calibrating, validDays, target, macros };
+  const macros = macroTargets({
+    kcal: target.kcal, goal: p.goal, weightKg: trendKg, heightCm: p.heightCm, bodyFatPct: p.bodyFatPct ?? null, fatPreference: p.fatPreference,
+    trainingHoursToday: i.trainingHoursToday ?? 0,
+  });
+  const lowIntake = lowIntakeCheck(i.intake, i.today, b);
+  return { ageYears, trendKg, bmr: b, prior, tdee, confidence, calibrating, validDays, target, macros, lowIntake };
 }
 
 export type CheckInVerdict = 'insufficient' | 'onTrack' | 'faster' | 'slower';
@@ -124,7 +146,8 @@ export function weeklyCheckIn(i: {
 }): CheckIn {
   const t = dayNum(i.today);
   const last7 = i.intake.filter((d) => dayNum(d.date) > t - 7 && dayNum(d.date) <= t);
-  const validDays = last7.filter((d) => d.markedComplete || (d.meals >= TDEE.validDayMinMeals && d.kcal >= TDEE.validDayMinTargetShare * i.kcalTarget)).length;
+  // same rule as the TDEE (§2.3): a complete day under 800 kcal only counts once the user confirmed it was a full day
+  const validDays = last7.filter((d) => isValidIntakeDay(d, i.kcalTarget)).length;
   const goalKgPerWeek = (i.goal === 'cut' || i.goal === 'bulk' ? i.ratePerWeek : 0) * i.trendKg;
   const slope = weightSlopePerDay(i.weighIns.filter((w) => dayNum(w.date) > t - 14 && dayNum(w.date) <= t));
   if (validDays < 4 || slope == null) {
@@ -184,10 +207,24 @@ export function weeklyTargets(i: {
   today: string;
   latest: StoredTarget | null;
   override?: MacroOverride;
+  trainingHoursToday?: number;
 }): { plan: NutritionPlan; macros: MacroTargets; effectiveFrom: string; store: boolean } {
   const sameGoal = !!i.latest && i.latest.goal === i.profile.goal && i.latest.ratePerWeek === i.profile.ratePerWeek;
   const fresh = sameGoal && dayNum(i.today) - dayNum(i.latest!.effectiveFrom) < 7;
-  const plan = nutritionPlan({ ...i, lastWeekTarget: sameGoal ? i.latest!.kcal : null });
+  let plan = nutritionPlan({ ...i, lastWeekTarget: sameGoal ? i.latest!.kcal : null });
+  // §2.8: while intake has been very low, the deficit never deepens — keep at least last week's kcal
+  if (plan.lowIntake && i.latest && plan.target.kcal < i.latest.kcal) {
+    const p = i.profile;
+    const kcal = i.latest.kcal;
+    plan = {
+      ...plan,
+      target: { ...plan.target, kcal, appliedRails: [...plan.target.appliedRails, 'lowIntakePause'] },
+      macros: macroTargets({
+        kcal, goal: p.goal, weightKg: plan.trendKg, heightCm: p.heightCm, bodyFatPct: p.bodyFatPct ?? null, fatPreference: p.fatPreference,
+        trainingHoursToday: i.trainingHoursToday ?? 0,
+      }),
+    };
+  }
   if (fresh) {
     const l = i.latest!;
     const base: MacroTargets = { kcal: l.kcal, proteinG: l.proteinG, fatG: l.fatG, carbsG: l.carbsG, fiberG: l.fiberG, waterMl: plan.macros.waterMl };

@@ -10,9 +10,21 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useSession } from '@/features/session/store';
 import { api, unwrap } from '@/lib/api';
+import { queryClient } from '@/lib/query';
 import { useTraining, type CompletedWorkout } from './store';
 
 export const trainingStateKey = ['training', 'state'] as const;
+
+/** Keyed so they can be replayed after an app restart (setMutationDefaults below) and detected while pending. */
+const programKey = ['training', 'program'] as const;
+const avoidKey = ['training', 'avoid'] as const;
+
+queryClient.setMutationDefaults(programKey, {
+  mutationFn: async (programId: string) => unwrap(await api.workouts.program.$put({ json: { programId } })),
+});
+queryClient.setMutationDefaults(avoidKey, {
+  mutationFn: async (v: { exerciseId: string; avoid: boolean }) => unwrap(await api.workouts.avoid.$put({ json: v })),
+});
 
 const toCompleted = (w: WorkoutSummaryDto): CompletedWorkout => ({
   id: w.id, date: w.date, name: w.name, kind: w.kind, source: w.source, notes: w.notes,
@@ -20,23 +32,41 @@ const toCompleted = (w: WorkoutSummaryDto): CompletedWorkout => ({
   minutes: w.minutes, workingSets: w.workingSets, volumeKg: w.volumeKg, xp: w.xp, prs: w.prs,
 });
 
-/** Server wins for everything it stores; local-only extras (unsynced finishes, newer lifts) are kept. */
+/**
+ * Server wins for everything it stores; local-only extras are kept only where they can't be stale:
+ * - history: a local workout missing on the server is kept only if it is newer than the server's newest one
+ *   (a finish that raced this fetch). Anything older was deleted on another device and must not come back.
+ * - program / pain flags: the local choice stands while its save is still pending (offline or in flight)
+ * - rotation: the server count plus the local program sessions it hasn't seen yet
+ */
 export function mergeTrainingState(s: TrainingStateResponse) {
+  const programPending = queryClient.isMutating({ mutationKey: programKey }) > 0;
+  const avoidPending = queryClient.isMutating({ mutationKey: avoidKey }) > 0;
   useTraining.setState((cur) => {
     const serverIds = new Set(s.recent.map((w) => w.id));
-    const oldest = s.recent.at(-1)?.date ?? '';
-    // a finish still waiting to sync is newer than the server's oldest row and not on the server yet
-    const pending = cur.history.filter((h) => !serverIds.has(h.id) && h.date >= oldest);
+    const newest = s.recent.reduce((d, w) => (w.date > d ? w.date : d), '');
+    const pending = newest ? cur.history.filter((h) => !serverIds.has(h.id) && h.date > newest) : [];
     const history = [...pending, ...s.recent.map(toCompleted)].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 200);
     const bestE1rm = { ...s.bestE1rm };
     for (const [id, kg] of Object.entries(cur.bestE1rm)) bestE1rm[id] = Math.max(kg, bestE1rm[id] ?? 0);
+
+    let activeProgramId: string | null;
+    let completedSessions: number;
+    if (programPending || !s.activeProgramId) {
+      activeProgramId = programPending ? cur.activeProgramId : (s.activeProgramId ?? cur.activeProgramId);
+      completedSessions = cur.completedSessions;
+    } else {
+      activeProgramId = s.activeProgramId;
+      const unseen = pending.filter((h) => h.kind === 'program' && h.programId === activeProgramId).length;
+      completedSessions = s.completedSessions + unseen;
+    }
     return {
-      activeProgramId: s.activeProgramId ?? cur.activeProgramId,
-      completedSessions: s.activeProgramId ? s.completedSessions : cur.completedSessions,
+      activeProgramId,
+      completedSessions,
       history,
       bestE1rm,
       lastSet: { ...s.lastSet, ...cur.lastSet },
-      avoid: s.avoid,
+      avoid: avoidPending ? cur.avoid : s.avoid,
       notes: { ...cur.notes, ...s.notes },
     };
   });
@@ -50,20 +80,22 @@ export function useTrainingRestore() {
     queryKey: [...trainingStateKey, userId],
     enabled: status === 'signedIn' && !!userId,
     staleTime: 10 * 60_000,
+    // Never persisted (see shouldDehydrateQuery in the root layout): an old snapshot must not overwrite newer local state.
+    meta: { persist: false },
     queryFn: async () => unwrap<TrainingStateResponse>(await api.workouts.state.$get()),
   });
+  const { data, dataUpdatedAt, isFetchedAfterMount } = q;
   useEffect(() => {
-    if (q.data) mergeTrainingState(q.data);
-  }, [q.data]);
+    // Only a response fetched in this run is merged, never a snapshot restored from disk.
+    if (data && isFetchedAfterMount) mergeTrainingState(data);
+  }, [data, dataUpdatedAt, isFetchedAfterMount]);
 }
 
 /** Pick a program: instant on the phone, saved to the account when signed in. */
 export function useSetProgram() {
   const status = useSession((s) => s.status);
   const local = useTraining((s) => s.setProgram);
-  const save = useMutation({
-    mutationFn: async (programId: string) => unwrap(await api.workouts.program.$put({ json: { programId } })),
-  });
+  const save = useMutation<unknown, Error, string>({ mutationKey: programKey });
   return (programId: string) => {
     local(programId);
     if (status === 'signedIn') save.mutate(programId);
@@ -75,9 +107,7 @@ export function usePainFlags() {
   const status = useSession((s) => s.status);
   const flag = useTraining((s) => s.flagPain);
   const unflag = useTraining((s) => s.unflagPain);
-  const save = useMutation({
-    mutationFn: async (v: { exerciseId: string; avoid: boolean }) => unwrap(await api.workouts.avoid.$put({ json: v })),
-  });
+  const save = useMutation<unknown, Error, { exerciseId: string; avoid: boolean }>({ mutationKey: avoidKey });
   return {
     flagPain: (exerciseId: string) => {
       flag(exerciseId);

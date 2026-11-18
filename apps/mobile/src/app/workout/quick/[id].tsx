@@ -16,14 +16,17 @@ export default function QuickSession() {
   const finish = useFinishWorkout();
   const [result, setResult] = useState<FinishSummary | null>(null);
   const startedAt = useRef(new Date().toISOString());
+  // id + finish time are fixed on the first save, so a retry is the same workout on the same game day
+  const frozen = useRef<{ id: string; finishedAt: string } | null>(null);
   const steps = useMemo(() => (q ? buildQuickSession(q) : []), [q]);
 
   if (!q) return <Redirect href="/train" />;
 
   const save = (r: FollowResult) => {
     if (r.workSeconds < 30) return router.replace('/train');
+    frozen.current ??= { id: newId(), finishedAt: new Date().toISOString() };
     const session: ActiveSession = {
-      id: newId(), kind: 'quick', programId: null, dayId: q.id, name: q.name, startedAt: startedAt.current,
+      id: frozen.current.id, finishedAt: frozen.current.finishedAt, kind: 'quick', programId: null, dayId: q.id, name: q.name, startedAt: startedAt.current,
       exercises: [], logs: {}, current: 0, restUntil: null, restTotal: 0, coachNote: null,
     };
     const minutes = Math.round((r.workSeconds / 60) * 10) / 10;

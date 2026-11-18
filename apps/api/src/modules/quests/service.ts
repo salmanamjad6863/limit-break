@@ -2,11 +2,12 @@ import { activeSlots, isQuestComplete, type BossResponse, type QuestDto, type Qu
 import type { PrismaClient } from '@lb/db';
 import {
   addDays, dailyQuestXp, defaultWeekdays, displayStreak, gameDate, generateDailyQuest, penaltyQuestOptions, resolveStreak,
-  REST_RITUAL, shadowBoss, sickAllowed, XP, type DayRecord, type HeroClass, type StreakState,
+  GAME_DAY_ROLLOVER_HOUR, REST_RITUAL, shadowBoss, sickAllowed, XP, type DayRecord, type HeroClass, type StreakState,
 } from '@lb/engine';
 import { sideQuests } from '@lb/content';
 import { mergeTests } from '../progression/service';
 import { grantXp } from '../progression/xp';
+import { isUniqueViolation } from '../../lib/db';
 
 type Tx = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'>;
 
@@ -115,14 +116,38 @@ export async function getToday(prisma: PrismaClient, userId: string, now = new D
   });
 }
 
+/** Offline progress for yesterday's quest is still accepted until 12:00 local the next day (if the day isn't resolved yet). */
+export const QUEST_GRACE_UNTIL_HOUR = 12;
+
 /** Records progress; on completion grants XP once (daily 50 + streak bonus, penalty 20, side 15 × max 3/day). */
-export async function updateQuest(prisma: PrismaClient, userId: string, questId: string, progress: Record<string, number>): Promise<QuestProgressResponse> {
+export async function updateQuest(prisma: PrismaClient, userId: string, questId: string, progress: Record<string, number>, now = new Date()): Promise<QuestProgressResponse> {
+  try {
+    return await updateQuestTx(prisma, userId, questId, progress, now);
+  } catch (e) {
+    if (!isUniqueViolation(e)) throw e;
+    // a concurrent request completed (and paid) this quest first: answer like the duplicate it is
+    const q = await prisma.questInstance.findFirst({ where: { id: questId, userId } });
+    if (!q) throw e;
+    return { quest: toDto(q), rewards: [] };
+  }
+}
+
+async function updateQuestTx(prisma: PrismaClient, userId: string, questId: string, progress: Record<string, number>, now: Date): Promise<QuestProgressResponse> {
   return prisma.$transaction(async (tx) => {
     const q = await tx.questInstance.findFirst({ where: { id: questId, userId } });
     if (!q) throw new QuestError(404, 'quest not found');
     const profile = await tx.profile.findUnique({ where: { id: userId } });
-    const today = gameDate(new Date(), profile?.timezone ?? 'UTC');
-    if (q.localDate !== today) throw new QuestError(409, 'quest expired');
+    const tz = profile?.timezone ?? 'UTC';
+    const today = gameDate(now, tz);
+    if (q.localDate !== today) {
+      // progress queued offline across the 03:00 rollover: yesterday's quest still counts while that day
+      // hasn't been resolved into the streak yet, until midday
+      const state = await tx.hunterState.findUnique({ where: { userId } });
+      const graceDay = gameDate(new Date(now.getTime() - (QUEST_GRACE_UNTIL_HOUR - GAME_DAY_ROLLOVER_HOUR) * 3_600_000), tz);
+      const unresolved = !state?.lastResolved || state.lastResolved < q.localDate;
+      if (!(q.localDate === addDays(today, -1) && graceDay === q.localDate && unresolved)) throw new QuestError(409, 'quest expired');
+    }
+    const day = q.localDate;
     if (q.status === 'COMPLETED') return { quest: toDto(q), rewards: [] };
 
     const merged = { ...((q.progress ?? {}) as Record<string, number>), ...progress };
@@ -141,11 +166,11 @@ export async function updateQuest(prisma: PrismaClient, userId: string, questId:
       if (q.kind === 'DAILY') amount = dailyQuestXp(state?.streak ?? 0);
       else if (q.kind === 'PENALTY') amount = XP.penaltyQuest;
       else if (q.kind === 'SIDE') {
-        const doneSides = await tx.questInstance.count({ where: { userId, localDate: today, kind: 'SIDE', status: 'COMPLETED' } });
+        const doneSides = await tx.questInstance.count({ where: { userId, localDate: day, kind: 'SIDE', status: 'COMPLETED' } });
         amount = doneSides <= XP.sideQuestMaxPerDay ? XP.sideQuest : 0;
       }
-      await tx.event.create({ data: { id: q.id, userId, type: `quest.${q.kind.toLowerCase()}.completed`, localDate: today, clientTs: new Date(), payload: { templateId: q.templateId } } });
-      rewards = await grantXp(tx, { userId, eventId: q.id, localDate: today, amount, reason: `quest:${q.templateId}` });
+      await tx.event.create({ data: { id: q.id, userId, type: `quest.${q.kind.toLowerCase()}.completed`, localDate: day, clientTs: now, payload: { templateId: q.templateId } } });
+      rewards = await grantXp(tx, { userId, eventId: q.id, localDate: day, amount, reason: `quest:${q.templateId}` });
       rewards.unshift({ type: 'questComplete', questId: q.templateId });
     }
     return { quest: toDto(updated), rewards };
@@ -227,16 +252,26 @@ export async function claimBoss(prisma: PrismaClient, userId: string): Promise<Q
   const boss = await getBoss(prisma, userId);
   if (!boss.won) throw new QuestError(409, 'boss not defeated yet');
   if (boss.claimed) throw new QuestError(409, 'already claimed this week');
+  try {
+    return await claimBossTx(prisma, userId, boss.weekStart);
+  } catch (e) {
+    // a concurrent claim won the race on the (user, week, 'boss') unique key
+    if (isUniqueViolation(e)) throw new QuestError(409, 'already claimed this week');
+    throw e;
+  }
+}
+
+async function claimBossTx(prisma: PrismaClient, userId: string, weekStart: string): Promise<QuestProgressResponse> {
   return prisma.$transaction(async (tx) => {
     const profile = await tx.profile.findUnique({ where: { id: userId } });
     const today = gameDate(new Date(), profile?.timezone ?? 'UTC');
     const q = await tx.questInstance.create({
       data: {
-        id: crypto.randomUUID(), userId, templateId: 'boss', kind: 'BOSS', localDate: boss.weekStart, targets: {}, progress: { done: 1 },
+        id: crypto.randomUUID(), userId, templateId: 'boss', kind: 'BOSS', localDate: weekStart, targets: {}, progress: { done: 1 },
         status: 'COMPLETED', completedAt: new Date(), dueAt: new Date(),
       },
     });
-    await tx.event.create({ data: { id: q.id, userId, type: 'quest.boss.claimed', localDate: today, clientTs: new Date(), payload: { weekStart: boss.weekStart } } });
+    await tx.event.create({ data: { id: q.id, userId, type: 'quest.boss.claimed', localDate: today, clientTs: new Date(), payload: { weekStart } } });
     const rewards = await grantXp(tx, { userId, eventId: q.id, localDate: today, amount: XP.bossWin, reason: 'boss' });
     return { quest: toDto(q), rewards: [{ type: 'title', titleId: 'Shadow Slayer' }, ...rewards] };
   });

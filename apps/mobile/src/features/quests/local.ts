@@ -1,10 +1,10 @@
 import { sideQuests } from '@lb/content';
-import { isQuestComplete, type QuestDto, type Reward, type TodayQuestsResponse } from '@lb/contracts';
+import { activeSlots, isQuestComplete, type QuestDto, type Reward, type TodayQuestsResponse } from '@lb/contracts';
 import {
-  addDays, apBetween, applyDailyCap, dailyQuestXp, defaultWeekdays, displayStreak, gameDate, generateDailyQuest, levelFromXp,
+  addDays, applyDailyCap, dailyQuestXp, defaultWeekdays, displayStreak, gameDate, generateDailyQuest,
   penaltyQuestOptions, resolveStreak, REST_RITUAL, sickAllowed, XP, type DayRecord, type HeroClass, type StreakState,
 } from '@lb/engine';
-import { useLocalHunter, useProgress } from '@/features/progression';
+import { applyLocalXp, useLocalHunter, useProgress } from '@/features/progression';
 import { useTraining } from '@/features/training/store';
 import type { FitnessTests, TrainingProfile } from '@lb/contracts';
 import { newId } from '@/lib/id';
@@ -75,12 +75,10 @@ export function grantLocalXp(amount: number, reason: string, timezone: string): 
   const rewards: Reward[] = [];
   if (cap.granted > 0) {
     t.addXp(date, cap.granted);
-    const from = levelFromXp(me.state.xp);
-    const xp = me.state.xp + cap.granted;
-    const to = levelFromXp(xp);
-    hunter.setMe({ ...me, state: { ...me.state, xp, level: to, apUnspent: me.state.apUnspent + apBetween(from, to) } });
+    const next = applyLocalXp(me.state, me.state.xp + cap.granted);
+    hunter.setMe({ ...me, state: next.state });
     rewards.push({ type: 'xp', amount: cap.granted, reason });
-    if (to > from) rewards.push({ type: 'levelUp', from, to, ap: apBetween(from, to) });
+    if (next.to > next.from) rewards.push({ type: 'levelUp', from: next.from, to: next.to, ap: next.ap });
   }
   if (cap.dropped > 0) rewards.push({ type: 'capReached', dropped: cap.dropped });
   return rewards;
@@ -95,7 +93,10 @@ export function localProgress(questId: string, progress: Record<string, number>,
   const quest = all.find((x) => x.id === questId);
   if (!quest) throw new Error('quest not found');
   if (quest.status === 'COMPLETED') return { quest, rewards: [] };
-  const next: QuestDto = { ...quest, progress: { ...quest.progress, ...progress } };
+  const merged = { ...quest.progress, ...progress };
+  // never let progress exceed 3× target (plausibility, §4.8; same as the server)
+  activeSlots({ ...quest, progress: merged }).forEach((sl, i) => { if (merged[String(i)] != null) merged[String(i)] = Math.min(merged[String(i)]!, sl.target * 3); });
+  const next: QuestDto = { ...quest, progress: merged };
   const complete = isQuestComplete(next);
   if (complete) {
     next.status = 'COMPLETED';
@@ -133,6 +134,8 @@ export function localChooseSides(ids: string[]): QuestDto[] {
 export function localSetSick(on: boolean) {
   const s = useQuestLocal.getState();
   if (!s.today) return;
+  // same limit as the server: max 7 sick days per rolling 30
+  if (on && !s.days[s.today.date]?.sick && !sickAllowed(s.streak.sickDates, s.today.date)) throw new Error('sick-mode limit reached (7 per 30 days)');
   const days = { ...s.days, [s.today.date]: { ...(s.days[s.today.date] ?? { dailyDone: false, penaltyDone: false, sick: false }), sick: on } };
   s.set({ days });
 }

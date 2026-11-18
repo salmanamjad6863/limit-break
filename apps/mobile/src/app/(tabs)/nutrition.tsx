@@ -1,5 +1,5 @@
 import type { FoodLogDto, Meal, NutritionDayResponse } from '@lb/contracts';
-import { nutrientsForGrams } from '@lb/engine';
+import { nutrientsForGrams, TDEE } from '@lb/engine';
 import { dataColors } from '@lb/tokens';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -70,6 +70,34 @@ export default function NutritionScreen() {
       </View>
 
       <Appear index={1}><Targets day={data} /></Appear>
+
+      {data.plan.lowIntake ? (
+        // SYSTEMS.md §2.8 safety rule: supportive, never shaming; the deficit stops deepening meanwhile
+        <Card tint={c.mana}>
+          <Text variant="label" color={c.mana}>Checking in</Text>
+          <Text variant="callout">A few of your recent days were very low in energy. Your body needs fuel to train, recover and stay healthy.</Text>
+          <Text variant="caption" muted>
+            Your targets won't get any lower for now. If eating enough feels hard, or food feels stressful, a doctor or registered dietitian can help, and you can switch to protein-only mode or hide calories any time in settings.
+          </Text>
+          <Button variant="secondary" size="md" label="Nutrition settings" onPress={() => router.push('/diary/settings')} />
+        </Card>
+      ) : null}
+
+      {data.markedComplete && data.logs.length > 0 && data.totals.kcal < TDEE.suspiciousCompleteDayKcal && !data.lowDayConfirm ? (
+        // §2.3: a complete day under 800 kcal only counts toward your metabolism once you confirm it
+        <Card>
+          <Text variant="headline">Was this a full day?</Text>
+          <Text variant="caption" muted>{`This day is marked complete at ${data.totals.kcal.toLocaleString()} kcal. If some food wasn't logged, we'll leave this day out so your targets stay accurate.`}</Text>
+          <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+            <View style={{ flex: 1 }}>
+              <Button variant="secondary" size="md" label="Yes, that's all" onPress={() => setDay.mutate({ localDate: date, lowDayConfirm: true })} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button variant="secondary" size="md" label="Some is missing" onPress={() => setDay.mutate({ localDate: date, markedComplete: false })} />
+            </View>
+          </View>
+        </Card>
+      ) : null}
 
       <Appear index={2} style={{ gap: spacing[3] }}>
         {MEALS.map((m) => <MealSection key={m.id} meal={m} logs={data.logs.filter((l) => l.meal === m.id)} hideKcal={data.settings.hideCalories || data.settings.nutritionMode === 'proteinOnly'} onAdd={() => add(m.id)} onEdit={edit} />)}

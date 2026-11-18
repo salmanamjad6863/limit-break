@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@lb/db';
-import { apBetween, applyDailyCap, levelFromXp } from '@lb/engine';
+import { applyDailyCap, levelFromXp } from '@lb/engine';
+import { apForLevelUp } from './ap';
 
 type Tx = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'>;
 
@@ -17,9 +18,10 @@ export async function grantXp(tx: Tx, i: { userId: string; eventId: string; loca
     await tx.xpLedger.create({ data: { eventId: i.eventId, userId: i.userId, localDate: i.localDate, amount: cap.granted, reason: i.reason } });
     const from = levelFromXp(state.xp);
     const to = levelFromXp(state.xp + cap.granted);
-    await tx.hunterState.update({ where: { userId: i.userId }, data: { xp: state.xp + cap.granted, level: to, apUnspent: { increment: apBetween(from, to) } } });
+    const ap = apForLevelUp(state, to);
+    await tx.hunterState.update({ where: { userId: i.userId }, data: { xp: state.xp + cap.granted, level: to, ...ap.data } });
     rewards.push({ type: 'xp', amount: cap.granted, reason: i.reason });
-    if (to > from) rewards.push({ type: 'levelUp', from, to, ap: apBetween(from, to) });
+    if (to > from) rewards.push({ type: 'levelUp', from, to, ap: ap.ap });
   }
   if (cap.dropped > 0) rewards.push({ type: 'capReached', dropped: cap.dropped });
   return rewards;

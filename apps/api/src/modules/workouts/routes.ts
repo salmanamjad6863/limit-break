@@ -23,7 +23,7 @@ const me = (c: Context<AppEnv>) => c.get('userId');
 export const workoutRoutes = new Hono<AppEnv>()
   .use(requireAuth)
   .post('/finish', zValidator('json', FinishWorkoutInput), async (c) => {
-    const res = await s.finishWorkout(db(c), me(c), c.req.valid('json'));
+    const res = await guard(() => s.finishWorkout(db(c), me(c), c.req.valid('json')));
     if (!res.duplicate) await postMilestones(db(c), me(c), res.workoutId, res.rewards);
     return c.json(res);
   })

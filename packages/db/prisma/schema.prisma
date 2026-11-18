@@ -128,6 +128,8 @@ model HunterState {
   xp               Int      @default(0)
   rank             Rank     @default(E)
   apUnspent        Int      @default(0)
+  /// highest level AP was ever paid for (no re-grants after edit-down / delete + re-finish)
+  apGrantedLevel   Int      @default(1)
   streak           Int      @default(0)
   longest          Int      @default(0)
   shields          Int      @default(2)
@@ -213,6 +215,8 @@ model WorkoutSession {
   plannedHardSets  Int          @default(0)
   /// interval / cardio minutes (quick sessions) — feeds the Shadow-Self boss
   cardioMinutes    Float        @default(0)
+  /// cardio entries as finished ([{ minutes, rpe }]) so edits recompute XP exactly like finish; null on older rows
+  cardio           Json?
   /// program | quick | manual (SYSTEMS.md §3.11)
   kind             String       @default("program")
   /// app = logged live; manual = logged afterwards (unverified: no leaderboards)

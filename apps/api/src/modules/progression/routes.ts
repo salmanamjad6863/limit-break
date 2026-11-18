@@ -24,7 +24,8 @@ export const progressionRoutes = new Hono<AppEnv>()
     try {
       const input = c.req.valid('json');
       const res = await attemptTrial(c.get('deps').prisma, c.get('userId'), input);
-      await postMilestones(c.get('deps').prisma, c.get('userId'), input.id, (res as { rewards?: unknown[] }).rewards ?? []);
+      // a retried attempt answers with the stored result; its milestones were posted the first time
+      if (!res.duplicate) await postMilestones(c.get('deps').prisma, c.get('userId'), input.id, (res as { rewards?: unknown[] }).rewards ?? []);
       return c.json(res);
     } catch (e) {
       if (e instanceof TrialError) throw new HTTPException(e.code === 'not-eligible' ? 409 : 400, { message: e.message });
