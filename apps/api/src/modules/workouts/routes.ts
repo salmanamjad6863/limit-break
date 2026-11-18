@@ -6,6 +6,7 @@ import { z } from 'zod';
 import type { AppEnv } from '../../lib/types';
 import { requireAuth } from '../../middleware/auth';
 import * as s from './service';
+import { postMilestones } from '../community/milestones';
 import { getTrainingState, setActiveProgram, setAvoid, TrainingStateError } from './state';
 
 const guard = async <T>(fn: () => Promise<T>): Promise<T> => {
@@ -21,7 +22,11 @@ const me = (c: Context<AppEnv>) => c.get('userId');
 
 export const workoutRoutes = new Hono<AppEnv>()
   .use(requireAuth)
-  .post('/finish', zValidator('json', FinishWorkoutInput), async (c) => c.json(await s.finishWorkout(db(c), me(c), c.req.valid('json'))))
+  .post('/finish', zValidator('json', FinishWorkoutInput), async (c) => {
+    const res = await s.finishWorkout(db(c), me(c), c.req.valid('json'));
+    if (!res.duplicate) await postMilestones(db(c), me(c), res.workoutId, res.rewards);
+    return c.json(res);
+  })
   .get('/', zValidator('query', z.object({ before: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() })), async (c) =>
     c.json({ workouts: await s.listWorkouts(db(c), me(c), c.req.valid('query').before) }),
   )

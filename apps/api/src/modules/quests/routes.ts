@@ -5,6 +5,7 @@ import { HTTPException } from 'hono/http-exception';
 import type { AppEnv } from '../../lib/types';
 import { requireAuth } from '../../middleware/auth';
 import { chooseSides, claimBoss, getBoss, getToday, QuestError, setSick, updateQuest } from './service';
+import { postStreakMilestone } from '../community/milestones';
 
 const guard = async <T>(fn: () => Promise<T>): Promise<T> => {
   try {
@@ -18,7 +19,11 @@ const ctx = (c: Context<AppEnv>) => ({ prisma: c.get('deps').prisma, userId: c.g
 
 export const questRoutes = new Hono<AppEnv>()
   .use(requireAuth)
-  .get('/today', async (c) => c.json(await guard(() => getToday(ctx(c).prisma, ctx(c).userId))))
+  .get('/today', async (c) => {
+    const res = await guard(() => getToday(ctx(c).prisma, ctx(c).userId));
+    await postStreakMilestone(ctx(c).prisma, ctx(c).userId, res.streak.current, res.date);
+    return c.json(res);
+  })
   .post('/:id/progress', zValidator('json', QuestProgressInput), async (c) =>
     c.json(await guard(() => updateQuest(ctx(c).prisma, ctx(c).userId, c.req.param('id'), c.req.valid('json').progress))),
   )

@@ -90,6 +90,11 @@ function Bootstrap() {
           <Stack.Screen name="diary" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="training-settings" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="history" options={{ animation: 'slide_from_right' }} />
+          {/* community screens (Sprint 9) */}
+          <Stack.Screen name="community/compose" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="community/handle" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="community/post/[id]" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="community/hunter/[handle]" options={{ animation: 'slide_from_right' }} />
           {/* dev-only labs: inside the guard so a fresh (not-onboarded) user restored onto them still lands on onboarding */}
           <Stack.Screen name="dev/aura" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="dev/trainer" options={{ animation: 'slide_from_right' }} />

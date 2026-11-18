@@ -5,6 +5,7 @@ import { HTTPException } from 'hono/http-exception';
 import type { AppEnv } from '../../lib/types';
 import { requireAuth } from '../../middleware/auth';
 import { attemptTrial, getProgression, TrialError } from './service';
+import { postMilestones } from '../community/milestones';
 import * as v from './verification';
 
 const vguard = async <T>(fn: () => Promise<T>): Promise<T> => {
@@ -21,7 +22,10 @@ export const progressionRoutes = new Hono<AppEnv>()
   .get('/', async (c) => c.json(await getProgression(c.get('deps').prisma, c.get('userId'))))
   .post('/trials', zValidator('json', TrialAttemptInput), async (c) => {
     try {
-      return c.json(await attemptTrial(c.get('deps').prisma, c.get('userId'), c.req.valid('json')));
+      const input = c.req.valid('json');
+      const res = await attemptTrial(c.get('deps').prisma, c.get('userId'), input);
+      await postMilestones(c.get('deps').prisma, c.get('userId'), input.id, (res as { rewards?: unknown[] }).rewards ?? []);
+      return c.json(res);
     } catch (e) {
       if (e instanceof TrialError) throw new HTTPException(e.code === 'not-eligible' ? 409 : 400, { message: e.message });
       throw e;

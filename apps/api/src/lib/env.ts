@@ -15,6 +15,10 @@ const Env = z.object({
   ALLOWED_ORIGINS: optional(z.string()),
   /** comma-separated user ids who may review A/S trial videos */
   MODERATOR_IDS: optional(z.string()),
+  /** community pre-moderation classifier (Claude Haiku 5.5). Unset = wordlist only */
+  ANTHROPIC_API_KEY: optional(z.string().min(1)),
+  /** extra blocked words/phrases for the community, comma-separated */
+  COMMUNITY_WORDLIST: optional(z.string()),
 });
 export type Env = z.infer<typeof Env>;
 

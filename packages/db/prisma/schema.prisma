@@ -111,6 +111,15 @@ model Profile {
   pushTokens    PushToken[]
   trials        TrialAttempt[]
   exerciseNotes ExerciseNote[]
+  publicProfile PublicProfile?
+  posts         Post[]
+  comments      Comment[]
+  reactions     Reaction[]
+  following     Follow[]          @relation("follower")
+  followers     Follow[]          @relation("followee")
+  blocking      Block[]           @relation("blocker")
+  blockedBy     Block[]           @relation("blocked")
+  reports       Report[]
 }
 
 model HunterState {
@@ -419,4 +428,129 @@ model ExerciseNote {
   profile    Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, exerciseId])
+}
+
+/// ───────────── Community (SYSTEMS.md §5) ─────────────
+/// The public face of a hunter: a handle (never the real name). No row = not in the community yet.
+model PublicProfile {
+  userId    String   @id @db.Uuid
+  /// lowercase, 3–20 chars [a-z0-9_.], unique
+  handle    String   @unique
+  isPublic  Boolean  @default(true)
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  profile   Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Follow {
+  followerId String   @db.Uuid
+  followeeId String   @db.Uuid
+  createdAt  DateTime @default(now())
+  follower   Profile  @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followee   Profile  @relation("followee", fields: [followeeId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followeeId])
+  @@index([followeeId])
+}
+
+/// milestone (auto: rank-up, PR, level, streak, program) | progress (written by the hunter)
+model Post {
+  id           String    @id @db.Uuid
+  authorId     String    @db.Uuid
+  type         String
+  body         String?
+  /// milestone details or an attached workout card
+  payload      Json?
+  /// public | followers | private
+  visibility   String
+  /// pending (moderation) | visible | hidden (by moderator) | removed (by author)
+  status       String
+  /// all | followers | off
+  commentsMode String    @default("all")
+  respectCount Int       @default(0)
+  commentCount Int       @default(0)
+  /// rank of the author when posted (the "My rank" tab)
+  authorRank   String    @default("E")
+  createdAt    DateTime  @default(now())
+  comments     Comment[]
+  reactions    Reaction[]
+  author       Profile   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([authorId, createdAt])
+}
+
+model Comment {
+  id        String   @id @db.Uuid
+  postId    String   @db.Uuid
+  authorId  String   @db.Uuid
+  parentId  String?  @db.Uuid
+  body      String
+  /// pending | visible | hidden | removed
+  status    String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    Profile  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+  @@index([authorId, createdAt])
+}
+
+/// one sticker per hunter per post; every sticker counts as Respect
+model Reaction {
+  postId    String   @db.Uuid
+  userId    String   @db.Uuid
+  sticker   String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+}
+
+/// mutual invisibility
+model Block {
+  blockerId String   @db.Uuid
+  blockedId String   @db.Uuid
+  createdAt DateTime @default(now())
+  blocker   Profile  @relation("blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked   Profile  @relation("blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@id([blockerId, blockedId])
+  @@index([blockedId])
+}
+
+model Report {
+  id         String    @id @db.Uuid
+  reporterId String    @db.Uuid
+  /// post | comment | profile
+  targetType String
+  targetId   String
+  reason     String
+  details    String?
+  /// open | upheld | dismissed
+  status     String    @default("open")
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+  resolvedBy String?   @db.Uuid
+  reporter   Profile   @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([reporterId, targetType, targetId])
+  @@index([status, createdAt])
+}
+
+/// audit log of every moderation decision (automatic or human)
+model ModerationAction {
+  id         String   @id @db.Uuid
+  targetType String
+  targetId   String
+  /// auto_hold | auto_allow | approve | hide | dismiss_report | uphold_report
+  action     String
+  reason     String
+  /// null = the automatic classifier
+  actorId    String?  @db.Uuid
+  createdAt  DateTime @default(now())
+
+  @@index([targetType, targetId])
 }

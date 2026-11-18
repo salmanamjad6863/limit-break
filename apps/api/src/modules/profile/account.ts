@@ -25,10 +25,22 @@ export async function exportData(prisma: PrismaClient, userId: string) {
     prisma.exerciseNote.findMany({ where: { userId } }),
     prisma.xpLedger.findMany({ where: { userId } }),
   ]);
+  // community (SYSTEMS.md §5): what this hunter published and who they follow/block
+  const community = prisma.publicProfile
+    ? await Promise.all([
+        prisma.publicProfile.findUnique({ where: { userId } }),
+        prisma.post.findMany({ where: { authorId: userId } }),
+        prisma.comment.findMany({ where: { authorId: userId } }),
+        prisma.reaction.findMany({ where: { userId } }),
+        prisma.follow.findMany({ where: { followerId: userId } }),
+        prisma.block.findMany({ where: { blockerId: userId } }),
+        prisma.report.findMany({ where: { reporterId: userId } }),
+      ]).then(([publicProfile, posts, comments, reactions, following, blocks, reports]) => ({ publicProfile, posts, comments, reactions, following, blocks, reports }))
+    : null;
   return {
     exportedAt: new Date().toISOString(),
     format: 'limitbreak-export/1',
-    profile, state, workouts, records, quests, foodLogs, customFoods, nutritionDays, body, tdee, targets, trials, notes, xpLedger: ledger,
+    profile, state, workouts, records, quests, foodLogs, customFoods, nutritionDays, body, tdee, targets, trials, notes, xpLedger: ledger, community,
   };
 }
 

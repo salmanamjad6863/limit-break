@@ -111,8 +111,11 @@ export default function SignIn() {
 
   const onCode = (v: string) => {
     const digits = v.replace(/\D/g, '').slice(0, 10);
+    const pasted = digits.length - code.length > 1; // paste or iOS/Android code autofill
     setCode(digits);
-    if (digits.length === env.otpLength) void verify(digits);
+    // Auto-submit only a pasted/autofilled code of the expected length; typed codes are sent with Verify,
+    // so a project set to a longer code (Supabase allows 6–10) never gets cut off early.
+    if (pasted && digits.length >= env.otpLength) void verify(digits);
   };
 
   const switchToSignIn = () => {

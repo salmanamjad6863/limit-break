@@ -47,7 +47,8 @@
 ## 5b. Known follow-ups before a policy change
 - [x] **Re-consent:** built. Bump `CONSENT_VERSION` (`packages/contracts/src/profile.ts`) when the privacy policy or terms change in a way that needs new consent; onboarded users then see the consent screen before the app (`POST /me/consent`).
 - [ ] Trial-video retention job (see the [DECIDE] in PRIVACY.md) if you promise a deletion window.
-- [ ] Moderation queue UI in the web admin (the API `/progression/reviews` is ready; reviewing now needs an API client).
+- [ ] Moderation queue UI in the web admin. The APIs are ready: `/progression/reviews` (trial videos) and `GET /community/moderation` + `POST /community/moderation/:type/:id` (posts/comments); reviewing now needs an API client.
+- [ ] Community moderation: set `ANTHROPIC_API_KEY` on the API (Claude Haiku 5.5 classifier) and `MODERATOR_IDS`. Without the key, posts from new accounts wait for a moderator. Add a maintained slur list via `COMMUNITY_WORDLIST`.
 
 ## 6. Soft launch
 - [ ] Release in 1–3 smaller markets first, then watch crash-free sessions (target ≥ 99.5%), D1/D7 retention and the first-workout rate for two weeks before a wider launch.

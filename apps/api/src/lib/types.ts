@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@lb/db';
+import type { Classifier } from '../modules/community/moderation';
 
 /** Dependencies injected into the app — lets tests swap Prisma and auth. */
 export interface Deps {
@@ -16,6 +17,10 @@ export interface Deps {
   moderatorIds?: string[];
   /** removes the Supabase auth user (admin API); absent in tests/dev without a service key */
   deleteAuthUser?: (userId: string) => Promise<void>;
+  /** community pre-moderation classifier (Claude Haiku 5.5); absent = wordlist only, new accounts held for review */
+  classifier?: Classifier;
+  /** extra blocked words for the community (COMMUNITY_WORDLIST), matched on whole words */
+  communityWordlist?: string[];
   /** barcode → raw Open Food Facts JSON (injected so tests never hit the network) */
   lookupBarcode?: (barcode: string) => Promise<unknown>;
 }

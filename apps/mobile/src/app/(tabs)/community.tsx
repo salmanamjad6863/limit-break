@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { Avatar } from '@/features/community/Avatar';
+import { LiveHall, LiveTopHunters } from '@/features/community/Live';
+import { useSession } from '@/features/session';
 import { BOARDS, DEMO_LEADERS, DEMO_ME_ON_BOARD, DEMO_POSTS, type BoardId } from '@/features/community/demo';
 import { useTheme } from '@/theme';
 import { Appear, Bar, Button, Card, Icon, Pill, PressableScale, Screen, SectionHeader, Text } from '@/ui';
@@ -11,8 +13,12 @@ type View_ = 'hall' | 'top' | 'guild';
 export default function CommunityScreen() {
   const [view, setView] = useState<View_>('hall');
   const { spacing } = useTheme();
+  // demo builds (no backend) keep the preview; signed-in hunters get the real community
+  const live = useSession((s) => s.status === 'signedIn');
+  const Hall = live ? LiveHall : DemoHall;
+  const TopHunters = live ? LiveTopHunters : DemoTopHunters;
   return (
-    <Screen title="Community" subtitle="Hunters worldwide, levelling up together." accent="#F5C451" right={<Pill icon="sparkles" label="Preview" />}>
+    <Screen title="Community" subtitle="Hunters worldwide, levelling up together." accent="#F5C451" right={live ? undefined : <Pill icon="sparkles" label="Preview" />}>
       <Appear index={1}>
         <Segmented
           options={[{ value: 'hall', label: 'The Hall' }, { value: 'top', label: 'Top Hunters' }, { value: 'guild', label: 'Guild' }]}
@@ -28,7 +34,7 @@ export default function CommunityScreen() {
 }
 
 /* ---------------- The Hall: global feed ---------------- */
-function Hall() {
+function DemoHall() {
   const { c, spacing, radius } = useTheme();
   const [feed, setFeed] = useState<'following' | 'global' | 'rank'>('global');
   const [respected, setRespected] = useState<Record<string, boolean>>({});
@@ -100,7 +106,7 @@ function Hall() {
 }
 
 /* ---------------- Top Hunters of the Month ---------------- */
-function TopHunters() {
+function DemoTopHunters() {
   const { c, spacing, radius } = useTheme();
   const [board, setBoard] = useState<BoardId>('consistent');
   const meta = BOARDS.find((b) => b.id === board)!;
@@ -226,6 +232,9 @@ function Guild() {
       </Appear>
       <Appear index={3}>
         <Button variant="secondary" icon="person-add-outline" label="Invite a friend" />
+      </Appear>
+      <Appear index={4}>
+        <Text variant="caption" muted style={{ textAlign: 'center' }}>Preview: guilds, raids and friend streaks arrive in the next update.</Text>
       </Appear>
     </>
   );

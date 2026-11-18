@@ -6,6 +6,7 @@ import { HTTPException } from 'hono/http-exception';
 import { requestId } from 'hono/request-id';
 import type { AppEnv, Deps } from './lib/types';
 import { rateLimit } from './middleware/rateLimit';
+import { communityRoutes } from './modules/community/routes';
 import { featureRoutes } from './modules/features/routes';
 import { nutritionRoutes } from './modules/nutrition/routes';
 import { profileRoutes } from './modules/profile/routes';
@@ -27,6 +28,9 @@ export function createApp(deps: Deps) {
     .use('/nutrition/foods', rateLimit('search', { limit: 90, windowMs: 60_000 }))
     .use('/progression/trials', rateLimit('trials', { limit: 10, windowMs: 60_000 }))
     .on('DELETE', '/me', rateLimit('account-delete', { limit: 5, windowMs: 3_600_000 }))
+    // community writes: abuse-resistant per-caller caps on top of the per-trust daily caps in the service
+    .on(['POST', 'PUT', 'DELETE'], '/community/*', rateLimit('community-write', { limit: 60, windowMs: 60_000 }))
+    .post('/community/reports', rateLimit('reports', { limit: 20, windowMs: 3_600_000 }))
     .get('/me/export', rateLimit('export', { limit: 5, windowMs: 3_600_000 }))
     .use(async (c, next) => {
       c.set('deps', deps);
@@ -39,7 +43,8 @@ export function createApp(deps: Deps) {
     .route('/workouts', workoutRoutes)
     .route('/progression', progressionRoutes)
     .route('/quests', questRoutes)
-    .route('/nutrition', nutritionRoutes);
+    .route('/nutrition', nutritionRoutes)
+    .route('/community', communityRoutes);
 
   app.onError((err, c) => {
     if (err instanceof HTTPException) return c.json({ error: err.message }, err.status);

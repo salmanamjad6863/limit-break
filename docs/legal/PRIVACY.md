@@ -13,7 +13,7 @@ _Last updated: [date]. Controller: [legal entity, address, contact email]._
 
 **Health data** is used only to provide the app to you. It is never sold, never used for advertising, and never shared with advertisers or data brokers.
 
-**Processors:** Supabase (database, auth, storage), [API host], Sentry (crash reports, optional), PostHog EU (analytics, opt-in), USDA FoodData Central and Open Food Facts (food lookups: only the search text or barcode is sent).
+**Processors:** Supabase (database, auth, storage), [API host], Sentry (crash reports, optional), PostHog EU (analytics, opt-in), USDA FoodData Central and Open Food Facts (food lookups: only the search text or barcode is sent), Anthropic (automated safety check of community posts and comments before they're shown: only the text is sent, not your name or account details), Resend (sign-in code emails).
 
 **Retention:** until you delete your account. Trial videos: [DECIDE, e.g. deleted 90 days after review; needs a scheduled cleanup job before you promise it]. Backups: [depends on your Supabase plan's backup window; state the real number].
 
@@ -22,3 +22,5 @@ _Last updated: [date]. Controller: [legal entity, address, contact email]._
 **Children:** not directed at children under 13 (16 in the EU without parental consent). Users under 18 get no calorie deficit and no public community features.
 
 **Contact:** [privacy email].
+
+**Community (optional):** if you join, other hunters see your handle (never your real name), hero, class, rank, level, Power Level and the posts you choose to share. Weight, measurements, food logs and location are never shown. Posts are followers-only unless you choose public. Posts and comments are checked automatically and may be reviewed by a moderator before they appear; reports and moderation decisions are kept as a safety record. Blocking hides you from each other. Deleting your account deletes your posts, comments, reactions and follows.
