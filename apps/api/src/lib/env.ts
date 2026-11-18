@@ -1,17 +1,20 @@
 import { z } from 'zod';
 
+/** `KEY=` in a .env file means "not set": treat blank strings as undefined before validating. */
+const optional = <T extends z.ZodType>(schema: T) => z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? undefined : v), schema.optional());
+
 const Env = z.object({
   PORT: z.coerce.number().default(8787),
   DATABASE_URL: z.string().min(1),
   SUPABASE_URL: z.url(),
-  PAYWALL_ENABLED: z.stringbool().default(false),
+  PAYWALL_ENABLED: z.preprocess((v) => (v === '' ? undefined : v), z.stringbool().default(false)),
   /** server-only; enables account deletion of the auth user (never ship to the app) */
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
-  USDA_API_KEY: z.string().min(1).optional(),
-  SENTRY_DSN: z.url().optional(),
-  ALLOWED_ORIGINS: z.string().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: optional(z.string().min(1)),
+  USDA_API_KEY: optional(z.string().min(1)),
+  SENTRY_DSN: optional(z.url()),
+  ALLOWED_ORIGINS: optional(z.string()),
   /** comma-separated user ids who may review A/S trial videos */
-  MODERATOR_IDS: z.string().optional(),
+  MODERATOR_IDS: optional(z.string()),
 });
 export type Env = z.infer<typeof Env>;
 

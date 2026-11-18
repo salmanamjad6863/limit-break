@@ -60,6 +60,7 @@ function Bootstrap() {
   const ready = fontsLoaded && status !== 'booting' && meSettled;
   // If the API is unreachable, keep the user in the app (offline cache) rather than forcing onboarding.
   const onboarded = me.data ? me.data.onboarded : true;
+  const hasSession = status === 'signedIn' || status === 'demo';
 
   useEffect(() => {
     if (!ready) return;
@@ -71,7 +72,7 @@ function Bootstrap() {
   return (
     <>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.dark.background }, animation: 'fade' }}>
-        <Stack.Protected guard={onboarded}>
+        <Stack.Protected guard={hasSession && onboarded}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="programs" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="exercises" options={{ animation: 'slide_from_right' }} />
@@ -82,9 +83,15 @@ function Bootstrap() {
           <Stack.Screen name="diary" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="training-settings" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="history" options={{ animation: 'slide_from_right' }} />
+          {/* dev-only labs: inside the guard so a fresh (not-onboarded) user restored onto them still lands on onboarding */}
+          <Stack.Screen name="dev/aura" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="dev/trainer" options={{ animation: 'slide_from_right' }} />
         </Stack.Protected>
-        <Stack.Protected guard={!onboarded}>
+        <Stack.Protected guard={hasSession && !onboarded}>
           <Stack.Screen name="awakening" />
+        </Stack.Protected>
+        <Stack.Protected guard={status === 'signedOut'}>
+          <Stack.Screen name="sign-in" />
         </Stack.Protected>
       </Stack>
       <CinematicOverlay />

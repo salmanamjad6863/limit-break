@@ -1,4 +1,4 @@
-import { gameDate } from '@lb/engine';
+import { addDays, gameDate } from '@lb/engine';
 import { describe, expect, it } from 'vitest';
 import { createApp } from '../src/app';
 import { fakeDb, USER } from './fakeDb';
@@ -37,8 +37,10 @@ describe('Quests API', () => {
   });
 
   it('a missed day with no shields opens the Penalty Zone with a penalty quest today', async () => {
-    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-    const dayBefore = new Date(Date.now() - 2 * 86_400_000).toISOString().slice(0, 10);
+    // game days reset at 04:00 in the user's zone (UTC here), so derive them the same way the server does
+    const today = gameDate(new Date(), 'UTC');
+    const yesterday = addDays(today, -1);
+    const dayBefore = addDays(today, -2);
     const { prisma } = fakeDb({ streak: { streak: 6, longest: 6, shields: 0, shieldsMonth: yesterday.slice(0, 7), lastResolved: dayBefore } });
     const t = (await (await req(prisma, '/quests/today')).json()) as any;
     expect(t.streak.penaltyDate).toBe(yesterday);

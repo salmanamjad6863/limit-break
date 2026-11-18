@@ -10,6 +10,8 @@ export const env = {
   /** product analytics (PostHog, EU cloud by default). Empty = off */
   posthogKey: process.env.EXPO_PUBLIC_POSTHOG_KEY ?? '',
   posthogHost: process.env.EXPO_PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com',
+  /** digits in the Supabase email code (Auth → Providers → Email → OTP length); the code screen submits at this length */
+  otpLength: Number(process.env.EXPO_PUBLIC_OTP_LENGTH ?? 6),
   appVersion: '1.0.0',
   /** public legal pages (required at sign-up by the stores) */
   privacyUrl: process.env.EXPO_PUBLIC_PRIVACY_URL ?? '',

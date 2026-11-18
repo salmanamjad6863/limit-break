@@ -36,7 +36,7 @@ export default function HomeScreen() {
   const history = useTraining((s) => s.history);
   const activeWorkout = useWorkoutSession((s) => s.active);
 
-  if (isLoading) return <Screen><Text dim>Loading…</Text></Screen>;
+  if (isLoading || sessionStatus === 'booting') return <Screen><Text dim>Loading…</Text></Screen>;
   if (error || !me) return <Screen><Text color={c.danger}>Couldn't reach the server. Your data is safe offline.</Text></Screen>;
 
   const state = me.state;

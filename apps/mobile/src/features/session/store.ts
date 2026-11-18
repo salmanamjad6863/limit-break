@@ -1,11 +1,17 @@
 import { create } from 'zustand';
 
-export type SessionStatus = 'booting' | 'signedIn' | 'demo' | 'error';
+/**
+ * booting   → restoring the saved session
+ * signedOut → no session: the email sign-in screen
+ * signedIn  → a verified (non-anonymous) Supabase user; the API is the source of truth
+ * demo      → no backend configured: everything runs on-device
+ */
+export type SessionStatus = 'booting' | 'signedOut' | 'signedIn' | 'demo';
 
 interface SessionState {
   status: SessionStatus;
   userId: string | null;
-  error: string | null;
+  email: string | null;
   set: (s: Partial<Omit<SessionState, 'set'>>) => void;
 }
 
@@ -13,6 +19,6 @@ interface SessionState {
 export const useSession = create<SessionState>((set) => ({
   status: 'booting',
   userId: null,
-  error: null,
+  email: null,
   set: (s) => set(s),
 }));

@@ -4,29 +4,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Platform, Share } from 'react-native';
-import { useOnboarding } from '@/features/onboarding/store';
-import { useLocalHunter, useProgress } from '@/features/progression';
+import { useLocalHunter } from '@/features/progression/localHunter';
+import { useProgress } from '@/features/progression/progressStore';
 import { useNutritionLocal } from '@/features/nutrition/local';
 import { useQuestLocal } from '@/features/quests/localStore';
-import { useSession } from '@/features/session';
-import { useTraining, useWorkoutSession } from '@/features/training';
+import { signOut, useSession } from '@/features/session';
+import { useTraining } from '@/features/training/store';
 import { api, unwrap } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
-import { useVoicePref } from '@/lib/voice';
-import { useAnalyticsConsent } from '@/lib/analytics';
+import { clearLocalData } from './localData';
 
-/** Every persisted store that can hold personal data. */
-const STORES = [useLocalHunter, useTraining, useWorkoutSession, useProgress, useNutritionLocal, useQuestLocal, useOnboarding, useVoicePref, useAnalyticsConsent] as const;
-
-type Persisted = { persist?: { clearStorage: () => void }; getInitialState: () => unknown; setState: (s: never, replace: true) => void };
-
-/** Wipes on-device data: persisted storage and in-memory state. */
-export function clearLocalData() {
-  for (const store of STORES as unknown as Persisted[]) {
-    store.persist?.clearStorage();
-    store.setState(store.getInitialState() as never, true);
-  }
-}
+export { clearLocalData };
 
 function localExport() {
   const pick = (s: object) => Object.fromEntries(Object.entries(s).filter(([, v]) => typeof v !== 'function'));
@@ -74,5 +62,12 @@ export function useAccountActions() {
     onSuccess: () => router.replace('/'),
   });
 
-  return { exportData, deleteAccount };
+  /** Unsynced offline changes (paused mutations) would be lost by signing out; the UI warns first. */
+  const unsynced = () => qc.getMutationCache().getAll().some((m) => m.state.isPaused || m.state.status === 'pending');
+
+  // Local data and cache are wiped by the session listener on SIGNED_OUT (useAuthBootstrap).
+  const signOutHere = useMutation({ mutationFn: () => signOut('local') });
+  const signOutEverywhere = useMutation({ mutationFn: () => signOut('global') });
+
+  return { exportData, deleteAccount, signOutHere, signOutEverywhere, unsynced };
 }

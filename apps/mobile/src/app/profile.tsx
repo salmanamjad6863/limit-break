@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useAccountActions } from '@/features/account';
+import { useSession } from '@/features/session';
 import { useAnalyticsConsent } from '@/lib/analytics';
 import { env } from '@/lib/env';
 import { useMe, useProgression, useVerifyTrial } from '@/features/progression';
@@ -185,7 +186,9 @@ export default function HunterProfile() {
 /** Your data: export everything, or delete the account permanently (typed confirmation). */
 function AccountSection() {
   const { c, spacing } = useTheme();
-  const { exportData, deleteAccount } = useAccountActions();
+  const { exportData, deleteAccount, signOutHere, signOutEverywhere, unsynced } = useAccountActions();
+  const session = useSession();
+  const [confirmOut, setConfirmOut] = useState(false);
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState('');
   const consent = useAnalyticsConsent((s) => s.consent);
@@ -202,6 +205,23 @@ function AccountSection() {
         ) : null}
         <Button variant="secondary" size="md" icon="download-outline" label="Export my data" loading={exportData.isPending} onPress={() => exportData.mutate()} />
         {exportData.isError ? <Text variant="caption" color={c.warning}>Export failed. Check your connection and try again.</Text> : null}
+        {session.status === 'signedIn' ? (
+          <View style={{ gap: spacing[2] }}>
+            <Text variant="caption" dim>{`Signed in as ${session.email ?? 'your account'}`}</Text>
+            {!confirmOut ? (
+              <Button variant="secondary" size="md" icon="log-out-outline" label="Sign out"
+                onPress={() => (unsynced() ? setConfirmOut(true) : signOutHere.mutate())} loading={signOutHere.isPending} />
+            ) : (
+              <>
+                <Text variant="callout" color={c.warning}>Some changes haven’t synced yet. Signing out now removes them from this phone. Connect to the internet first to keep them.</Text>
+                <Button size="md" icon="log-out-outline" label="Sign out anyway" loading={signOutHere.isPending} onPress={() => signOutHere.mutate()} />
+                <Button variant="ghost" size="md" label="Cancel" onPress={() => setConfirmOut(false)} />
+              </>
+            )}
+            <Button variant="ghost" size="md" icon="phone-portrait-outline" label="Sign out of all devices" loading={signOutEverywhere.isPending} onPress={() => signOutEverywhere.mutate()} />
+            {signOutEverywhere.isError ? <Text variant="caption" color={c.warning}>{(signOutEverywhere.error as Error).message}</Text> : null}
+          </View>
+        ) : null}
         {!open ? (
           <Button variant="ghost" size="md" icon="trash-outline" label="Delete account" onPress={() => setOpen(true)} />
         ) : (
