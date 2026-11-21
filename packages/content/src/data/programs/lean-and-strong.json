@@ -1,0 +1,232 @@
+{
+ "id": "lean-and-strong",
+ "name": "Lean & Strong",
+ "typeId": "hiit",
+ "summary": "Three home days that pair strength with conditioning finishers. Built for fat loss without losing muscle.",
+ "levels": [
+  "beginner",
+  "novice",
+  "intermediate",
+  "advanced"
+ ],
+ "locations": [
+  "HOME",
+  "HYBRID"
+ ],
+ "goals": [
+  "cut",
+  "recomp"
+ ],
+ "daysPerWeek": [
+  3
+ ],
+ "blockWeeks": 5,
+ "deloadEvery": 5,
+ "days": [
+  {
+   "id": "a",
+   "name": "Strength + Sprint",
+   "focus": "full",
+   "slots": [
+    {
+     "pattern": "squat",
+     "role": "main",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "goblet-squat",
+      "bodyweight-squat"
+     ]
+    },
+    {
+     "pattern": "horizontal_push",
+     "role": "main",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      15
+     ],
+     "prefer": [
+      "push-up",
+      "db-floor-press"
+     ]
+    },
+    {
+     "pattern": "horizontal_pull",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "db-row",
+      "doorframe-row"
+     ]
+    },
+    {
+     "pattern": "conditioning",
+     "role": "finisher",
+     "sets": 3,
+     "rir": 2,
+     "seconds": [
+      30,
+      40
+     ],
+     "prefer": [
+      "high-knees",
+      "mountain-climber"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "b",
+   "name": "Hinge + Carry",
+   "focus": "full",
+   "slots": [
+    {
+     "pattern": "hinge",
+     "role": "main",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "db-romanian-deadlift",
+      "single-leg-rdl"
+     ],
+     "fallback": [
+      "hip_thrust"
+     ]
+    },
+    {
+     "pattern": "vertical_push",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "db-shoulder-press",
+      "pike-push-up"
+     ]
+    },
+    {
+     "pattern": "lunge",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      12
+     ],
+     "prefer": [
+      "reverse-lunge"
+     ]
+    },
+    {
+     "pattern": "conditioning",
+     "role": "finisher",
+     "sets": 3,
+     "rir": 2,
+     "seconds": [
+      30,
+      40
+     ],
+     "prefer": [
+      "burpee",
+      "mountain-climber"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "c",
+   "name": "Circuit",
+   "focus": "full",
+   "slots": [
+    {
+     "pattern": "plyo",
+     "role": "main",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "jump-squat"
+     ],
+     "fallback": [
+      "squat"
+     ]
+    },
+    {
+     "pattern": "horizontal_push",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      15
+     ],
+     "prefer": [
+      "push-up",
+      "knee-push-up"
+     ]
+    },
+    {
+     "pattern": "hip_thrust",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      12,
+      20
+     ],
+     "prefer": [
+      "glute-bridge"
+     ]
+    },
+    {
+     "pattern": "core_anti_extension",
+     "role": "core",
+     "sets": 3,
+     "rir": 2,
+     "seconds": [
+      30,
+      45
+     ],
+     "prefer": [
+      "plank"
+     ]
+    },
+    {
+     "pattern": "conditioning",
+     "role": "finisher",
+     "sets": 2,
+     "rir": 2,
+     "seconds": [
+      30,
+      40
+     ],
+     "prefer": [
+      "skater-hop",
+      "jumping-jack"
+     ]
+    }
+   ]
+  }
+ ]
+}

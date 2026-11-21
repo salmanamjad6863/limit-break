@@ -17,13 +17,23 @@ import upperLowerFull from './data/programs/upper-lower-full.json';
 import powerbuilding from './data/programs/powerbuilding.json';
 import lowerGlutes from './data/programs/lower-glutes.json';
 import dumbbellOnly from './data/programs/dumbbell-only.json';
+import homeHypertrophy from './data/programs/home-hypertrophy.json';
+import gluteSculpt from './data/programs/glute-sculpt.json';
+import fullBodyTone from './data/programs/full-body-tone.json';
+import proStrengthBlock from './data/programs/pro-strength-block.json';
+import classicSplit from './data/programs/classic-split.json';
+import bodyweightMastery from './data/programs/bodyweight-mastery.json';
+import leanAndStrong from './data/programs/lean-and-strong.json';
+import strongAtFifty from './data/programs/strong-at-50.json';
+import athleticPower from './data/programs/athletic-power.json';
+import focusedJson from './data/focused-workouts.json';
 import quickSessionsJson from './data/quick-sessions.json';
 import sideQuestsJson from './data/side-quests.json';
 import trialsJson from './data/trials.json';
 import exerciseMediaJson from './data/exercise-media.json';
 import flowsJson from './data/flows.json';
 import foodsJson from './data/foods.json';
-import { AssessmentNorms, Cosmetic, Exercise, ExerciseMediaEntry, FeatureMatrix, Flows, FoodsFile, Hero, type FoodItem, type Per100, Notifications, ProgramTemplate, QuickSession, SideQuest, TrialsConfig, WorkoutType } from './schemas';
+import { AssessmentNorms, Cosmetic, Exercise, ExerciseMediaEntry, FeatureMatrix, Flows, FocusedWorkout, FoodsFile, Hero, type FoodItem, type Per100, Notifications, ProgramTemplate, QuickSession, SideQuest, TrialsConfig, WorkoutType } from './schemas';
 
 
 export * from './schemas';
@@ -45,12 +55,15 @@ export const workoutTypes = z.array(WorkoutType).parse(workoutTypesJson);
 export const programs = z
   .array(ProgramTemplate)
   .parse([
-    foundation, dumbbellOnly, shinobiPath, burnProtocol, ironFoundation, linearStrength, upperLowerFull, lowerGlutes, upperLowerBuilder, pushPullLegs, powerbuilding,
+    foundation, dumbbellOnly, strongAtFifty, gluteSculpt, fullBodyTone, shinobiPath, bodyweightMastery, burnProtocol, leanAndStrong, ironFoundation,
+    linearStrength, homeHypertrophy, upperLowerFull, lowerGlutes, upperLowerBuilder, pushPullLegs, classicSplit, powerbuilding, athleticPower, proStrengthBlock,
   ]);
 export const programById = new Map(programs.map((p) => [p.id, p]));
 /** Free tier (feature `starterPrograms`); the rest are `allPrograms` (premium, SYSTEMS.md §7.2). A user's running program is never locked. */
 export const starterProgramIds: ReadonlySet<string> = new Set(['foundation', 'dumbbell-only', 'iron-foundation', 'linear-strength', 'burn-protocol']);
 export const quickSessions = z.array(QuickSession).parse(quickSessionsJson);
+export const focusedWorkouts = z.array(FocusedWorkout).parse(focusedJson);
+export const focusedById = new Map(focusedWorkouts.map((f) => [f.id, f]));
 export const trials = TrialsConfig.parse(trialsJson);
 export const sideQuests = z.array(SideQuest).parse(sideQuestsJson);
 /** Demo media per exercise; clips are added here as the content pipeline produces them. */

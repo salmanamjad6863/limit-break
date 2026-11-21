@@ -52,7 +52,7 @@ export function lastActivityAt(a: ActiveSession): string | null {
 
 interface SessionState {
   active: ActiveSession | null;
-  start: (w: GeneratedWorkout, meta: { programId: string | null; dayId: string | null; view?: 'guided' | 'log' }) => void;
+  start: (w: GeneratedWorkout, meta: { programId: string | null; dayId: string | null; view?: 'guided' | 'log'; kind?: 'program' | 'quick' }) => void;
   logSet: (exIndex: number, entry: Omit<LoggedEntry, 'id' | 'completedAt'>) => void;
   undoLast: (exIndex: number) => void;
   setLoad: (exIndex: number, setIndex: number, loadKg: number | null) => void;
@@ -82,7 +82,7 @@ export const useWorkoutSession = create<SessionState>()(
       start: (w, meta) =>
         set({
           active: {
-            id: newId(), kind: 'program', programId: meta.programId, dayId: meta.dayId, name: w.name,
+            id: newId(), kind: meta.kind ?? 'program', programId: meta.programId, dayId: meta.dayId, name: w.name,
             startedAt: new Date().toISOString(), exercises: clone(w.exercises), logs: {}, current: 0, restUntil: null, restTotal: 0, coachNote: null,
             view: meta.view ?? 'guided',
           },

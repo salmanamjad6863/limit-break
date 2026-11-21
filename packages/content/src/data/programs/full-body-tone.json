@@ -1,0 +1,253 @@
+{
+ "id": "full-body-tone",
+ "name": "Full-Body Tone",
+ "typeId": "hypertrophy",
+ "summary": "Three balanced full-body gym days: machines and dumbbells first, then barbells as you progress.",
+ "levels": [
+  "beginner",
+  "novice",
+  "intermediate"
+ ],
+ "locations": [
+  "GYM"
+ ],
+ "goals": [
+  "cut",
+  "recomp",
+  "maintain"
+ ],
+ "daysPerWeek": [
+  3
+ ],
+ "blockWeeks": 6,
+ "deloadEvery": 6,
+ "days": [
+  {
+   "id": "a",
+   "name": "Full Body A",
+   "focus": "full",
+   "slots": [
+    {
+     "pattern": "squat",
+     "role": "main",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "leg-press",
+      "goblet-squat"
+     ]
+    },
+    {
+     "pattern": "horizontal_push",
+     "role": "main",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "machine-chest-press",
+      "db-bench-press"
+     ]
+    },
+    {
+     "pattern": "vertical_pull",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      12
+     ],
+     "prefer": [
+      "lat-pulldown"
+     ]
+    },
+    {
+     "pattern": "hip_thrust",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      15
+     ],
+     "prefer": [
+      "hip-thrust",
+      "glute-bridge"
+     ]
+    },
+    {
+     "pattern": "core_anti_extension",
+     "role": "core",
+     "sets": 2,
+     "rir": 2,
+     "seconds": [
+      30,
+      45
+     ],
+     "prefer": [
+      "plank"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "b",
+   "name": "Full Body B",
+   "focus": "full",
+   "slots": [
+    {
+     "pattern": "hinge",
+     "role": "main",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "db-romanian-deadlift",
+      "romanian-deadlift"
+     ]
+    },
+    {
+     "pattern": "vertical_push",
+     "role": "main",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "machine-shoulder-press",
+      "db-shoulder-press"
+     ]
+    },
+    {
+     "pattern": "horizontal_pull",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      12
+     ],
+     "prefer": [
+      "seated-cable-row"
+     ]
+    },
+    {
+     "pattern": "lunge",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      12
+     ],
+     "prefer": [
+      "reverse-lunge",
+      "step-up"
+     ]
+    },
+    {
+     "pattern": "core_anti_rotation",
+     "role": "core",
+     "sets": 2,
+     "rir": 2,
+     "reps": [
+      10,
+      12
+     ],
+     "prefer": [
+      "pallof-press"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "c",
+   "name": "Full Body C",
+   "focus": "full",
+   "slots": [
+    {
+     "pattern": "squat",
+     "role": "main",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "goblet-squat",
+      "back-squat"
+     ]
+    },
+    {
+     "pattern": "horizontal_push",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "incline-db-press"
+     ]
+    },
+    {
+     "pattern": "horizontal_pull",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "chest-supported-row",
+      "db-row"
+     ]
+    },
+    {
+     "pattern": "knee_flexion",
+     "role": "accessory",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      15
+     ],
+     "prefer": [
+      "leg-curl"
+     ],
+     "fallback": [
+      "hinge"
+     ]
+    },
+    {
+     "pattern": "shoulder_abduction",
+     "role": "accessory",
+     "sets": 2,
+     "rir": 2,
+     "reps": [
+      12,
+      20
+     ],
+     "prefer": [
+      "db-lateral-raise"
+     ]
+    }
+   ]
+  }
+ ]
+}

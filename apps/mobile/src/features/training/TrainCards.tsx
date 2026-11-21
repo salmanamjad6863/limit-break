@@ -3,7 +3,7 @@
  * mode bar, exercise rows and poster cards. Media is a placeholder poster (muscle map) until a
  * licensed clip provider is plugged into ExerciseMedia; layouts already use 1:1 thumbs and posters.
  */
-import type { ProgramTemplate, QuickSession } from '@lb/content';
+import type { FocusedWorkout, ProgramTemplate, QuickSession } from '@lb/content';
 import type { Experience, PlannedExercise, WorkoutMode } from '@lb/engine';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -332,5 +332,54 @@ export function ProgramPoster({ p, active }: { p: ProgramTemplate; active: boole
         <Text variant="micro" muted>{`${levels} · ${p.daysPerWeek.join('–')} days · ${p.locations.map((l) => LOC[l]).join(' / ')}`}</Text>
       </View>
     </PressableScale>
+  );
+}
+
+export const CATEGORY_LABEL: Record<FocusedWorkout['category'], string> = {
+  abs: 'Abs', chest: 'Chest', back: 'Back', shoulders: 'Shoulders', arms: 'Arms', glutes: 'Glutes', legs: 'Legs',
+  full: 'Full body', hiit: 'HIIT', mobility: 'Mobility',
+};
+
+/** Focused-workout poster (Muscle Monster style): muscles worked, exercise count, minutes, Home/Gym. */
+export function FocusedPoster({ f, exercises, minutes }: { f: FocusedWorkout; exercises: number; minutes: number }) {
+  const { c, radius, spacing } = useTheme();
+  const t = workoutTypes.find((x) => x.id === f.typeId);
+  const color = t?.color ?? c.accent;
+  const muscles = targetMuscles(f.slots.flatMap((s) => s.prefer?.slice(0, 1) ?? []), 5);
+  return (
+    <PressableScale haptic="tap" onPress={() => router.push(`/workout/preview?focused=${f.id}`)} accessibilityRole="button"
+      accessibilityLabel={`${f.name}, ${exercises} exercises, ${minutes} minutes, ${f.location === 'GYM' ? 'gym' : 'home'}`}
+      style={{ width: 156, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: c.border, backgroundColor: c.surface }}>
+      <LinearGradient colors={[`${color}4D`, `${color}0D`]} style={{ height: 116, alignItems: 'center', justifyContent: 'center' }}>
+        <MuscleMap primary={muscles} width={120} showLabels={false} />
+        <View style={{ position: 'absolute', top: 8, left: 8, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 7, height: 22, borderRadius: 11, backgroundColor: 'rgba(0,0,0,0.45)' }}>
+          <Icon name={f.location === 'GYM' ? 'barbell-outline' : 'home-outline'} size={11} color={c.text} />
+          <Text variant="micro" color={c.text}>{f.location === 'GYM' ? 'Gym' : 'Home'}</Text>
+        </View>
+      </LinearGradient>
+      <View style={{ padding: spacing[3], gap: 2 }}>
+        <Text variant="callout" numberOfLines={1} style={{ fontFamily: 'Inter_600SemiBold' }}>{f.name}</Text>
+        <Text variant="caption" muted>{`${exercises} exercises · ${minutes} min`}</Text>
+      </View>
+    </PressableScale>
+  );
+}
+
+/** Horizontal filter chips (All · Abs · Chest …). */
+export function FilterChips<T extends string>({ options, value, onChange }: { options: readonly { value: T; label: string }[]; value: T; onChange: (v: T) => void }) {
+  const { c, radius, spacing } = useTheme();
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -spacing[4] }}
+      contentContainerStyle={{ paddingHorizontal: spacing[4], gap: 6 }} accessibilityRole="tablist">
+      {options.map((o) => {
+        const on = o.value === value;
+        return (
+          <PressableScale key={o.value} haptic="tap" onPress={() => onChange(o.value)} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={o.label}
+            style={{ paddingHorizontal: 12, height: 32, justifyContent: 'center', borderRadius: radius.pill, borderWidth: 1, borderColor: on ? c.accent : c.border, backgroundColor: on ? `${c.accent}33` : c.surface }}>
+            <Text variant="caption" color={on ? c.text : c.textDim} style={on ? { fontFamily: 'Inter_600SemiBold' } : undefined}>{o.label}</Text>
+          </PressableScale>
+        );
+      })}
+    </ScrollView>
   );
 }

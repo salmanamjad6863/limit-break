@@ -1,0 +1,256 @@
+{
+ "id": "glute-sculpt",
+ "name": "Glute Sculpt at Home",
+ "typeId": "hypertrophy",
+ "summary": "Three lower-focused full-body days with lots of glute work. No gym needed; dumbbells make it harder.",
+ "levels": [
+  "beginner",
+  "novice",
+  "intermediate"
+ ],
+ "locations": [
+  "HOME",
+  "HYBRID"
+ ],
+ "goals": [
+  "recomp",
+  "cut",
+  "maintain"
+ ],
+ "daysPerWeek": [
+  3
+ ],
+ "blockWeeks": 6,
+ "deloadEvery": 6,
+ "days": [
+  {
+   "id": "a",
+   "name": "Day A \u00b7 Bridges",
+   "focus": "full",
+   "slots": [
+    {
+     "pattern": "hip_thrust",
+     "role": "main",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      12,
+      20
+     ],
+     "prefer": [
+      "glute-bridge",
+      "single-leg-glute-bridge"
+     ]
+    },
+    {
+     "pattern": "lunge",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      12
+     ],
+     "prefer": [
+      "reverse-lunge",
+      "bulgarian-split-squat"
+     ]
+    },
+    {
+     "pattern": "squat",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      12,
+      15
+     ],
+     "prefer": [
+      "goblet-squat",
+      "bodyweight-squat"
+     ]
+    },
+    {
+     "pattern": "horizontal_push",
+     "role": "accessory",
+     "sets": 2,
+     "rir": 2,
+     "reps": [
+      6,
+      12
+     ],
+     "prefer": [
+      "incline-push-up",
+      "knee-push-up"
+     ]
+    },
+    {
+     "pattern": "core_anti_extension",
+     "role": "core",
+     "sets": 2,
+     "rir": 2,
+     "reps": [
+      10,
+      12
+     ],
+     "prefer": [
+      "dead-bug"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "b",
+   "name": "Day B \u00b7 Single leg",
+   "focus": "full",
+   "slots": [
+    {
+     "pattern": "lunge",
+     "role": "main",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "bulgarian-split-squat",
+      "split-squat"
+     ]
+    },
+    {
+     "pattern": "hinge",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "single-leg-rdl",
+      "db-romanian-deadlift"
+     ],
+     "fallback": [
+      "hip_thrust"
+     ]
+    },
+    {
+     "pattern": "hip_thrust",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      15
+     ],
+     "prefer": [
+      "single-leg-glute-bridge"
+     ]
+    },
+    {
+     "pattern": "horizontal_pull",
+     "role": "accessory",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      12
+     ],
+     "prefer": [
+      "db-row",
+      "band-row",
+      "doorframe-row"
+     ]
+    },
+    {
+     "pattern": "core_anti_lateral",
+     "role": "core",
+     "sets": 2,
+     "rir": 2,
+     "seconds": [
+      20,
+      40
+     ],
+     "prefer": [
+      "side-plank"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "c",
+   "name": "Day C \u00b7 Burn",
+   "focus": "full",
+   "slots": [
+    {
+     "pattern": "squat",
+     "role": "main",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      12,
+      20
+     ],
+     "prefer": [
+      "goblet-squat",
+      "bodyweight-squat"
+     ]
+    },
+    {
+     "pattern": "hip_thrust",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      15,
+      25
+     ],
+     "prefer": [
+      "glute-bridge"
+     ]
+    },
+    {
+     "pattern": "lunge",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      12
+     ],
+     "prefer": [
+      "step-up",
+      "walking-lunge"
+     ]
+    },
+    {
+     "pattern": "squat_iso",
+     "role": "accessory",
+     "sets": 2,
+     "rir": 2,
+     "seconds": [
+      30,
+      60
+     ],
+     "prefer": [
+      "wall-sit"
+     ]
+    },
+    {
+     "pattern": "conditioning",
+     "role": "finisher",
+     "sets": 2,
+     "rir": 2,
+     "seconds": [
+      30,
+      40
+     ],
+     "prefer": [
+      "mountain-climber"
+     ]
+    }
+   ]
+  }
+ ]
+}

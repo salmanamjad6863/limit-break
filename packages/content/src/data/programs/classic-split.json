@@ -1,0 +1,339 @@
+{
+ "id": "classic-split",
+ "name": "Classic 5-Day Split",
+ "typeId": "hypertrophy",
+ "summary": "Chest, back, legs, shoulders, arms: one muscle group a day with high volume. For experienced lifters.",
+ "levels": [
+  "intermediate",
+  "advanced",
+  "pro"
+ ],
+ "locations": [
+  "GYM"
+ ],
+ "goals": [
+  "bulk",
+  "recomp"
+ ],
+ "daysPerWeek": [
+  5
+ ],
+ "blockWeeks": 6,
+ "deloadEvery": 6,
+ "days": [
+  {
+   "id": "chest",
+   "name": "Chest",
+   "focus": "upper",
+   "slots": [
+    {
+     "pattern": "horizontal_push",
+     "role": "main",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      6,
+      10
+     ],
+     "prefer": [
+      "bench-press"
+     ]
+    },
+    {
+     "pattern": "horizontal_push",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "incline-db-press"
+     ]
+    },
+    {
+     "pattern": "horizontal_push",
+     "role": "accessory",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      15
+     ],
+     "prefer": [
+      "machine-chest-press"
+     ]
+    },
+    {
+     "pattern": "vertical_push_dip",
+     "role": "accessory",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "dip"
+     ],
+     "fallback": [
+      "horizontal_push"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "back",
+   "name": "Back",
+   "focus": "upper",
+   "slots": [
+    {
+     "pattern": "vertical_pull",
+     "role": "main",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      6,
+      10
+     ],
+     "prefer": [
+      "pull-up",
+      "lat-pulldown"
+     ]
+    },
+    {
+     "pattern": "horizontal_pull",
+     "role": "secondary",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      6,
+      10
+     ],
+     "prefer": [
+      "barbell-row"
+     ]
+    },
+    {
+     "pattern": "horizontal_pull",
+     "role": "accessory",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      12
+     ],
+     "prefer": [
+      "seated-cable-row"
+     ]
+    },
+    {
+     "pattern": "rear_delt",
+     "role": "accessory",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      12,
+      20
+     ],
+     "prefer": [
+      "face-pull"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "legs",
+   "name": "Legs",
+   "focus": "lower",
+   "slots": [
+    {
+     "pattern": "squat",
+     "role": "main",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      6,
+      10
+     ],
+     "prefer": [
+      "back-squat"
+     ]
+    },
+    {
+     "pattern": "hinge",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      10
+     ],
+     "prefer": [
+      "romanian-deadlift"
+     ]
+    },
+    {
+     "pattern": "squat",
+     "role": "accessory",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      15
+     ],
+     "prefer": [
+      "leg-press"
+     ]
+    },
+    {
+     "pattern": "knee_flexion",
+     "role": "accessory",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      15
+     ],
+     "prefer": [
+      "leg-curl"
+     ]
+    },
+    {
+     "pattern": "calf",
+     "role": "accessory",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      12,
+      20
+     ],
+     "prefer": [
+      "standing-calf-raise"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "shoulders",
+   "name": "Shoulders",
+   "focus": "upper",
+   "slots": [
+    {
+     "pattern": "vertical_push",
+     "role": "main",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      6,
+      10
+     ],
+     "prefer": [
+      "overhead-press"
+     ]
+    },
+    {
+     "pattern": "vertical_push",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "db-shoulder-press",
+      "machine-shoulder-press"
+     ]
+    },
+    {
+     "pattern": "shoulder_abduction",
+     "role": "accessory",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      12,
+      20
+     ],
+     "prefer": [
+      "db-lateral-raise"
+     ]
+    },
+    {
+     "pattern": "rear_delt",
+     "role": "accessory",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      12,
+      20
+     ],
+     "prefer": [
+      "face-pull",
+      "band-pull-apart"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "arms",
+   "name": "Arms",
+   "focus": "upper",
+   "slots": [
+    {
+     "pattern": "vertical_pull",
+     "role": "main",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      6,
+      10
+     ],
+     "prefer": [
+      "chin-up"
+     ]
+    },
+    {
+     "pattern": "elbow_flexion",
+     "role": "accessory",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "db-curl"
+     ]
+    },
+    {
+     "pattern": "elbow_extension",
+     "role": "accessory",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "triceps-pushdown"
+     ]
+    },
+    {
+     "pattern": "elbow_extension",
+     "role": "accessory",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      15
+     ],
+     "prefer": [
+      "overhead-triceps-extension"
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,2238 @@
+[
+ {
+  "id": "home-abs",
+  "name": "Home Abs",
+  "typeId": "core",
+  "category": "abs",
+  "location": "HOME",
+  "needs": [],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 15,
+  "summary": "Five core moves, no equipment. Front, sides and deep core.",
+  "slots": [
+   {
+    "pattern": "core_anti_extension",
+    "role": "core",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "dead-bug"
+    ]
+   },
+   {
+    "pattern": "core_anti_lateral",
+    "role": "core",
+    "sets": 3,
+    "rir": 2,
+    "seconds": [
+     20,
+     40
+    ],
+    "prefer": [
+     "side-plank"
+    ]
+   },
+   {
+    "pattern": "core_anti_rotation",
+    "role": "core",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "bird-dog"
+    ]
+   },
+   {
+    "pattern": "core_anti_extension",
+    "role": "core",
+    "sets": 2,
+    "rir": 2,
+    "seconds": [
+     30,
+     45
+    ],
+    "prefer": [
+     "plank",
+     "hollow-hold"
+    ]
+   },
+   {
+    "pattern": "conditioning",
+    "role": "finisher",
+    "sets": 2,
+    "rir": 2,
+    "seconds": [
+     30,
+     40
+    ],
+    "prefer": [
+     "mountain-climber"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "six-pack-burner",
+  "name": "Six-Pack Burner",
+  "typeId": "core",
+  "category": "abs",
+  "location": "HOME",
+  "needs": [],
+  "levels": [
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 15,
+  "summary": "Harder holds and fast climbers for a strong, visible core.",
+  "slots": [
+   {
+    "pattern": "core_anti_extension",
+    "role": "core",
+    "sets": 3,
+    "rir": 2,
+    "seconds": [
+     20,
+     40
+    ],
+    "prefer": [
+     "hollow-hold",
+     "plank"
+    ]
+   },
+   {
+    "pattern": "core_anti_extension",
+    "role": "core",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "dead-bug"
+    ]
+   },
+   {
+    "pattern": "core_anti_lateral",
+    "role": "core",
+    "sets": 3,
+    "rir": 2,
+    "seconds": [
+     30,
+     45
+    ],
+    "prefer": [
+     "side-plank"
+    ]
+   },
+   {
+    "pattern": "core_anti_rotation",
+    "role": "core",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     12
+    ],
+    "prefer": [
+     "bird-dog"
+    ]
+   },
+   {
+    "pattern": "conditioning",
+    "role": "finisher",
+    "sets": 3,
+    "rir": 2,
+    "seconds": [
+     30,
+     40
+    ],
+    "prefer": [
+     "mountain-climber"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "core-strength-gym",
+  "name": "Core Strength",
+  "typeId": "core",
+  "category": "abs",
+  "location": "GYM",
+  "needs": [],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 20,
+  "summary": "Hanging raises, anti-rotation and heavy carries.",
+  "slots": [
+   {
+    "pattern": "core_flexion",
+    "role": "core",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "hanging-knee-raise",
+     "hanging-leg-raise"
+    ],
+    "fallback": [
+     "core_anti_extension"
+    ]
+   },
+   {
+    "pattern": "core_anti_rotation",
+    "role": "core",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     12
+    ],
+    "prefer": [
+     "pallof-press"
+    ]
+   },
+   {
+    "pattern": "carry",
+    "role": "core",
+    "sets": 3,
+    "rir": 2,
+    "seconds": [
+     30,
+     40
+    ],
+    "prefer": [
+     "farmer-carry"
+    ]
+   },
+   {
+    "pattern": "core_anti_lateral",
+    "role": "core",
+    "sets": 2,
+    "rir": 2,
+    "seconds": [
+     30,
+     45
+    ],
+    "prefer": [
+     "side-plank"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "dumbbell-chest",
+  "name": "Dumbbell Chest",
+  "typeId": "hypertrophy",
+  "category": "chest",
+  "location": "HOME",
+  "needs": [
+   "dumbbells"
+  ],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 30,
+  "summary": "Flat and incline presses with a push-up finisher.",
+  "slots": [
+   {
+    "pattern": "horizontal_push",
+    "role": "main",
+    "sets": 4,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "db-bench-press",
+     "db-floor-press"
+    ]
+   },
+   {
+    "pattern": "horizontal_push",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "incline-db-press",
+     "db-floor-press"
+    ]
+   },
+   {
+    "pattern": "elbow_extension",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "overhead-triceps-extension"
+    ],
+    "optional": true
+   },
+   {
+    "pattern": "horizontal_push",
+    "role": "finisher",
+    "sets": 2,
+    "rir": 2,
+    "reps": [
+     8,
+     20
+    ],
+    "prefer": [
+     "push-up",
+     "knee-push-up"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "push-up-chest",
+  "name": "Push-up Chest",
+  "typeId": "calisthenics",
+  "category": "chest",
+  "location": "HOME",
+  "needs": [],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 20,
+  "summary": "Chest with no equipment: three push-up angles.",
+  "slots": [
+   {
+    "pattern": "horizontal_push",
+    "role": "main",
+    "sets": 4,
+    "rir": 2,
+    "reps": [
+     6,
+     15
+    ],
+    "prefer": [
+     "decline-push-up",
+     "push-up",
+     "incline-push-up"
+    ]
+   },
+   {
+    "pattern": "horizontal_push",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     15
+    ],
+    "prefer": [
+     "push-up",
+     "knee-push-up"
+    ]
+   },
+   {
+    "pattern": "horizontal_push",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     6,
+     12
+    ],
+    "prefer": [
+     "diamond-push-up",
+     "incline-push-up"
+    ]
+   },
+   {
+    "pattern": "core_anti_extension",
+    "role": "core",
+    "sets": 2,
+    "rir": 2,
+    "seconds": [
+     30,
+     45
+    ],
+    "prefer": [
+     "plank"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "chest-day",
+  "name": "Chest Day",
+  "typeId": "hypertrophy",
+  "category": "chest",
+  "location": "GYM",
+  "needs": [],
+  "levels": [
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 45,
+  "summary": "Bench, incline, machine and dips: full chest volume.",
+  "slots": [
+   {
+    "pattern": "horizontal_push",
+    "role": "main",
+    "sets": 4,
+    "rir": 2,
+    "reps": [
+     5,
+     8
+    ],
+    "prefer": [
+     "bench-press"
+    ]
+   },
+   {
+    "pattern": "horizontal_push",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "incline-db-press"
+    ]
+   },
+   {
+    "pattern": "horizontal_push",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "machine-chest-press"
+    ]
+   },
+   {
+    "pattern": "vertical_push_dip",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     6,
+     12
+    ],
+    "prefer": [
+     "dip"
+    ],
+    "fallback": [
+     "horizontal_push"
+    ]
+   },
+   {
+    "pattern": "elbow_extension",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "triceps-pushdown"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "back-day",
+  "name": "Back Width & Thickness",
+  "typeId": "hypertrophy",
+  "category": "back",
+  "location": "GYM",
+  "needs": [],
+  "levels": [
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 45,
+  "summary": "Pull-ups or pulldowns, rows and rear delts.",
+  "slots": [
+   {
+    "pattern": "vertical_pull",
+    "role": "main",
+    "sets": 4,
+    "rir": 2,
+    "reps": [
+     6,
+     10
+    ],
+    "prefer": [
+     "pull-up",
+     "lat-pulldown"
+    ]
+   },
+   {
+    "pattern": "horizontal_pull",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     6,
+     10
+    ],
+    "prefer": [
+     "barbell-row"
+    ]
+   },
+   {
+    "pattern": "horizontal_pull",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     12
+    ],
+    "prefer": [
+     "seated-cable-row",
+     "chest-supported-row"
+    ]
+   },
+   {
+    "pattern": "rear_delt",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     12,
+     20
+    ],
+    "prefer": [
+     "face-pull"
+    ]
+   },
+   {
+    "pattern": "elbow_flexion",
+    "role": "accessory",
+    "sets": 2,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "db-curl"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "home-back",
+  "name": "Home Back",
+  "typeId": "hypertrophy",
+  "category": "back",
+  "location": "HOME",
+  "needs": [],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 25,
+  "summary": "Rows and pulls with whatever you have at home.",
+  "slots": [
+   {
+    "pattern": "horizontal_pull",
+    "role": "main",
+    "sets": 4,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "db-row",
+     "inverted-row",
+     "doorframe-row"
+    ]
+   },
+   {
+    "pattern": "vertical_pull",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     6,
+     12
+    ],
+    "prefer": [
+     "pull-up",
+     "negative-pull-up",
+     "band-pulldown"
+    ],
+    "optional": true
+   },
+   {
+    "pattern": "rear_delt",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "prone-ytw",
+     "band-pull-apart"
+    ]
+   },
+   {
+    "pattern": "core_anti_rotation",
+    "role": "core",
+    "sets": 2,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "bird-dog"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "dumbbell-shoulders",
+  "name": "Dumbbell Shoulders",
+  "typeId": "hypertrophy",
+  "category": "shoulders",
+  "location": "HOME",
+  "needs": [
+   "dumbbells"
+  ],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 25,
+  "summary": "Press, raise, rear delts: rounder shoulders.",
+  "slots": [
+   {
+    "pattern": "vertical_push",
+    "role": "main",
+    "sets": 4,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "db-shoulder-press",
+     "pike-push-up"
+    ]
+   },
+   {
+    "pattern": "shoulder_abduction",
+    "role": "accessory",
+    "sets": 4,
+    "rir": 2,
+    "reps": [
+     12,
+     20
+    ],
+    "prefer": [
+     "db-lateral-raise"
+    ],
+    "fallback": [
+     "rear_delt"
+    ]
+   },
+   {
+    "pattern": "rear_delt",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     12,
+     20
+    ],
+    "prefer": [
+     "prone-ytw",
+     "band-pull-apart"
+    ]
+   },
+   {
+    "pattern": "horizontal_push",
+    "role": "finisher",
+    "sets": 2,
+    "rir": 2,
+    "reps": [
+     8,
+     15
+    ],
+    "prefer": [
+     "push-up",
+     "knee-push-up"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "shoulder-day",
+  "name": "Boulder Shoulders",
+  "typeId": "hypertrophy",
+  "category": "shoulders",
+  "location": "GYM",
+  "needs": [],
+  "levels": [
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 40,
+  "summary": "Overhead press, machine press, raises and face pulls.",
+  "slots": [
+   {
+    "pattern": "vertical_push",
+    "role": "main",
+    "sets": 4,
+    "rir": 2,
+    "reps": [
+     5,
+     8
+    ],
+    "prefer": [
+     "overhead-press"
+    ]
+   },
+   {
+    "pattern": "vertical_push",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "machine-shoulder-press",
+     "db-shoulder-press"
+    ]
+   },
+   {
+    "pattern": "shoulder_abduction",
+    "role": "accessory",
+    "sets": 4,
+    "rir": 2,
+    "reps": [
+     12,
+     20
+    ],
+    "prefer": [
+     "db-lateral-raise"
+    ]
+   },
+   {
+    "pattern": "rear_delt",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     12,
+     20
+    ],
+    "prefer": [
+     "face-pull"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "dumbbell-arms",
+  "name": "Dumbbell Arms",
+  "typeId": "hypertrophy",
+  "category": "arms",
+  "location": "HOME",
+  "needs": [
+   "dumbbells"
+  ],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 25,
+  "summary": "Biceps and triceps supersets with dumbbells.",
+  "slots": [
+   {
+    "pattern": "elbow_flexion",
+    "role": "main",
+    "sets": 4,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "db-curl"
+    ]
+   },
+   {
+    "pattern": "elbow_extension",
+    "role": "main",
+    "sets": 4,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "overhead-triceps-extension"
+    ]
+   },
+   {
+    "pattern": "horizontal_push",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     6,
+     15
+    ],
+    "prefer": [
+     "diamond-push-up",
+     "push-up",
+     "knee-push-up"
+    ]
+   },
+   {
+    "pattern": "horizontal_pull",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "db-row"
+    ],
+    "fallback": [
+     "vertical_pull"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "arm-day",
+  "name": "Arm Day",
+  "typeId": "hypertrophy",
+  "category": "arms",
+  "location": "GYM",
+  "needs": [],
+  "levels": [
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 40,
+  "summary": "Chin-ups, dips, curls and pushdowns.",
+  "slots": [
+   {
+    "pattern": "vertical_pull",
+    "role": "main",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     6,
+     10
+    ],
+    "prefer": [
+     "chin-up",
+     "lat-pulldown"
+    ]
+   },
+   {
+    "pattern": "vertical_push_dip",
+    "role": "main",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     6,
+     12
+    ],
+    "prefer": [
+     "dip"
+    ],
+    "fallback": [
+     "horizontal_push"
+    ]
+   },
+   {
+    "pattern": "elbow_flexion",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "db-curl"
+    ]
+   },
+   {
+    "pattern": "elbow_extension",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "triceps-pushdown"
+    ]
+   },
+   {
+    "pattern": "elbow_extension",
+    "role": "accessory",
+    "sets": 2,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "overhead-triceps-extension"
+    ],
+    "optional": true
+   }
+  ]
+ },
+ {
+  "id": "home-glutes",
+  "name": "Home Glutes",
+  "typeId": "hypertrophy",
+  "category": "glutes",
+  "location": "HOME",
+  "needs": [],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 25,
+  "summary": "Bridges, lunges and single-leg work. No equipment.",
+  "slots": [
+   {
+    "pattern": "hip_thrust",
+    "role": "main",
+    "sets": 4,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "single-leg-glute-bridge",
+     "glute-bridge"
+    ]
+   },
+   {
+    "pattern": "lunge",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "bulgarian-split-squat",
+     "reverse-lunge"
+    ]
+   },
+   {
+    "pattern": "hinge",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "single-leg-rdl",
+     "db-romanian-deadlift"
+    ],
+    "fallback": [
+     "hip_thrust"
+    ]
+   },
+   {
+    "pattern": "squat",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     12,
+     20
+    ],
+    "prefer": [
+     "bodyweight-squat",
+     "goblet-squat"
+    ]
+   },
+   {
+    "pattern": "hip_thrust",
+    "role": "finisher",
+    "sets": 2,
+    "rir": 2,
+    "reps": [
+     15,
+     25
+    ],
+    "prefer": [
+     "glute-bridge"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "glute-builder",
+  "name": "Glute Builder",
+  "typeId": "hypertrophy",
+  "category": "glutes",
+  "location": "GYM",
+  "needs": [],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 45,
+  "summary": "Hip thrusts, RDLs and split squats: the glute-growth staples.",
+  "slots": [
+   {
+    "pattern": "hip_thrust",
+    "role": "main",
+    "sets": 4,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "hip-thrust"
+    ]
+   },
+   {
+    "pattern": "hinge",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "romanian-deadlift",
+     "db-romanian-deadlift"
+    ]
+   },
+   {
+    "pattern": "lunge",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "bulgarian-split-squat",
+     "step-up"
+    ]
+   },
+   {
+    "pattern": "squat",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "leg-press",
+     "goblet-squat"
+    ]
+   },
+   {
+    "pattern": "hip_thrust",
+    "role": "finisher",
+    "sets": 2,
+    "rir": 2,
+    "reps": [
+     15,
+     20
+    ],
+    "prefer": [
+     "single-leg-glute-bridge",
+     "glute-bridge"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "leg-day",
+  "name": "Leg Day",
+  "typeId": "strength",
+  "category": "legs",
+  "location": "GYM",
+  "needs": [],
+  "levels": [
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 50,
+  "summary": "Squat, RDL, leg press, curls and calves.",
+  "slots": [
+   {
+    "pattern": "squat",
+    "role": "main",
+    "sets": 4,
+    "rir": 2,
+    "reps": [
+     5,
+     8
+    ],
+    "prefer": [
+     "back-squat",
+     "front-squat"
+    ]
+   },
+   {
+    "pattern": "hinge",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     6,
+     10
+    ],
+    "prefer": [
+     "romanian-deadlift"
+    ]
+   },
+   {
+    "pattern": "squat",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "leg-press",
+     "goblet-squat"
+    ]
+   },
+   {
+    "pattern": "knee_flexion",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "leg-curl"
+    ],
+    "fallback": [
+     "hinge"
+    ]
+   },
+   {
+    "pattern": "calf",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     12,
+     20
+    ],
+    "prefer": [
+     "standing-calf-raise"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "dumbbell-legs",
+  "name": "Dumbbell Legs",
+  "typeId": "hypertrophy",
+  "category": "legs",
+  "location": "HOME",
+  "needs": [
+   "dumbbells"
+  ],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 30,
+  "summary": "Goblet squats, RDLs, lunges and step-ups.",
+  "slots": [
+   {
+    "pattern": "squat",
+    "role": "main",
+    "sets": 4,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "goblet-squat",
+     "bodyweight-squat"
+    ]
+   },
+   {
+    "pattern": "hinge",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "db-romanian-deadlift",
+     "single-leg-rdl"
+    ]
+   },
+   {
+    "pattern": "lunge",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "walking-lunge",
+     "reverse-lunge"
+    ]
+   },
+   {
+    "pattern": "lunge",
+    "role": "accessory",
+    "sets": 2,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "step-up",
+     "split-squat"
+    ]
+   },
+   {
+    "pattern": "calf",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     15,
+     20
+    ],
+    "prefer": [
+     "standing-calf-raise"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "bodyweight-legs",
+  "name": "Bodyweight Legs",
+  "typeId": "calisthenics",
+  "category": "legs",
+  "location": "HOME",
+  "needs": [],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 20,
+  "summary": "Squats, split squats, bridges and a wall-sit burn.",
+  "slots": [
+   {
+    "pattern": "squat",
+    "role": "main",
+    "sets": 4,
+    "rir": 2,
+    "reps": [
+     12,
+     20
+    ],
+    "prefer": [
+     "bodyweight-squat",
+     "pistol-squat"
+    ]
+   },
+   {
+    "pattern": "lunge",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "split-squat",
+     "reverse-lunge"
+    ]
+   },
+   {
+    "pattern": "hip_thrust",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "single-leg-glute-bridge",
+     "glute-bridge"
+    ]
+   },
+   {
+    "pattern": "calf",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     15,
+     25
+    ],
+    "prefer": [
+     "standing-calf-raise"
+    ]
+   },
+   {
+    "pattern": "squat_iso",
+    "role": "finisher",
+    "sets": 2,
+    "rir": 2,
+    "seconds": [
+     30,
+     60
+    ],
+    "prefer": [
+     "wall-sit"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "full-body-20",
+  "name": "Full Body 20\u2032",
+  "typeId": "calisthenics",
+  "category": "full",
+  "location": "HOME",
+  "needs": [],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 20,
+  "summary": "Squat, push, pull, hinge and core in 20 minutes.",
+  "slots": [
+   {
+    "pattern": "squat",
+    "role": "main",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "bodyweight-squat",
+     "goblet-squat"
+    ]
+   },
+   {
+    "pattern": "horizontal_push",
+    "role": "main",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     15
+    ],
+    "prefer": [
+     "push-up",
+     "knee-push-up"
+    ]
+   },
+   {
+    "pattern": "horizontal_pull",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "db-row",
+     "inverted-row",
+     "doorframe-row"
+    ]
+   },
+   {
+    "pattern": "hip_thrust",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "glute-bridge"
+    ]
+   },
+   {
+    "pattern": "core_anti_extension",
+    "role": "core",
+    "sets": 2,
+    "rir": 2,
+    "seconds": [
+     30,
+     45
+    ],
+    "prefer": [
+     "plank"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "dumbbell-full-body",
+  "name": "Dumbbell Full Body",
+  "typeId": "hypertrophy",
+  "category": "full",
+  "location": "HOME",
+  "needs": [
+   "dumbbells"
+  ],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 35,
+  "summary": "One pair of dumbbells, every muscle.",
+  "slots": [
+   {
+    "pattern": "squat",
+    "role": "main",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "goblet-squat"
+    ]
+   },
+   {
+    "pattern": "horizontal_push",
+    "role": "main",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "db-bench-press",
+     "db-floor-press"
+    ]
+   },
+   {
+    "pattern": "horizontal_pull",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "db-row"
+    ]
+   },
+   {
+    "pattern": "hinge",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "db-romanian-deadlift"
+    ]
+   },
+   {
+    "pattern": "carry",
+    "role": "core",
+    "sets": 2,
+    "rir": 2,
+    "seconds": [
+     30,
+     45
+    ],
+    "prefer": [
+     "farmer-carry"
+    ],
+    "fallback": [
+     "core_anti_extension"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "gym-full-body",
+  "name": "Gym Full Body",
+  "typeId": "strength",
+  "category": "full",
+  "location": "GYM",
+  "needs": [],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 50,
+  "summary": "The big lifts in one session: squat, bench, pull, hinge.",
+  "slots": [
+   {
+    "pattern": "squat",
+    "role": "main",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     5,
+     8
+    ],
+    "prefer": [
+     "back-squat",
+     "leg-press"
+    ]
+   },
+   {
+    "pattern": "horizontal_push",
+    "role": "main",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     5,
+     8
+    ],
+    "prefer": [
+     "bench-press",
+     "machine-chest-press"
+    ]
+   },
+   {
+    "pattern": "vertical_pull",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "lat-pulldown",
+     "pull-up"
+    ]
+   },
+   {
+    "pattern": "hinge",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     6,
+     10
+    ],
+    "prefer": [
+     "romanian-deadlift"
+    ]
+   },
+   {
+    "pattern": "rear_delt",
+    "role": "accessory",
+    "sets": 2,
+    "rir": 2,
+    "reps": [
+     12,
+     20
+    ],
+    "prefer": [
+     "face-pull"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "band-workout",
+  "name": "Resistance Band Workout",
+  "typeId": "hypertrophy",
+  "category": "full",
+  "location": "HOME",
+  "needs": [
+   "bands"
+  ],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 25,
+  "summary": "Press, row, pulldown and anti-rotation with one band.",
+  "slots": [
+   {
+    "pattern": "vertical_push",
+    "role": "main",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "band-overhead-press",
+     "pike-push-up"
+    ]
+   },
+   {
+    "pattern": "horizontal_pull",
+    "role": "main",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "band-row",
+     "doorframe-row"
+    ]
+   },
+   {
+    "pattern": "vertical_pull",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "band-pulldown"
+    ],
+    "fallback": [
+     "horizontal_pull"
+    ]
+   },
+   {
+    "pattern": "squat",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     12,
+     20
+    ],
+    "prefer": [
+     "bodyweight-squat"
+    ]
+   },
+   {
+    "pattern": "core_anti_rotation",
+    "role": "core",
+    "sets": 2,
+    "rir": 2,
+    "reps": [
+     10,
+     12
+    ],
+    "prefer": [
+     "pallof-press",
+     "bird-dog"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fat-burn-hiit",
+  "name": "Fat Burn HIIT",
+  "typeId": "hiit",
+  "category": "hiit",
+  "location": "HOME",
+  "needs": [],
+  "levels": [
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 20,
+  "summary": "Four all-out moves, three rounds. Expect to sweat.",
+  "slots": [
+   {
+    "pattern": "conditioning",
+    "role": "main",
+    "sets": 3,
+    "rir": 2,
+    "seconds": [
+     30,
+     40
+    ],
+    "prefer": [
+     "burpee"
+    ]
+   },
+   {
+    "pattern": "plyo",
+    "role": "main",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "jump-squat"
+    ],
+    "fallback": [
+     "squat"
+    ]
+   },
+   {
+    "pattern": "conditioning",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "seconds": [
+     30,
+     40
+    ],
+    "prefer": [
+     "mountain-climber"
+    ]
+   },
+   {
+    "pattern": "conditioning",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "seconds": [
+     30,
+     40
+    ],
+    "prefer": [
+     "high-knees",
+     "skater-hop"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "leg-burner-hiit",
+  "name": "Leg Burner",
+  "typeId": "hiit",
+  "category": "hiit",
+  "location": "HOME",
+  "needs": [],
+  "levels": [
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 15,
+  "summary": "Jump squats, lunges, skaters and a wall-sit.",
+  "slots": [
+   {
+    "pattern": "plyo",
+    "role": "main",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "jump-squat"
+    ],
+    "fallback": [
+     "squat"
+    ]
+   },
+   {
+    "pattern": "lunge",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     16
+    ],
+    "prefer": [
+     "reverse-lunge"
+    ]
+   },
+   {
+    "pattern": "conditioning",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "seconds": [
+     30,
+     40
+    ],
+    "prefer": [
+     "skater-hop",
+     "high-knees"
+    ]
+   },
+   {
+    "pattern": "squat_iso",
+    "role": "finisher",
+    "sets": 2,
+    "rir": 2,
+    "seconds": [
+     30,
+     60
+    ],
+    "prefer": [
+     "wall-sit"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "low-impact-sweat",
+  "name": "Low-Impact Sweat",
+  "typeId": "hiit",
+  "category": "hiit",
+  "location": "HOME",
+  "needs": [],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 20,
+  "summary": "Heart rate up, joints happy: no jumping.",
+  "slots": [
+   {
+    "pattern": "squat",
+    "role": "main",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     12,
+     20
+    ],
+    "prefer": [
+     "bodyweight-squat"
+    ]
+   },
+   {
+    "pattern": "lunge",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     12
+    ],
+    "prefer": [
+     "step-up",
+     "reverse-lunge"
+    ]
+   },
+   {
+    "pattern": "conditioning",
+    "role": "secondary",
+    "sets": 3,
+    "rir": 2,
+    "seconds": [
+     30,
+     40
+    ],
+    "prefer": [
+     "mountain-climber"
+    ]
+   },
+   {
+    "pattern": "hip_thrust",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     12,
+     20
+    ],
+    "prefer": [
+     "glute-bridge"
+    ]
+   },
+   {
+    "pattern": "core_anti_rotation",
+    "role": "core",
+    "sets": 2,
+    "rir": 2,
+    "reps": [
+     8,
+     12
+    ],
+    "prefer": [
+     "bird-dog"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "full-body-stretch",
+  "name": "Full-Body Stretch",
+  "typeId": "mobility",
+  "category": "mobility",
+  "location": "HOME",
+  "needs": [],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 15,
+  "summary": "Hips, spine and shoulders, head to toe.",
+  "slots": [
+   {
+    "pattern": "mobility",
+    "role": "accessory",
+    "sets": 1,
+    "rir": 2,
+    "seconds": [
+     45,
+     60
+    ],
+    "prefer": [
+     "cat-cow"
+    ]
+   },
+   {
+    "pattern": "mobility",
+    "role": "accessory",
+    "sets": 1,
+    "rir": 2,
+    "seconds": [
+     45,
+     60
+    ],
+    "prefer": [
+     "worlds-greatest-stretch"
+    ]
+   },
+   {
+    "pattern": "mobility",
+    "role": "accessory",
+    "sets": 1,
+    "rir": 2,
+    "seconds": [
+     45,
+     60
+    ],
+    "prefer": [
+     "downward-dog"
+    ]
+   },
+   {
+    "pattern": "mobility",
+    "role": "accessory",
+    "sets": 1,
+    "rir": 2,
+    "seconds": [
+     45,
+     60
+    ],
+    "prefer": [
+     "hip-flexor-stretch"
+    ]
+   },
+   {
+    "pattern": "mobility",
+    "role": "accessory",
+    "sets": 1,
+    "rir": 2,
+    "seconds": [
+     45,
+     60
+    ],
+    "prefer": [
+     "thoracic-open-book"
+    ]
+   },
+   {
+    "pattern": "mobility",
+    "role": "accessory",
+    "sets": 1,
+    "rir": 2,
+    "seconds": [
+     45,
+     60
+    ],
+    "prefer": [
+     "childs-pose"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "hip-opener",
+  "name": "Hip Opener",
+  "typeId": "mobility",
+  "category": "mobility",
+  "location": "HOME",
+  "needs": [],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 12,
+  "summary": "Unlock tight hips from sitting all day.",
+  "slots": [
+   {
+    "pattern": "mobility",
+    "role": "accessory",
+    "sets": 2,
+    "rir": 2,
+    "seconds": [
+     40,
+     60
+    ],
+    "prefer": [
+     "hip-flexor-stretch"
+    ]
+   },
+   {
+    "pattern": "mobility",
+    "role": "accessory",
+    "sets": 2,
+    "rir": 2,
+    "seconds": [
+     40,
+     60
+    ],
+    "prefer": [
+     "ninety-ninety",
+     "worlds-greatest-stretch"
+    ]
+   },
+   {
+    "pattern": "mobility",
+    "role": "accessory",
+    "sets": 2,
+    "rir": 2,
+    "seconds": [
+     40,
+     60
+    ],
+    "prefer": [
+     "deep-squat-hold"
+    ]
+   },
+   {
+    "pattern": "mobility",
+    "role": "accessory",
+    "sets": 1,
+    "rir": 2,
+    "seconds": [
+     45,
+     60
+    ],
+    "prefer": [
+     "worlds-greatest-stretch",
+     "childs-pose"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "desk-reset",
+  "name": "Desk Posture Reset",
+  "typeId": "mobility",
+  "category": "mobility",
+  "location": "HOME",
+  "needs": [],
+  "levels": [
+   "beginner",
+   "novice",
+   "intermediate",
+   "advanced",
+   "pro"
+  ],
+  "minutes": 12,
+  "summary": "Undo the desk hunch: upper back, chest and neck.",
+  "slots": [
+   {
+    "pattern": "mobility",
+    "role": "accessory",
+    "sets": 2,
+    "rir": 2,
+    "seconds": [
+     40,
+     60
+    ],
+    "prefer": [
+     "thoracic-open-book"
+    ]
+   },
+   {
+    "pattern": "rear_delt",
+    "role": "accessory",
+    "sets": 3,
+    "rir": 2,
+    "reps": [
+     10,
+     15
+    ],
+    "prefer": [
+     "prone-ytw",
+     "band-pull-apart"
+    ]
+   },
+   {
+    "pattern": "mobility",
+    "role": "accessory",
+    "sets": 2,
+    "rir": 2,
+    "seconds": [
+     40,
+     60
+    ],
+    "prefer": [
+     "cat-cow"
+    ]
+   },
+   {
+    "pattern": "mobility",
+    "role": "accessory",
+    "sets": 1,
+    "rir": 2,
+    "seconds": [
+     45,
+     60
+    ],
+    "prefer": [
+     "childs-pose",
+     "downward-dog"
+    ]
+   }
+  ]
+ }
+]

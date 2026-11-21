@@ -1,0 +1,347 @@
+{
+ "id": "home-hypertrophy",
+ "name": "Home Hypertrophy",
+ "typeId": "hypertrophy",
+ "summary": "Build muscle at home with dumbbells (or bodyweight): four days, upper/lower, progressive volume.",
+ "levels": [
+  "beginner",
+  "novice",
+  "intermediate",
+  "advanced"
+ ],
+ "locations": [
+  "HOME",
+  "HYBRID"
+ ],
+ "goals": [
+  "bulk",
+  "recomp",
+  "maintain"
+ ],
+ "daysPerWeek": [
+  4
+ ],
+ "blockWeeks": 6,
+ "deloadEvery": 6,
+ "days": [
+  {
+   "id": "upper-a",
+   "name": "Upper A \u00b7 Push focus",
+   "focus": "upper",
+   "slots": [
+    {
+     "pattern": "horizontal_push",
+     "role": "main",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "db-bench-press",
+      "db-floor-press",
+      "push-up"
+     ]
+    },
+    {
+     "pattern": "horizontal_pull",
+     "role": "main",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "db-row",
+      "inverted-row",
+      "doorframe-row"
+     ]
+    },
+    {
+     "pattern": "vertical_push",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "db-shoulder-press",
+      "pike-push-up",
+      "band-overhead-press"
+     ]
+    },
+    {
+     "pattern": "shoulder_abduction",
+     "role": "accessory",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      12,
+      20
+     ],
+     "prefer": [
+      "db-lateral-raise"
+     ],
+     "fallback": [
+      "rear_delt"
+     ]
+    },
+    {
+     "pattern": "elbow_extension",
+     "role": "accessory",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      15
+     ],
+     "prefer": [
+      "overhead-triceps-extension"
+     ],
+     "optional": true
+    }
+   ]
+  },
+  {
+   "id": "lower-a",
+   "name": "Lower A \u00b7 Squat focus",
+   "focus": "lower",
+   "slots": [
+    {
+     "pattern": "squat",
+     "role": "main",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "goblet-squat",
+      "bodyweight-squat"
+     ]
+    },
+    {
+     "pattern": "hinge",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "db-romanian-deadlift",
+      "single-leg-rdl"
+     ]
+    },
+    {
+     "pattern": "lunge",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "bulgarian-split-squat",
+      "reverse-lunge"
+     ]
+    },
+    {
+     "pattern": "calf",
+     "role": "accessory",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      12,
+      20
+     ],
+     "prefer": [
+      "standing-calf-raise"
+     ]
+    },
+    {
+     "pattern": "core_anti_extension",
+     "role": "core",
+     "sets": 2,
+     "rir": 2,
+     "reps": [
+      10,
+      15
+     ],
+     "prefer": [
+      "dead-bug"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "upper-b",
+   "name": "Upper B \u00b7 Pull focus",
+   "focus": "upper",
+   "slots": [
+    {
+     "pattern": "vertical_pull",
+     "role": "main",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      6,
+      12
+     ],
+     "prefer": [
+      "pull-up",
+      "negative-pull-up",
+      "band-pulldown"
+     ],
+     "fallback": [
+      "horizontal_pull"
+     ]
+    },
+    {
+     "pattern": "horizontal_push",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      15
+     ],
+     "prefer": [
+      "incline-db-press",
+      "push-up"
+     ]
+    },
+    {
+     "pattern": "horizontal_pull",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      12
+     ],
+     "prefer": [
+      "chest-supported-row",
+      "db-row",
+      "doorframe-row"
+     ],
+     "optional": true
+    },
+    {
+     "pattern": "rear_delt",
+     "role": "accessory",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      12,
+      20
+     ],
+     "prefer": [
+      "prone-ytw",
+      "band-pull-apart"
+     ]
+    },
+    {
+     "pattern": "elbow_flexion",
+     "role": "accessory",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      15
+     ],
+     "prefer": [
+      "db-curl",
+      "band-curl"
+     ],
+     "optional": true
+    }
+   ]
+  },
+  {
+   "id": "lower-b",
+   "name": "Lower B \u00b7 Glute focus",
+   "focus": "lower",
+   "slots": [
+    {
+     "pattern": "hip_thrust",
+     "role": "main",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      10,
+      15
+     ],
+     "prefer": [
+      "single-leg-glute-bridge",
+      "glute-bridge"
+     ]
+    },
+    {
+     "pattern": "lunge",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "step-up",
+      "walking-lunge"
+     ]
+    },
+    {
+     "pattern": "hinge",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "single-leg-rdl"
+     ],
+     "fallback": [
+      "hip_thrust"
+     ]
+    },
+    {
+     "pattern": "squat",
+     "role": "accessory",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      12,
+      20
+     ],
+     "prefer": [
+      "goblet-squat",
+      "bodyweight-squat"
+     ]
+    },
+    {
+     "pattern": "core_anti_lateral",
+     "role": "core",
+     "sets": 2,
+     "rir": 2,
+     "seconds": [
+      30,
+      45
+     ],
+     "prefer": [
+      "side-plank"
+     ]
+    }
+   ]
+  }
+ ]
+}

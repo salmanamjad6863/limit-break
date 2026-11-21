@@ -1,11 +1,11 @@
 import { workoutTypes } from '@lb/content';
 import type { WorkoutEdits } from '@lb/engine';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { LayoutAnimationConfig, LinearTransition } from 'react-native-reanimated';
 import Animated from 'react-native-reanimated';
-import { exerciseById, exerciseName, useToday, useTraining, useTrainingProfile, useWorkoutSession } from '@/features/training';
+import { exerciseById, exerciseName, useTrainingProfile, useWorkoutPlan, useWorkoutSession } from '@/features/training';
 import { estimateKcal, ExerciseRow, LevelChip, ModeBar, setsRepsText } from '@/features/training/TrainCards';
 import { ExerciseMedia, MuscleMap } from '@/features/visuals';
 import { useTheme } from '@/theme';
@@ -32,51 +32,51 @@ export default function WorkoutPreview() {
   const [guided, setGuided] = useState(true);
   const [editing, setEditing] = useState(false);
   const [swapping, setSwapping] = useState<number | null>(null);
-  const today = useToday(readiness);
+  const { focused: focusedId } = useLocalSearchParams<{ focused?: string }>();
+  const plan = useWorkoutPlan(focusedId, readiness);
   const profile = useTrainingProfile();
   const start = useWorkoutSession((s) => s.start);
-  const setMode = useTraining((s) => s.setMode);
-  const setEdits = useTraining((s) => s.setEdits);
-  const w = today.workout;
-  const type = workoutTypes.find((t) => t.id === today.program.typeId);
+  const active = useWorkoutSession((s) => s.active);
+  const w = plan.workout;
+  const type = workoutTypes.find((t) => t.id === plan.typeId);
   const sets = w.exercises.reduce((n, e) => n + e.sets.filter((s) => s.kind === 'working').length, 0);
   const first = w.exercises[0];
   const kit = [...new Set(w.exercises.flatMap((pe) => {
     const e = exerciseById.get(pe.exerciseId);
     return [...(e?.equipment ?? []), ...(e?.anyOf?.slice(0, 1) ?? [])];
   }))];
-  const edited = !!(today.edits.swap && Object.keys(today.edits.swap).length) || !!today.edits.remove?.length || !!today.edits.order?.length;
+  const edited = !!(plan.edits.swap && Object.keys(plan.edits.swap).length) || !!plan.edits.remove?.length || !!plan.edits.order?.length;
 
-  const edit = (next: WorkoutEdits) => setEdits(today.todayIso, w.dayId, next);
+  const edit = (next: WorkoutEdits) => plan.setEdits(next);
   const move = (i: number, d: -1 | 1) => {
     const order = [...w.templateSlots];
     const j = i + d;
     if (j < 0 || j >= order.length) return;
     [order[i], order[j]] = [order[j]!, order[i]!];
-    edit({ ...today.edits, order });
+    edit({ ...plan.edits, order });
   };
   const remove = (i: number) => {
     if (w.exercises.length <= 1) return;
     setSwapping(null);
-    edit({ ...today.edits, remove: [...(today.edits.remove ?? []), w.templateSlots[i]!] });
+    edit({ ...plan.edits, remove: [...(plan.edits.remove ?? []), w.templateSlots[i]!] });
   };
   const swap = (i: number, exerciseId: string) => {
     setSwapping(null);
-    edit({ ...today.edits, swap: { ...(today.edits.swap ?? {}), [w.templateSlots[i]!]: exerciseId } });
+    edit({ ...plan.edits, swap: { ...(plan.edits.swap ?? {}), [w.templateSlots[i]!]: exerciseId } });
   };
 
   return (
     <Page
       accent={type?.color}
-      header={<ScreenHeader title={today.program.name} icon="close" />}
+      header={<ScreenHeader title={plan.title} icon="close" />}
       footer={
         <Button
-          label="Start workout"
+          label={active ? 'Start (ends the open workout)' : 'Start workout'}
           icon="play"
           onPress={() => {
             // Guided for Beginner/Novice, the set table for everyone else (switchable mid-workout)
             const view = profile.experience === 'beginner' || profile.experience === 'novice' ? 'guided' : 'log';
-            start(w, { programId: today.program.id, dayId: w.dayId, view });
+            start(w, { ...plan.start, view });
             router.replace(guided ? '/workout/flow?kind=warmup' : '/workout/session');
           }}
         />
@@ -99,11 +99,14 @@ export default function WorkoutPreview() {
           <LevelChip level={profile.experience} />
         </View>
         <Text variant="title">{w.name}</Text>
+        {plan.focused ? (
+          <Text variant="callout" dim>{`${plan.focused.summary} A one-off session: your program stays where it is.`}</Text>
+        ) : null}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing[4], rowGap: 4 }}>
           <Meta icon="time-outline" text={`${w.estimatedMinutes} min`} />
           <Meta icon="list-outline" text={`${w.exercises.length} exercises`} />
           <Meta icon="layers-outline" text={`${sets} working sets`} />
-          <Meta icon="flame-outline" text={`~${estimateKcal(w.estimatedMinutes, profile.weightKg, today.mode.intensity)} kcal`} />
+          <Meta icon="flame-outline" text={`~${estimateKcal(w.estimatedMinutes, profile.weightKg, plan.mode.intensity)} kcal`} />
         </View>
       </Appear>
 
@@ -131,7 +134,7 @@ export default function WorkoutPreview() {
       <Appear index={2} style={{ gap: spacing[3] }}>
         <SectionHeader title="Adjust today" />
         <Card>
-          <ModeBar mode={today.mode} onChange={(m) => setMode(today.todayIso, m)} />
+          <ModeBar mode={plan.mode} onChange={plan.setMode} />
         </Card>
       </Appear>
 
@@ -202,7 +205,7 @@ export default function WorkoutPreview() {
           <Row icon="leaf-outline" title="Cool-down" detail="About 4 min, follow along · offered when you finish" />
         </Card>
         {edited ? (
-          <Button variant="ghost" size="md" icon="refresh" label="Reset to the coach's plan" onPress={() => { setSwapping(null); setEdits(today.todayIso, w.dayId, null); }} />
+          <Button variant="ghost" size="md" icon="refresh" label="Reset to the coach's plan" onPress={() => { setSwapping(null); plan.setEdits(null); }} />
         ) : editing ? (
           <Text variant="caption" muted>Swap, reorder or remove exercises. Changes apply to today only.</Text>
         ) : null}

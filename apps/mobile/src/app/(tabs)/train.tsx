@@ -1,11 +1,13 @@
+import { FOCUS_CATEGORIES, focusedWorkouts, type FocusedWorkout } from '@lb/content';
 import { gameDate } from '@lb/engine';
+import { useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import { View } from 'react-native';
 import {
-  programs, quickSessions, StaleSessionCard, useStaleSession, useToday, useTraining, useTrainingProfile, useWorkoutSession, workoutTypes,
+  buildFocused, programs, quickSessions, StaleSessionCard, usePersonalContext, useStaleSession, useToday, useTraining, useTrainingProfile, useWorkoutSession, workoutTypes,
 } from '@/features/training';
 import {
-  estimateKcal, ExerciseRow, ModeBar, ProgramHero, ProgramPoster, SessionPoster, Shelf, targetMuscles, WeekStrip,
+  CATEGORY_LABEL, estimateKcal, ExerciseRow, FilterChips, FocusedPoster, ModeBar, ProgramHero, ProgramPoster, SessionPoster, Shelf, targetMuscles, WeekStrip,
 } from '@/features/training/TrainCards';
 import { bestSide, MuscleMap } from '@/features/visuals';
 import { useTheme } from '@/theme';
@@ -29,6 +31,17 @@ export default function TrainScreen() {
   const kcal = estimateKcal(w.estimatedMinutes, profile.weightKg, today.mode.intensity);
   const showPlan = !active && (today.isTrainingDay ? !doneToday : today.schedule.canTrainInstead);
   const currentId = activeProgramId ?? today.program.id;
+  const [category, setCategory] = useState<'all' | FocusedWorkout['category']>('all');
+  const ctx = usePersonalContext();
+  // posters show the session this hunter will actually get (level, kit, age)
+  const focusedPlans = useMemo(() => new Map(focusedWorkouts.map((f) => [f.id, buildFocused(f, ctx)])), [ctx]);
+  // your level and setting first; everything stays available
+  const home = profile.location === 'HOME';
+  const focused = focusedWorkouts
+    .filter((f) => category === 'all' || f.category === category)
+    .map((f) => ({ f, score: (f.levels.includes(profile.experience) ? 2 : 0) + ((f.location === 'HOME') === home ? 1 : 0) }))
+    .sort((a, b) => b.score - a.score)
+    .map((x) => x.f);
 
   return (
     <Screen title="Train" subtitle="Beginner to Pro, shaped to you every day." accent={type?.color ?? c.danger}>
@@ -113,8 +126,12 @@ export default function TrainScreen() {
       {/* Focused workouts */}
       <Appear index={4} style={{ gap: spacing[3] }}>
         <SectionHeader title="Focused workouts" />
+        <FilterChips options={CATEGORY_OPTIONS} value={category} onChange={setCategory} />
         <Shelf>
-          {quickSessions.map((q) => <SessionPoster key={q.id} q={q} />)}
+          {focused.map((f) => (
+            <FocusedPoster key={f.id} f={f} exercises={focusedPlans.get(f.id)?.exercises.length ?? f.slots.length} minutes={focusedPlans.get(f.id)?.estimatedMinutes ?? f.minutes} />
+          ))}
+          {quickSessions.filter((q) => category === 'all' || QUICK_CATEGORY[q.id] === category).map((q) => <SessionPoster key={q.id} q={q} />)}
         </Shelf>
       </Appear>
 
@@ -156,6 +173,10 @@ export default function TrainScreen() {
     </Screen>
   );
 }
+
+const CATEGORY_OPTIONS = [{ value: 'all' as const, label: 'All' }, ...FOCUS_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABEL[c] }))];
+/** interval sessions slot into the same shelf */
+const QUICK_CATEGORY: Record<string, FocusedWorkout['category']> = { 'express-7': 'hiit', 'hiit-15': 'hiit', 'mobility-10': 'mobility', 'core-12': 'abs' };
 
 function Meta({ icon, text }: { icon: IconName; text: string }) {
   return (

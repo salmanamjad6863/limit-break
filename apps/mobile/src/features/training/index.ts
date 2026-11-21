@@ -9,3 +9,4 @@ export { useUpdateTraining } from './settings';
 export { EDIT_WINDOW_DAYS, historyKeys, useEditable, useHistoryActions, useWorkoutDetail, useWorkoutHistory } from './history';
 export { useChangeLevel, useTrainingPatch } from './level';
 export { StaleSessionCard, useStaleSession } from './StaleSession';
+export { buildFocused, focusedDay, useWorkoutPlan, type WorkoutPlan } from './plan';

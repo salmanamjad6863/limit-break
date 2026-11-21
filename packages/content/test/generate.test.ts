@@ -1,6 +1,6 @@
 import { generateWorkout, type TrainingContext } from '@lb/engine';
 import { describe, expect, it } from 'vitest';
-import { exercises, programs } from '../src';
+import { exercises, focusedWorkouts, programs } from '../src';
 
 const users: Record<string, Omit<TrainingContext, 'experience'>> = {
   'home, no equipment': { equipment: [], injuries: [], sessionMinutes: 45, bodyweightKg: 75 },
@@ -25,6 +25,22 @@ describe('every program day generates a complete workout for its intended users'
           }
         });
       }
+    }
+  }
+
+  // focused workouts: generated with the kit the poster names (+ none / full gym), at every listed level
+  for (const f of focusedWorkouts) {
+    for (const level of f.levels) {
+      it(`focused ${f.id} · ${level}`, () => {
+        const kits = f.location === 'GYM' ? [users['full gym']!.equipment] : [f.needs, [...f.needs, 'dumbbells', 'bands', 'pull_up_bar']];
+        for (const equipment of kits) {
+          const day = { id: f.id, name: f.name, focus: 'full' as const, slots: f.slots };
+          const w = generateWorkout(day, exercises, { equipment, injuries: [], sessionMinutes: 90, bodyweightKg: 75, experience: level });
+          expect(w.unfilled, `${f.id} with [${equipment.join(',')}]`).toEqual([]);
+          expect(w.exercises.length).toBeGreaterThanOrEqual(3);
+          expect(new Set(w.exercises.map((e) => e.exerciseId)).size).toBe(w.exercises.length);
+        }
+      });
     }
   }
 

@@ -15,7 +15,7 @@
   "tier": 1
  },
  "archer-push-up": {
-  "tier": 2
+  "tier": 1
  },
  "db-floor-press": {
   "tier": 1
@@ -54,7 +54,7 @@
   "tier": 1
  },
  "doorframe-row": {
-  "tier": 2
+  "tier": 1
  },
  "band-row": {
   "tier": 1
@@ -75,7 +75,7 @@
   "tier": 1
  },
  "band-pulldown": {
-  "tier": 2
+  "tier": 1
  },
  "lat-pulldown": {
   "tier": 1
@@ -126,13 +126,13 @@
   "tier": 1
  },
  "single-leg-glute-bridge": {
-  "tier": 2
+  "tier": 1
  },
  "hip-thrust": {
   "tier": 1
  },
  "single-leg-rdl": {
-  "tier": 2
+  "tier": 1
  },
  "db-romanian-deadlift": {
   "tier": 1
