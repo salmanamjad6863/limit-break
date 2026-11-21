@@ -18,7 +18,7 @@ import type { ActiveSession, LoggedEntry } from './session';
 type LogInput = { reps: number | null; loadKg: number | null; rir: number | null; durationS: number | null };
 
 export function LogView({
-  active, lastSet, notes, onLog, onAddSet, onSwap,
+  active, lastSet, notes, onLog, onAddSet, onSwap, onAddExercise,
 }: {
   active: ActiveSession;
   lastSet: Record<string, { reps: number | null; loadKg: number | null }>;
@@ -26,14 +26,20 @@ export function LogView({
   onLog: (exIndex: number, setIndex: number, e: LogInput) => void;
   onAddSet: (exIndex: number) => void;
   onSwap: (exIndex: number) => void;
+  onAddExercise: () => void;
 }) {
-  const { spacing } = useTheme();
+  const { c, spacing } = useTheme();
   return (
     <View style={{ gap: spacing[4] }}>
       {active.exercises.map((pe, k) => (
         <ExerciseTable key={`${k}-${pe.exerciseId}`} k={k} active={active} prev={lastSet[pe.exerciseId]} note={notes[pe.exerciseId]}
           onLog={onLog} onAddSet={onAddSet} onSwap={onSwap} />
       ))}
+      <PressableScale haptic="tap" onPress={onAddExercise} accessibilityRole="button" accessibilityLabel="Add exercise"
+        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44, borderRadius: 12, borderWidth: 1, borderColor: c.border, borderStyle: 'dashed' }}>
+        <Icon name="add" size={18} color={c.textDim} />
+        <Text variant="callout" dim>Add exercise</Text>
+      </PressableScale>
     </View>
   );
 }

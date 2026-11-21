@@ -24,6 +24,7 @@ export default function NutritionSettingsScreen() {
   const [protein, setProtein] = useState<string | null>(null);
   const [fat, setFat] = useState<string | null>(null);
   const [bf, setBf] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
   if (!data) return <Page header={<ScreenHeader title="Nutrition settings" />}><Text dim>Loading…</Text></Page>;
   const cur = s ?? data.settings;
   const set = (p: Partial<NutritionSettings>) => setS({ ...cur, ...p });
@@ -43,6 +44,7 @@ export default function NutritionSettingsScreen() {
   const invalid = (next.proteinOverrideG != null && (next.proteinOverrideG < 40 || next.proteinOverrideG > 400)) ||
     (next.fatOverrideG != null && (next.fatOverrideG < 20 || next.fatOverrideG > 250)) ||
     (next.bodyFatPct != null && (next.bodyFatPct < 3 || next.bodyFatPct > 60));
+  const dirty = s != null || protein != null || fat != null || bf != null;
 
   const chip = (label: string, on: boolean, onPress: () => void) => (
     <PressableScale key={label} haptic="tap" onPress={onPress} accessibilityRole="radio" accessibilityState={{ selected: on }} accessibilityLabel={label}
@@ -53,7 +55,11 @@ export default function NutritionSettingsScreen() {
 
   return (
     <Page accent={c.mana} header={<ScreenHeader title="Nutrition settings" />}
-      footer={<Button label="Save" icon="checkmark" disabled={invalid} loading={updateSettings.isPending} onPress={() => updateSettings.mutate(next, { onSuccess: () => router.back() })} />}>
+      footer={<Button label={saved ? 'Saved' : 'Save'} icon={saved ? 'checkmark-circle' : 'checkmark'}
+        disabled={invalid || !dirty || saved} loading={updateSettings.isPending}
+        onPress={() => updateSettings.mutate(next, {
+          onSuccess: () => { setSaved(true); setTimeout(() => router.back(), 500); },
+        })} />}>
       <SectionHeader title="Goal" />
       <Segmented options={GOALS.map((g) => ({ value: g.value, label: g.label }))} value={cur.goal} onChange={(goal) => set({ goal })} />
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>

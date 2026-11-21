@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { endRestActivity, startRestActivity, updateRestActivity, useGymMode } from '@/features/depth';
 import { haptics } from '@/lib/haptics';
-import { startingLoad } from '@lb/engine';
+import { canPerform, startingLoad } from '@lb/engine';
 import {
+  catalog,
   exerciseById,
   exerciseName,
   patternLabel,
@@ -37,6 +38,7 @@ export default function WorkoutSession() {
   const clearRest = useWorkoutSession((s) => s.clearRest);
   const end = useWorkoutSession((s) => s.end);
   const addSet = useWorkoutSession((s) => s.addSet);
+  const addExercise = useWorkoutSession((s) => s.addExercise);
   const setView = useWorkoutSession((s) => s.setView);
   const stale = useStaleSession();
   const ctx = usePersonalContext();
@@ -44,7 +46,8 @@ export default function WorkoutSession() {
   const { flagPain } = usePainFlags();
   const [now, setNow] = useState(Date.now());
   const [showHow, setShowHow] = useState(false);
-  const [sheet, setSheet] = useState<'none' | 'swap' | 'pain' | 'exit' | 'note'>('none');
+  const [sheet, setSheet] = useState<'none' | 'swap' | 'pain' | 'exit' | 'note' | 'add'>('none');
+  const [addQuery, setAddQuery] = useState('');
   const notes = useTraining((s) => s.notes);
   const { setNote } = useHistoryActions();
   const [noteDraft, setNoteDraft] = useState('');
@@ -161,6 +164,19 @@ export default function WorkoutSession() {
     const next = exerciseById.get(id);
     const firstWorking = pe.sets.find((x) => x.kind === 'working') ?? pe.sets[0];
     swap(i, id, next && firstWorking ? startingLoad(next, firstWorking, ctx) : null);
+  };
+  const usedIds = new Set(active.exercises.map((x) => x.exerciseId));
+  const addCandidates = catalog
+    .filter((e) => !usedIds.has(e.id) && canPerform(e, ctx))
+    .filter((e) => !addQuery.trim() || e.name.toLowerCase().includes(addQuery.trim().toLowerCase()))
+    .slice(0, 40);
+  const addToSession = (id: string) => {
+    const next = exerciseById.get(id);
+    const load = next ? startingLoad(next, { reps: [8, 12], rir: 2 }, ctx) : null;
+    addExercise(id, load);
+    setSheet('none');
+    setAddQuery('');
+    go(active.exercises.length);
   };
   const finishButton = (
     <Button
@@ -299,7 +315,8 @@ export default function WorkoutSession() {
         ) : null}
         {view === 'log' ? (
           <LogView active={active} lastSet={lastSet} notes={notes} onLog={logAndRest} onAddSet={addSet}
-            onSwap={(k) => { if (k !== i) go(k); setSheet('swap'); }} />
+            onSwap={(k) => { if (k !== i) go(k); setSheet('swap'); }}
+            onAddExercise={() => { setAddQuery(''); setSheet('add'); }} />
         ) : (
         <>
         <Card>
@@ -479,6 +496,39 @@ export default function WorkoutSession() {
                     }}
                   />
                   <Button variant="ghost" label="Keep going" onPress={() => setSheet('none')} />
+                </>
+              ) : sheet === 'add' ? (
+                <>
+                  <Text variant="heading">Add exercise</Text>
+                  <Text variant="callout" dim>Fits your equipment. Three working sets to start — add more as you go.</Text>
+                  <TextField label="Search" placeholder="e.g. curl, squat" value={addQuery} onChangeText={setAddQuery} autoFocus />
+                  {addCandidates.length === 0 ? (
+                    <Text variant="callout" muted>No matching exercises for your kit.</Text>
+                  ) : null}
+                  {addCandidates.map((e) => (
+                    <PressableScale
+                      key={e.id}
+                      haptic="press"
+                      onPress={() => addToSession(e.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Add ${e.name}`}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: spacing[3],
+                        padding: spacing[3],
+                        borderRadius: radius.md,
+                        backgroundColor: c.surfaceRaised,
+                      }}
+                    >
+                      <View style={{ flex: 1, gap: 2 }}>
+                        <Text variant="callout">{e.name}</Text>
+                        <Text variant="caption" muted>{patternLabel(e.pattern)}</Text>
+                      </View>
+                      <Icon name="add" size={16} />
+                    </PressableScale>
+                  ))}
+                  <Button variant="ghost" label="Cancel" onPress={() => setSheet('none')} />
                 </>
               ) : (
                 <>

@@ -13,6 +13,8 @@ export default function Weight() {
   const { data } = useNutritionSummary();
   const { addWeighIn, deleteWeighIn } = useNutritionActions();
   const [kg, setKg] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const value = Number(kg.replace(',', '.'));
   const valid = value >= 30 && value <= 300;
   const points = data?.weighIns ?? [];
@@ -21,9 +23,17 @@ export default function Weight() {
     <Page accent={c.mana} header={<ScreenHeader title="Weight trend" />}>
       <Card>
         <TextField label="Today’s weight (kg)" placeholder={points.length ? points.at(-1)!.kg.toFixed(1) : 'e.g. 78.4'} value={kg} onChangeText={setKg} keyboardType="decimal-pad" />
-        <Button size="md" icon="checkmark" label="Save weigh-in" disabled={!valid} loading={addWeighIn.isPending}
-          onPress={() => addWeighIn.mutate({ weightKg: Math.round(value * 10) / 10, localDate: today }, { onSuccess: () => setKg('') })} />
+        <Button size="md" icon={saved ? 'checkmark-circle' : 'checkmark'} label={saved ? 'Saved' : 'Save weigh-in'}
+          disabled={!valid || saved} loading={addWeighIn.isPending}
+          onPress={() => addWeighIn.mutate({ weightKg: Math.round(value * 10) / 10, localDate: today }, {
+            onSuccess: () => {
+              setKg('');
+              setSaved(true);
+              setTimeout(() => setSaved(false), 1200);
+            },
+          })} />
         <Text variant="caption" muted>Same time each morning, after the bathroom, before food. Daily ups and downs are water; the trend line is what counts.</Text>
+        {addWeighIn.isError ? <Text variant="caption" color={c.warning}>Couldn’t save the weigh-in. Try again.</Text> : null}
       </Card>
       {points.length >= 2 ? <TrendChart points={points} /> : null}
       {data && points.length ? (
@@ -43,8 +53,11 @@ export default function Weight() {
               <Text variant="callout" style={{ flex: 1 }}>{new Date(`${p.date}T12:00:00Z`).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</Text>
               <Text variant="callout">{`${p.kg.toFixed(1)} kg`}</Text>
               <Text variant="caption" muted style={{ width: 70, textAlign: 'right' }}>{`trend ${p.trend.toFixed(1)}`}</Text>
-              <PressableScale haptic="tap" onPress={() => deleteWeighIn.mutate(p.id)} accessibilityRole="button" accessibilityLabel={`Delete weigh-in ${p.date}`} style={{ padding: 4 }}>
-                <Icon name="trash-outline" size={16} color={c.textMuted} />
+              <PressableScale haptic="tap"
+                onPress={() => (confirmDelete === p.id ? (deleteWeighIn.mutate(p.id), setConfirmDelete(null)) : setConfirmDelete(p.id))}
+                accessibilityRole="button" accessibilityLabel={confirmDelete === p.id ? `Confirm delete weigh-in ${p.date}` : `Delete weigh-in ${p.date}`}
+                style={{ paddingHorizontal: 8, height: 28, borderRadius: 14, justifyContent: 'center', backgroundColor: confirmDelete === p.id ? `${c.danger}22` : 'transparent' }}>
+                {confirmDelete === p.id ? <Text variant="caption" color={c.danger}>Delete?</Text> : <Icon name="trash-outline" size={16} color={c.textMuted} />}
               </PressableScale>
             </View>
           ))}

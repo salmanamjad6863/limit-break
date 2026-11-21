@@ -1,4 +1,4 @@
-import { adjustNextLoad, loadFromLoggedSet, type GeneratedWorkout, type PlannedExercise } from '@lb/engine';
+import { adjustNextLoad, loadFromLoggedSet, REST_SECONDS, type GeneratedWorkout, type PlannedExercise } from '@lb/engine';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { newId } from '@/lib/id';
@@ -60,6 +60,8 @@ interface SessionState {
   swap: (exIndex: number, exerciseId: string, loadKg?: number | null) => void;
   /** one more working set like the last one */
   addSet: (exIndex: number) => void;
+  /** append an exercise mid-workout (Log mode); loadKg is the suggested working load */
+  addExercise: (exerciseId: string, loadKg?: number | null) => void;
   setView: (view: 'guided' | 'log') => void;
   /** finish as of a given time (stale sessions finish at their last set) */
   finishAt: (iso: string) => void;
@@ -136,6 +138,31 @@ export const useWorkoutSession = create<SessionState>()(
           if (!pe || !last || pe.sets.length >= 12) return s;
           pe.sets.push({ ...last, kind: 'working' });
           return { active: { ...s.active, exercises } };
+        }),
+      addExercise: (exerciseId, loadKg = null) =>
+        set((s) => {
+          if (!s.active) return s;
+          const e = exerciseById.get(exerciseId);
+          if (!e || s.active.exercises.some((x) => x.exerciseId === exerciseId)) return s;
+          const timed = e.pattern === 'cardio' || e.pattern === 'mobility' || e.pattern === 'conditioning';
+          const role = e.pattern.startsWith('core') ? 'core' as const
+            : timed ? 'finisher' as const
+            : 'accessory' as const;
+          const working = Array.from({ length: 3 }, () => ({
+            kind: 'working' as const,
+            ...(timed ? { seconds: [30, 45] as [number, number] } : { reps: [8, 12] as [number, number] }),
+            rir: 2,
+            loadKg: timed ? null : loadKg,
+          }));
+          const pe: PlannedExercise = {
+            slotIndex: s.active.exercises.length,
+            exerciseId,
+            role,
+            restSeconds: REST_SECONDS[e.restType] ?? 75,
+            sets: working,
+            alternatives: [],
+          };
+          return { active: { ...s.active, exercises: [...s.active.exercises, pe] } };
         }),
       setView: (view) => set((s) => (s.active ? { active: { ...s.active, view } } : s)),
       finishAt: (iso) => set((s) => (s.active ? { active: { ...s.active, finishedAt: iso } } : s)),
