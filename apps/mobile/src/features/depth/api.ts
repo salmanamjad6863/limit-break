@@ -115,10 +115,12 @@ export function useDeleteMealTemplate() {
 export function useApplyMealTemplate() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (i: { id: string; toDate: string; applyId?: string }) =>
+    // the caller stamps applyId once per tap; retries reuse it so the server adds nothing twice
+    retry: 2,
+    mutationFn: async (i: { id: string; toDate: string; applyId: string }) =>
       unwrapCommunity<ApplyMealTemplateResponse>(await api.depth['meal-templates'][':id'].apply.$post({
         param: { id: i.id },
-        json: { toDate: i.toDate, applyId: i.applyId ?? newId() },
+        json: { toDate: i.toDate, applyId: i.applyId },
       })),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['nutrition'] }),
   });

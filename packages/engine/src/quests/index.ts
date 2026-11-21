@@ -29,6 +29,7 @@ const DEFAULT_BASELINES: Record<Experience, Required<{ pushups: number; plankSec
   novice: { pushups: 15, plankSec: 45, squats60: 35 },
   intermediate: { pushups: 25, plankSec: 75, squats60: 40 },
   advanced: { pushups: 35, plankSec: 110, squats60: 45 },
+  pro: { pushups: 45, plankSec: 150, squats60: 50 },
 };
 
 /** Seconds per rep (for the time box) and rest between slots. */
@@ -251,7 +252,7 @@ const BOSS_WEIGHTS: Partial<Record<HeroClass, Record<keyof BossMetrics, number>>
   RANGER: { hardSets: 0.2, volumeKg: 0.1, cardioMin: 0.5, questDays: 0.2 },
   MONK: { hardSets: 0.3, volumeKg: 0.1, cardioMin: 0.2, questDays: 0.4 },
 };
-export const BOSS_REQUIRED: Record<Experience, number> = { beginner: 1.03, novice: 1.02, intermediate: 1.01, advanced: 1.0 };
+export const BOSS_REQUIRED: Record<Experience, number> = { beginner: 1.03, novice: 1.02, intermediate: 1.01, advanced: 1.0, pro: 1.0 };
 
 /** S = Σ w·min(current/past, 1.5) over metrics that have a baseline (past, or the plan when past is 0). */
 export function shadowBoss(i: {

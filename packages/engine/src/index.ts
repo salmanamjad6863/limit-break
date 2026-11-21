@@ -12,3 +12,4 @@ export * from './social';
 export * from './quests';
 export * from './follow';
 export * from './training/schedule';
+export * from './training/personalize';

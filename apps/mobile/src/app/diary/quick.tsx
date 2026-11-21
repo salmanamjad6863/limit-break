@@ -19,23 +19,29 @@ export default function QuickAdd() {
   const [p, setP] = useState('');
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
+  // lock the button the moment we stamp an id so a double-tap can't log twice
+  const [locked, setLocked] = useState(false);
   const fromMacros = 4 * n(p) + 4 * n(carbs) + 9 * n(fat);
   const k = n(kcal) || Math.round(fromMacros);
   const mismatch = n(kcal) > 0 && fromMacros > 0 && Math.abs(n(kcal) - fromMacros) / n(kcal) > 0.15;
   const valid = k > 0 && k <= 5000 && n(p) <= 400 && n(carbs) <= 800 && n(fat) <= 400;
 
   const save = () => {
+    if (locked || !valid) return;
+    setLocked(true);
     // one entry = 100 "g", so per100 holds the entry's own numbers
     const food: FoodDto = {
       id: `quick:${newId()}`, name: name.trim() || 'Quick add', per100: { kcal: Math.min(902, k), protein: Math.min(100, n(p)), carbs: Math.min(100, n(carbs)), fat: Math.min(100, n(fat)) },
       servings: [{ label: '1 entry', grams: 100 }], source: 'quick', verified: false, brand: null, barcode: null,
     };
-    addLog.mutate({ food, grams: 100, meal: d.meal, servingLabel: 'Quick add', localDate: d.date }, { onSuccess: () => router.dismissTo('/nutrition') });
+    // shows in the diary right away (optimistic) and saves in the background
+    addLog.mutate({ food, grams: 100, meal: d.meal, servingLabel: 'Quick add', localDate: d.date });
+    router.dismissTo('/nutrition');
   };
 
   return (
     <Page accent={c.mana} header={<ScreenHeader title={`Quick add · ${MEALS.find((m) => m.id === d.meal)?.label ?? ''}`} />}
-      footer={<Button label="Add" icon="checkmark" disabled={!valid} loading={addLog.isPending} onPress={save} />}>
+      footer={<Button label="Add" icon="checkmark" disabled={!valid || locked} loading={addLog.isPending || locked} onPress={save} />}>
       <TextField label="Name (optional)" placeholder="e.g. Restaurant burger" value={name} onChangeText={setName} />
       <TextField label="Calories (kcal)" placeholder={fromMacros ? `${Math.round(fromMacros)} from macros` : '0'} value={kcal} onChangeText={setKcal} keyboardType="number-pad" />
       <TextField label="Protein (g)" value={p} onChangeText={setP} keyboardType="decimal-pad" />

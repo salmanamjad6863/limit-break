@@ -30,7 +30,8 @@ export const OnboardingInput = z.object({
   sessionMinutes: z.union([z.literal(15), z.literal(30), z.literal(45), z.literal(60), z.literal(75)]),
   questTime: z.string().regex(/^\d{2}:\d{2}$/, 'HH:mm'),
   heroClass: HeroClass,
-  sex: Sex,
+  /** training rules are male/female only (docs/plans/TRAIN_REDESIGN.md §4.2) */
+  sex: z.enum(['male', 'female']),
   birthDate: z.iso.date(),
   heightCm: z.number().min(120).max(230),
   weightKg: z.number().min(30).max(300),

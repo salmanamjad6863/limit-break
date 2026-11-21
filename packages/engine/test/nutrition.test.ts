@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
+import { rankFoods,
   bmr, calorieTarget, computeTrend, labelLooksOff, macroTargets, needsLowIntakeCheckIn,
   observedTdee, tdeePrior, updateTdee, weightSlopePerDay, type IntakeDay, type WeighIn,
 } from '../src';
@@ -105,5 +105,22 @@ describe('adaptive TDEE convergence (SYSTEMS §8)', () => {
     expect(t).toHaveLength(3);
     expect(t[2]!.trend).toBeGreaterThan(79);
     expect(t[2]!.trend).toBeLessThan(81);
+  });
+});
+
+describe('food search forgives plurals', () => {
+  const foods = [
+    { id: 'egg', name: 'Egg, whole', verified: true },
+    { id: 'omelette', name: 'Omelette (2 eggs, 1 tsp oil)', verified: true },
+    { id: 'tomato', name: 'Tomato', verified: true },
+    { id: 'straw', name: 'Strawberries', verified: true },
+    { id: 'hummus', name: 'Hummus', verified: true },
+  ];
+  it('plural queries find singular foods and vice versa', () => {
+    expect(rankFoods('eggs', foods).map((f) => f.id)).toEqual(expect.arrayContaining(['egg', 'omelette']));
+    expect(rankFoods('eggs', foods)[0]!.id).toBe('egg');
+    expect(rankFoods('tomatoes', foods)[0]!.id).toBe('tomato');
+    expect(rankFoods('strawberry', foods)[0]!.id).toBe('straw');
+    expect(rankFoods('hummus', foods)[0]!.id).toBe('hummus');
   });
 });

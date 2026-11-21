@@ -26,7 +26,7 @@ export function Page({
       <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
         {header}
         {scroll ? (
-          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={body}>
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive" contentContainerStyle={body}>
             {children}
           </ScrollView>
         ) : (

@@ -1,3 +1,4 @@
+import type { WorkoutEdits, WorkoutMode } from '@lb/engine';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { zustandStorage } from '@/lib/storage';
@@ -58,6 +59,12 @@ interface TrainingState {
   /** sticky per-exercise notes (SYSTEMS.md §3.11) */
   notes: Record<string, string>;
   setNote: (exerciseId: string, note: string) => void;
+  /** today's mode bar choice (intensity / home-gym / minutes); applies to that game day only */
+  mode: { date: string; value: WorkoutMode } | null;
+  setMode: (date: string, value: WorkoutMode) => void;
+  /** today's swaps / removals / order from the preview; applies to that game day and program day only */
+  edits: { date: string; dayId: string; value: WorkoutEdits } | null;
+  setEdits: (date: string, dayId: string, value: WorkoutEdits | null) => void;
   /** history edits (demo mode; the server is authoritative when signed in) */
   updateWorkout: (id: string, patch: Partial<CompletedWorkout>) => void;
   removeWorkout: (id: string) => void;
@@ -87,6 +94,10 @@ export const useTraining = create<TrainingState>()(
       flagPain: (id) => set((s) => ({ avoid: s.avoid.includes(id) ? s.avoid : [...s.avoid, id] })),
       unflagPain: (id) => set((s) => ({ avoid: s.avoid.filter((x) => x !== id) })),
       notes: {},
+      mode: null,
+      setMode: (date, value) => set({ mode: { date, value } }),
+      edits: null,
+      setEdits: (date, dayId, value) => set({ edits: value ? { date, dayId, value } : null }),
       setNote: (id, note) =>
         set((s) => {
           const notes = { ...s.notes };

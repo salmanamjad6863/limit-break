@@ -1,0 +1,207 @@
+{
+ "id": "athletic-power",
+ "name": "Athletic Power",
+ "typeId": "power",
+ "summary": "Jump, swing and lift heavy: three days for speed and explosiveness.",
+ "levels": [
+  "intermediate",
+  "advanced",
+  "pro"
+ ],
+ "locations": [
+  "GYM"
+ ],
+ "goals": [
+  "maintain",
+  "recomp",
+  "bulk"
+ ],
+ "daysPerWeek": [
+  3
+ ],
+ "blockWeeks": 6,
+ "deloadEvery": 6,
+ "days": [
+  {
+   "id": "lower",
+   "name": "Lower Power",
+   "focus": "lower",
+   "slots": [
+    {
+     "pattern": "plyo",
+     "role": "main",
+     "sets": 4,
+     "rir": 3,
+     "reps": [
+      3,
+      5
+     ],
+     "prefer": [
+      "jump-squat"
+     ]
+    },
+    {
+     "pattern": "squat",
+     "role": "main",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      3,
+      5
+     ],
+     "prefer": [
+      "front-squat",
+      "back-squat"
+     ]
+    },
+    {
+     "pattern": "hinge",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      8,
+      12
+     ],
+     "prefer": [
+      "kettlebell-swing",
+      "romanian-deadlift"
+     ]
+    },
+    {
+     "pattern": "lunge",
+     "role": "accessory",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      6,
+      8
+     ],
+     "prefer": [
+      "bulgarian-split-squat"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "upper",
+   "name": "Upper Power",
+   "focus": "upper",
+   "slots": [
+    {
+     "pattern": "horizontal_push",
+     "role": "main",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      3,
+      5
+     ],
+     "prefer": [
+      "bench-press"
+     ]
+    },
+    {
+     "pattern": "vertical_pull",
+     "role": "main",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      4,
+      6
+     ],
+     "prefer": [
+      "pull-up",
+      "chin-up"
+     ]
+    },
+    {
+     "pattern": "vertical_push",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      5,
+      8
+     ],
+     "prefer": [
+      "overhead-press"
+     ]
+    },
+    {
+     "pattern": "horizontal_pull",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      6,
+      8
+     ],
+     "prefer": [
+      "barbell-row"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "full",
+   "name": "Total Athlete",
+   "focus": "full",
+   "slots": [
+    {
+     "pattern": "hinge",
+     "role": "main",
+     "sets": 4,
+     "rir": 2,
+     "reps": [
+      3,
+      5
+     ],
+     "prefer": [
+      "deadlift"
+     ]
+    },
+    {
+     "pattern": "hinge",
+     "role": "secondary",
+     "sets": 3,
+     "rir": 2,
+     "reps": [
+      10,
+      15
+     ],
+     "prefer": [
+      "kettlebell-swing"
+     ]
+    },
+    {
+     "pattern": "carry",
+     "role": "core",
+     "sets": 3,
+     "rir": 2,
+     "seconds": [
+      30,
+      45
+     ],
+     "prefer": [
+      "farmer-carry"
+     ]
+    },
+    {
+     "pattern": "conditioning",
+     "role": "finisher",
+     "sets": 3,
+     "rir": 2,
+     "seconds": [
+      20,
+      30
+     ],
+     "prefer": [
+      "skater-hop",
+      "burpee"
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -107,3 +107,13 @@ describe('re-consent', () => {
     expect(calls[0].data.consentedAt).toBeInstanceOf(Date);
   });
 });
+
+describe('male/female only (train redesign §4.2)', () => {
+  it('onboarding rejects "unspecified"; training settings accept a one-time sex choice', async () => {
+    const { OnboardingInput, TrainingSettingsInput } = await import('@lb/contracts');
+    expect(OnboardingInput.shape.sex.safeParse('unspecified').success).toBe(false);
+    expect(OnboardingInput.shape.sex.safeParse('female').success).toBe(true);
+    expect(TrainingSettingsInput.shape.sex.safeParse(undefined).success).toBe(true);
+    expect(TrainingSettingsInput.shape.experience.safeParse('pro').success).toBe(true);
+  });
+});

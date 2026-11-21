@@ -1,19 +1,20 @@
 import { sideQuests } from '@lb/content';
-import { activeSlots, type QuestDto } from '@lb/contracts';
+import { activeSlots, questRatio, type QuestDto } from '@lb/contracts';
 import { STREAK } from '@lb/engine';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useBoss, useQuestActions, useQuests } from '@/features/quests';
+import { BossCard, SideTile, StreakHero, TileGrid } from '@/features/quests/QuestCards';
 import { SlotRow } from '@/features/quests/SlotRow';
 import { exerciseName, useTraining } from '@/features/training';
 import { useQuestDeadline } from '@/lib/time';
 import { useTheme } from '@/theme';
-import { Appear, Bar, Button, Card, Icon, Pill, PressableScale, Screen, SectionHeader, SystemWindow, Text } from '@/ui';
-import { Ring } from '@/ui/fx';
+import { Appear, Bar, Button, Icon, Pill, PressableScale, Screen, SectionHeader, SystemWindow, Text } from '@/ui';
 
+/** Quests (docs/plans/HOME_QUESTS_REDESIGN.md §4): streak, today's quest, side quests, weekly boss. */
 export default function QuestsScreen() {
-  const { c, spacing } = useTheme();
+  const { c, spacing, radius } = useTheme();
   const { data } = useQuests();
   const { progress, chooseSides, setSick, claimBoss } = useQuestActions();
   const { data: boss } = useBoss();
@@ -24,31 +25,17 @@ export default function QuestsScreen() {
   const { daily, penalty, streak } = data;
   const dailyDone = daily.status === 'COMPLETED';
   const ritual = daily.progress.option === 1;
+  const penaltyActive = !!penalty && penalty.status !== 'COMPLETED';
   const nextMilestone = STREAK.milestones.find((m) => m > streak.current);
+  const slots = activeSlots(daily);
+  const slotsDone = slots.filter((s, i) => (daily.progress[String(i)] ?? 0) >= s.target).length;
 
   const set = (q: QuestDto, i: number, v: number) => progress.mutate({ quest: q, progress: { [String(i)]: v } });
 
   return (
-    <Screen title="Quests" subtitle="Small daily wins that compound." accent={penalty && penalty.status !== 'COMPLETED' ? c.danger : '#FF9F43'}>
-      {/* Streak */}
+    <Screen title="Quests" subtitle="Small daily wins that compound." accent={penaltyActive ? c.danger : '#FF9F43'}>
       <Appear index={1}>
-        <Card tint="#FF9F43">
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[4] }}>
-            <Ring ratio={nextMilestone ? streak.current / nextMilestone : 1} size={82} stroke={8} color="#FF9F43">
-              <Icon name="flame" size={22} color="#FF9F43" />
-            </Ring>
-            <View style={{ flex: 1, gap: 2 }}>
-              <Text variant="title">{`${streak.current} day${streak.current === 1 ? '' : 's'}`}</Text>
-              <Text variant="caption" dim>{nextMilestone ? `${nextMilestone - streak.current} to the ${nextMilestone}-day title` : 'Legendary streak'}</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                {Array.from({ length: Math.max(streak.shields, 2) }, (_, i) => (
-                  <Icon key={i} name={i < streak.shields ? 'shield' : 'shield-outline'} size={16} color={i < streak.shields ? c.mana : c.textMuted} />
-                ))}
-                <Text variant="caption" muted>{`${streak.shields} shield${streak.shields === 1 ? '' : 's'} · best ${streak.longest}`}</Text>
-              </View>
-            </View>
-          </View>
-        </Card>
+        <StreakHero streak={streak} date={data.date} clearedToday={dailyDone} nextMilestone={nextMilestone} penalty={penaltyActive} />
       </Appear>
 
       {/* Penalty Zone */}
@@ -67,7 +54,7 @@ export default function QuestsScreen() {
                   return (
                     <PressableScale key={oi} haptic="tap" onPress={() => progress.mutate({ quest: penalty, progress: { option: oi, '0': 0 } })}
                       accessibilityRole="radio" accessibilityState={{ selected: on }} accessibilityLabel={exerciseName(opt[0]!.exerciseId)}
-                      style={{ flex: 1, padding: spacing[3], borderRadius: 12, borderWidth: 1.5, borderColor: on ? c.danger : c.border, backgroundColor: on ? `${c.danger}14` : c.surfaceRaised }}>
+                      style={{ flex: 1, padding: spacing[3], borderRadius: radius.md, borderWidth: 1.5, borderColor: on ? c.danger : c.border, backgroundColor: on ? `${c.danger}14` : c.surfaceRaised }}>
                       <Text variant="callout">{exerciseName(opt[0]!.exerciseId)}</Text>
                       <Text variant="caption" muted>{`${opt[0]!.target}${opt[0]!.unit === 'sec' ? ' s' : ' reps'}`}</Text>
                     </PressableScale>
@@ -75,9 +62,12 @@ export default function QuestsScreen() {
                 })}
               </View>
             ) : null}
-            {activeSlots(penalty).map((s, i) => (
-              <SlotRow key={`${s.exerciseId}-${i}`} slot={s} done={penalty.progress[String(i)] ?? 0} color={c.danger} locked={penalty.status === 'COMPLETED'} onSet={(v) => set(penalty, i, v)} />
-            ))}
+            <View>
+              {activeSlots(penalty).map((s, i, all) => (
+                <SlotRow key={`${s.exerciseId}-${i}`} slot={s} done={penalty.progress[String(i)] ?? 0} color={c.danger} last={i === all.length - 1}
+                  locked={penalty.status === 'COMPLETED'} onSet={(v) => set(penalty, i, v)} />
+              ))}
+            </View>
             {penalty.status !== 'COMPLETED' ? <FollowButton id={penalty.id} /> : null}
           </SystemWindow>
         </Appear>
@@ -89,28 +79,36 @@ export default function QuestsScreen() {
           title={ritual ? 'Rest Ritual' : 'Daily Quest'}
           accent={c.danger}
           right={<Pill icon={dailyDone ? 'checkmark-circle' : 'time-outline'} label={dailyDone ? 'Cleared' : deadline} color={dailyDone ? c.success : c.textDim} />}>
-          <Text variant="caption" muted>
-            {ritual ? 'Three gentle mobility holds. Rest days still count for your streak.'
-              : data.trainingDay ? 'A lighter activation set on training days. Any number of sets, good form.'
-              : 'Scaled to your tests. Any number of sets, good form.'}
-          </Text>
-          {activeSlots(daily).map((s, i) => (
-            <SlotRow key={`${s.exerciseId}-${i}`} slot={s} done={daily.progress[String(i)] ?? 0} color={c.danger} locked={dailyDone || streak.sickToday} onSet={(v) => set(daily, i, v)} />
-          ))}
+          <View style={{ gap: 6 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Text variant="caption" muted style={{ flex: 1 }}>
+                {ritual ? 'Three gentle mobility holds. Rest days still count.'
+                  : data.trainingDay ? 'A lighter activation set on training days.' : 'Scaled to your tests. Any number of sets, good form.'}
+              </Text>
+              <Text variant="caption" color={dailyDone ? c.success : c.text} style={{ fontFamily: 'Inter_600SemiBold' }}>{`${slotsDone} / ${slots.length}`}</Text>
+            </View>
+            <Bar ratio={questRatio(daily)} height={5} color={dailyDone ? c.success : c.danger} />
+          </View>
+          <View>
+            {slots.map((s, i) => (
+              <SlotRow key={`${s.exerciseId}-${i}`} slot={s} done={daily.progress[String(i)] ?? 0} color={c.danger} last={i === slots.length - 1}
+                locked={dailyDone || streak.sickToday} onSet={(v) => set(daily, i, v)} />
+            ))}
+          </View>
           {!dailyDone && !streak.sickToday ? <FollowButton id={daily.id} /> : null}
           {!dailyDone && daily.options.length > 0 ? (
             <Button variant="ghost" size="md" label={ritual ? 'Do the full Daily Quest instead' : 'Rest day? Do the 3-minute Rest Ritual'}
               onPress={() => progress.mutate({ quest: daily, progress: { option: ritual ? 0 : 1, '0': 0, '1': 0, '2': 0 } })} />
           ) : null}
-          {!dailyDone ? <Text variant="caption" muted>Failure to complete will result in an appropriate penalty.</Text> : null}
+          {!dailyDone && !streak.sickToday ? <Text variant="caption" muted>Failure to complete will result in an appropriate penalty.</Text> : null}
         </SystemWindow>
       </Appear>
 
       {/* Side quests */}
       <Appear index={4} style={{ gap: spacing[3] }}>
-        <SectionHeader title="Side quests" action={data.sides.length ? `${data.sides.filter((q) => q.status === 'COMPLETED').length} / ${data.sides.length}` : 'Pick 3'} />
+        <SectionHeader title="Side quests" action={data.sides.length ? `${data.sides.filter((q) => q.status === 'COMPLETED').length} / ${data.sides.length} done` : '+15 XP each'} />
         {data.sides.length === 0 ? <SidePicker onConfirm={(ids) => chooseSides.mutate(ids)} /> : (
-          <Card>
+          <TileGrid>
             {data.sides.map((q) => {
               const def = sideQuests.find((s) => s.id === q.templateId)!;
               const done = q.status === 'COMPLETED';
@@ -119,20 +117,12 @@ export default function QuestsScreen() {
                 ? history.some((h) => h.date === data.date && h.kind === 'program')
                 : def.verify.startsWith('auto:quick:') ? history.some((h) => h.date === data.date && h.dayId === def.verify.slice('auto:quick:'.length)) : true;
               return (
-                <View key={q.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
-                  <Icon name={def.icon as never} size={18} color={def.color} />
-                  <View style={{ flex: 1 }}>
-                    <Text variant="callout" color={done ? c.textDim : c.text}>{def.title}</Text>
-                    <Text variant="caption" muted>{done ? '+15 XP earned' : auto ? (verified ? 'Verified, ready to claim' : 'Verified automatically') : 'Check off when done'}</Text>
-                  </View>
-                  {done ? <Icon name="checkmark-circle" size={22} color={c.success} /> : (
-                    <Button size="md" variant={auto && !verified ? 'secondary' : 'primary'} label={auto ? 'Claim' : 'Done'} disabled={auto && !verified}
-                      onPress={() => progress.mutate({ quest: q, progress: { done: 1 } })} />
-                  )}
-                </View>
+                <SideTile key={q.id} icon={def.icon as never} color={def.color} title={def.title}
+                  status={done ? '+15 XP earned' : auto ? (verified ? 'Verified · ready to claim' : 'Verified automatically') : 'Tick it when done'}
+                  action={done ? 'done' : { label: auto ? 'Claim' : 'Done', disabled: auto && !verified, onPress: () => progress.mutate({ quest: q, progress: { done: 1 } }) }} />
               );
             })}
-          </Card>
+          </TileGrid>
         )}
       </Appear>
 
@@ -140,77 +130,47 @@ export default function QuestsScreen() {
       {boss ? (
         <Appear index={5} style={{ gap: spacing[3] }}>
           <SectionHeader title="Weekly boss" action="Resets Monday" />
-          <Card tint="#7C5CFF">
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
-              <View style={{ width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#7C5CFF22' }}>
-                <Icon name="skull" size={22} color="#A893FF" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text variant="heading">{boss.prophecy ? "The Shadow's Prophecy" : 'Your Shadow-Self'}</Text>
-                <Text variant="caption" dim>{boss.prophecy ? 'Your first weeks: beat the plan the System set for you.' : 'You, four weeks ago. Out-train your past numbers.'}</Text>
-              </View>
-            </View>
-            <Bar ratio={boss.hpPct / 100} height={10} color={boss.won ? c.success : '#A893FF'} />
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text variant="caption" muted>{boss.won ? 'Defeated' : `Boss HP ${boss.hpPct}%`}</Text>
-              <Text variant="caption" dim>{`Score ${boss.score.toFixed(2)} / ${boss.required.toFixed(2)}`}</Text>
-            </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              {([['Hard sets', 'hardSets'], ['Volume', 'volumeKg'], ['Cardio', 'cardioMin'], ['Quests', 'questDays']] as const).map(([label, k]) => (
-                <View key={k} style={{ alignItems: 'center', flex: 1 }}>
-                  <Text variant="heading">{boss.current[k].toLocaleString()}</Text>
-                  <Text variant="micro" muted>{label}</Text>
-                  {boss.past ? <Text variant="micro" color={boss.current[k] >= boss.past[k] ? c.success : c.textMuted}>{`vs ${boss.past[k].toLocaleString()}`}</Text> : null}
-                </View>
-              ))}
-            </View>
-            {boss.won && !boss.claimed ? <Button label="Claim victory · +150 XP" icon="trophy" onPress={() => claimBoss.mutate(boss)} /> : null}
-            {boss.claimed ? <Pill icon="trophy" label="Victory claimed this week" color={c.success} /> : null}
-          </Card>
+          <BossCard boss={boss} onClaim={() => claimBoss.mutate(boss)} claiming={claimBoss.isPending} />
         </Appear>
       ) : null}
 
       {/* Sick mode */}
       <Appear index={6}>
-        <Card>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
-            <Icon name="medkit-outline" size={20} color={streak.sickToday ? c.mana : c.textDim} />
+        <PressableScale haptic="tap" disabled={!streak.sickToday && (!streak.sickAllowed || dailyDone)} onPress={() => setSick.mutate(!streak.sickToday)}
+          accessibilityRole="switch" accessibilityState={{ checked: streak.sickToday, disabled: !streak.sickToday && (!streak.sickAllowed || dailyDone) }}
+          accessibilityLabel="Sick or injured today: freeze streak">
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[3], paddingHorizontal: spacing[4], borderRadius: radius.lg, borderWidth: 1, borderColor: c.border }}>
+            <Icon name="medkit-outline" size={18} color={streak.sickToday ? c.mana : c.textDim} />
             <View style={{ flex: 1 }}>
               <Text variant="callout">Sick or injured today?</Text>
-              <Text variant="caption" muted>{streak.sickToday ? 'Streak frozen for today. Rest well.' : 'Freezes your streak. Up to 7 days in any 30.'}</Text>
+              <Text variant="caption" muted>{streak.sickToday ? 'Streak frozen for today. Rest well.' : !streak.sickAllowed ? 'Used 7 sick days in the last 30.' : 'Freezes your streak. Up to 7 days in any 30.'}</Text>
             </View>
-            <Button size="md" variant={streak.sickToday ? 'primary' : 'secondary'} label={streak.sickToday ? 'On' : 'Off'}
-              disabled={!streak.sickToday && (!streak.sickAllowed || dailyDone)} onPress={() => setSick.mutate(!streak.sickToday)} />
+            <Icon name={streak.sickToday ? 'toggle' : 'toggle-outline'} size={30} color={streak.sickToday ? c.mana : c.textMuted} />
           </View>
-        </Card>
+        </PressableScale>
       </Appear>
     </Screen>
   );
 }
 
 function SidePicker({ onConfirm }: { onConfirm: (ids: string[]) => void }) {
-  const { c, spacing, radius } = useTheme();
+  const { spacing } = useTheme();
   const [picked, setPicked] = useState<string[]>([]);
   return (
-    <Card>
-      {sideQuests.map((s) => {
-        const on = picked.includes(s.id);
-        return (
-          <PressableScale key={s.id} haptic="tap" accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={s.title}
-            onPress={() => setPicked((p) => (on ? p.filter((x) => x !== s.id) : p.length < 3 ? [...p, s.id] : p))}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[2], borderRadius: radius.md, backgroundColor: on ? `${c.accent}14` : 'transparent' }}>
-            <Icon name={s.icon as never} size={18} color={s.color} />
-            <View style={{ flex: 1 }}>
-              <Text variant="callout">{s.title}</Text>
-              {s.verify !== 'manual' ? <Text variant="caption" muted>Verified automatically</Text> : null}
-            </View>
-            <Icon name={on ? 'checkmark-circle' : 'ellipse-outline'} size={20} color={on ? c.accent : c.textMuted} />
-          </PressableScale>
-        );
-      })}
-      <Button label={`Accept ${picked.length || ''} quest${picked.length === 1 ? '' : 's'}`.replace('  ', ' ')} disabled={picked.length === 0} onPress={() => onConfirm(picked)} />
-      <Text variant="caption" muted>+15 XP each, up to 3 a day.</Text>
-    </Card>
+    <View style={{ gap: spacing[3] }}>
+      <Text variant="caption" muted>Pick up to 3 for today. Some are checked automatically from your logs.</Text>
+      <TileGrid>
+        {sideQuests.map((s) => {
+          const on = picked.includes(s.id);
+          return (
+            <SideTile key={s.id} icon={s.icon as never} color={s.color} title={s.title} selected={on}
+              status={s.verify !== 'manual' ? 'Verified automatically' : 'Tick it when done'}
+              onPress={() => setPicked((p) => (on ? p.filter((x) => x !== s.id) : p.length < 3 ? [...p, s.id] : p))} />
+          );
+        })}
+      </TileGrid>
+      <Button label={picked.length ? `Accept ${picked.length} quest${picked.length === 1 ? '' : 's'}` : 'Pick up to 3'} disabled={picked.length === 0} onPress={() => onConfirm(picked)} />
+    </View>
   );
 }
 

@@ -231,7 +231,7 @@ function Body() {
   return (
     <View style={{ gap: spacing[3] }}>
       <Segmented
-        options={[{ value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }, { value: 'unspecified', label: 'Other' }]}
+        options={[{ value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }]}
         value={d.sex}
         onChange={(v) => set({ sex: v })}
       />
@@ -390,7 +390,7 @@ function Nutrition() {
   const { c, spacing } = useTheme();
   const d = useDraft();
   const set = useSet();
-  const user = { sex: d.sex ?? 'unspecified', weightKg: d.weightKg ?? 75, heightCm: d.heightCm ?? 175, ageYears: d.ageYears ?? 24, bodyFatPct: d.bodyFatPct };
+  const user = { sex: d.sex ?? ('unspecified' as const), weightKg: d.weightKg ?? 75, heightCm: d.heightCm ?? 175, ageYears: d.ageYears ?? 24, bodyFatPct: d.bodyFatPct };
   const goal = d.goal ?? 'maintain';
   const prior = tdeePrior({
     ...user,

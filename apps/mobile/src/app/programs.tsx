@@ -7,16 +7,14 @@ import { useFeature } from '@/features/paywall';
 import { rankedPrograms, useTraining, useTrainingProfile } from '@/features/training';
 import { useTheme } from '@/theme';
 import { Appear, Card, Icon, Page, Pill, PressableScale, ScreenHeader, Text } from '@/ui';
-import { useSetProgram } from '@/features/training/sync';
 
-const LEVEL: Record<string, string> = { beginner: 'Beginner', novice: 'Novice', intermediate: 'Intermediate', advanced: 'Advanced' };
+const LEVEL: Record<string, string> = { beginner: 'Beginner', novice: 'Novice', intermediate: 'Intermediate', advanced: 'Advanced', pro: 'Pro' };
 const LOC: Record<string, string> = { HOME: 'Home', GYM: 'Gym', HYBRID: 'Hybrid' };
 
 export default function ProgramsScreen() {
   const { c, spacing } = useTheme();
   const profile = useTrainingProfile();
   const active = useTraining((s) => s.activeProgramId);
-  const setProgram = useSetProgram();
   const ranked = rankedPrograms(profile);
   const recommended = ranked[0]?.program.id;
   // SYSTEMS.md §7.1: the gate is real but open while PAYWALL_ENABLED=false
@@ -24,9 +22,9 @@ export default function ProgramsScreen() {
   const [lockedTap, setLockedTap] = useState<string | null>(null);
 
   return (
-    <Page header={<ScreenHeader title="Choose a program" icon="close" />}>
+    <Page header={<ScreenHeader title="Programs" />}>
       <Text variant="callout" dim>
-        Programs that fit your setting ({LOC[profile.location]}), level and schedule. Switching starts the new program from its first day.
+        Best fit first for your setting ({LOC[profile.location]}), level and schedule. Open one to see every day at your level.
       </Text>
       {ranked.map(({ program: p }, i) => {
         const type = workoutTypes.find((t) => t.id === p.typeId);
@@ -37,11 +35,10 @@ export default function ProgramsScreen() {
             <PressableScale
               haptic="press"
               accessibilityRole="button"
-              accessibilityLabel={`Choose ${p.name}`}
+              accessibilityLabel={`${p.name}${locked ? ', Premium' : ''}`}
               onPress={() => {
                 if (locked) return setLockedTap(p.id);
-                setProgram(p.id);
-                router.back();
+                router.push(`/program/${p.id}`);
               }}>
               <Card tint={isActive ? c.accent : undefined} style={isActive ? { borderColor: `${c.accent}80` } : undefined}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], flexWrap: 'wrap' }}>

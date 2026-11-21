@@ -146,6 +146,7 @@ export async function updateTraining(prisma: PrismaClient, userId: string, input
     data: {
       experience: input.experience, location: input.location, equipment: input.equipment, injuries: input.injuries,
       sessionMinutes: input.sessionMinutes, trainingWeekdays: weekdays, daysPerWeek: weekdays.length, workoutTime: input.workoutTime,
+      ...(input.sex ? { sex: input.sex } : {}),
     },
   });
   return getMe(prisma, userId);

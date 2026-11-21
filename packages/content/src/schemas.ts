@@ -136,7 +136,7 @@ export const ProgramTemplate = z.object({
   name: z.string(),
   typeId: z.string(),
   summary: z.string(),
-  levels: z.array(z.enum(['beginner', 'novice', 'intermediate', 'advanced'])).min(1),
+  levels: z.array(z.enum(['beginner', 'novice', 'intermediate', 'advanced', 'pro'])).min(1),
   locations: z.array(z.enum(['HOME', 'GYM', 'HYBRID'])).min(1),
   goals: z.array(z.enum(['cut', 'maintain', 'recomp', 'bulk'])).min(1),
   daysPerWeek: z.array(z.number().int().min(2).max(6)).min(1),
@@ -147,6 +147,24 @@ export const ProgramTemplate = z.object({
     .min(1),
 });
 export type ProgramTemplate = z.infer<typeof ProgramTemplate>;
+
+/** Focused workouts (docs/plans/TRAIN_REDESIGN.md §4.4): one-off sessions like "Home Abs", personalised by the engine. */
+export const FOCUS_CATEGORIES = ['abs', 'chest', 'back', 'shoulders', 'arms', 'glutes', 'legs', 'full', 'hiit', 'mobility'] as const;
+export const FocusedWorkout = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  name: z.string(),
+  typeId: z.string(),
+  category: z.enum(FOCUS_CATEGORIES),
+  location: z.enum(['HOME', 'GYM']),
+  /** kit the poster promises ("Dumbbell Chest"); the hunter is assumed to have it when they pick it */
+  needs: z.array(z.string()).default([]),
+  levels: z.array(z.enum(['beginner', 'novice', 'intermediate', 'advanced', 'pro'])).min(1),
+  /** nominal work length (content metadata); the app shows the personalised estimate */
+  minutes: z.number().int().min(5).max(90),
+  summary: z.string(),
+  slots: z.array(ProgramSlot).min(3),
+});
+export type FocusedWorkout = z.infer<typeof FocusedWorkout>;
 
 export const QuickSession = z.object({
   id: z.string(),
