@@ -5,10 +5,10 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { MEALS, useFoodDraft, useNutritionActions } from '@/features/nutrition';
 import { useTheme } from '@/theme';
-import { Button, Card, Page, Pill, PressableScale, ScreenHeader, Text } from '@/ui';
-import { Segmented, TextField } from '@/ui/form';
+import { Button, Card, Icon, type IconName, Page, Pill, PressableScale, ScreenHeader, Text } from '@/ui';
+import { TextField } from '@/ui/form';
 
-const QTY = [0.5, 1, 1.5, 2, 3];
+const QTY = [0.5, 1, 2, 3, 4];
 
 /** Portion picker: household servings or grams, live macros, meal; add or edit (SYSTEMS.md §2.7). */
 export default function Portion() {
@@ -33,9 +33,10 @@ export default function Portion() {
 
   const save = () => {
     if (grams <= 0) return;
-    const done = () => router.dismissTo('/nutrition');
-    if (d.logId) patchLog.mutate({ id: d.logId, patch: { grams, meal, servingLabel } }, { onSuccess: done });
-    else addLog.mutate({ food, grams, meal, servingLabel, localDate: d.date }, { onSuccess: done });
+    // the diary updates on tap (optimistic) and the save finishes in the background, so close right away
+    if (d.logId) patchLog.mutate({ id: d.logId, patch: { grams, meal, servingLabel } });
+    else addLog.mutate({ food, grams, meal, servingLabel, localDate: d.date });
+    router.dismissTo('/nutrition');
   };
 
   return (
@@ -80,29 +81,61 @@ export default function Portion() {
         })}
       </View>
       {serving ? (
-        <View style={{ flexDirection: 'row', gap: spacing[2] }}>
-          {QTY.map((x) => {
-            const on = qty === x;
-            return (
-              <PressableScale key={x} haptic="tap" onPress={() => setQty(x)} accessibilityRole="radio" accessibilityState={{ selected: on }} accessibilityLabel={`${x} servings`}
-                style={{ flex: 1, alignItems: 'center', paddingVertical: spacing[3], borderRadius: radius.md, backgroundColor: on ? c.mana : c.surfaceRaised }}>
-                <Text variant="headline" color={on ? '#FFFFFF' : c.text}>{`${x}×`}</Text>
-              </PressableScale>
-            );
-          })}
+        <View style={{ gap: spacing[2] }}>
+          {/* stepper: any amount in half servings, up to 20 */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: 6, borderRadius: radius.lg, backgroundColor: c.surfaceRaised }}>
+            <Step icon="remove" label="Less" disabled={qty <= 0.5} onPress={() => setQty((q) => Math.max(0.5, Math.round((q - 0.5) * 2) / 2))} />
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text variant="stat" style={{ fontSize: 30, lineHeight: 34 }}>{`${qty}`}</Text>
+              <Text variant="caption" muted numberOfLines={1}>{serving.label.replace(/^1 /, '')}</Text>
+            </View>
+            <Step icon="add" label="More" disabled={qty >= 20} onPress={() => setQty((q) => Math.min(20, Math.round((q + 0.5) * 2) / 2))} />
+          </View>
+          <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+            {QTY.map((x) => {
+              const on = qty === x;
+              return (
+                <PressableScale key={x} haptic="tap" onPress={() => setQty(x)} accessibilityRole="radio" accessibilityState={{ selected: on }} accessibilityLabel={`${x} servings`}
+                  style={{ flex: 1, alignItems: 'center', paddingVertical: spacing[2], borderRadius: radius.md, borderWidth: 1, borderColor: on ? c.mana : c.border, backgroundColor: on ? `${c.mana}22` : 'transparent' }}>
+                  <Text variant="callout" color={on ? c.text : c.textDim}>{`${x}×`}</Text>
+                </PressableScale>
+              );
+            })}
+          </View>
         </View>
       ) : (
         <TextField label="Grams" value={gramsText} onChangeText={setGramsText} keyboardType="decimal-pad" selectTextOnFocus accessibilityLabel="Grams" />
       )}
 
       <Text variant="label" muted>Meal</Text>
-      <Segmented options={MEALS.map((m) => ({ value: m.id, label: m.label }))} value={meal} onChange={setMeal} />
+      <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+        {MEALS.map((m) => {
+          const on = meal === m.id;
+          return (
+            <PressableScale key={m.id} haptic="tap" onPress={() => setMeal(m.id)} accessibilityRole="radio" accessibilityState={{ selected: on }} accessibilityLabel={m.label}
+              style={{ flex: 1, alignItems: 'center', gap: 4, paddingVertical: spacing[2], borderRadius: radius.md, borderWidth: 1.5, borderColor: on ? c.mana : c.border, backgroundColor: on ? `${c.mana}1F` : c.surfaceRaised }}>
+              <Icon name={m.icon} size={16} color={on ? c.mana : c.textMuted} />
+              <Text variant="caption" color={on ? c.text : c.textDim}>{m.label}</Text>
+            </PressableScale>
+          );
+        })}
+      </View>
 
       {d.logId ? (
         <Button variant="ghost" size="md" icon="trash-outline" label="Remove from diary" loading={deleteLog.isPending}
-          onPress={() => deleteLog.mutate(d.logId!, { onSuccess: () => router.dismissTo('/nutrition') })} />
+          onPress={() => { deleteLog.mutate(d.logId!); router.dismissTo('/nutrition'); }} />
       ) : null}
       {food.source === 'off' ? <Text variant="micro" muted>Product data © Open Food Facts contributors (ODbL).</Text> : null}
     </Page>
+  );
+}
+
+function Step({ icon, label, onPress, disabled }: { icon: IconName; label: string; onPress: () => void; disabled?: boolean }) {
+  const { c, radius } = useTheme();
+  return (
+    <PressableScale haptic="tap" onPress={onPress} disabled={disabled} accessibilityRole="button" accessibilityLabel={label}
+      style={{ width: 52, height: 52, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: c.surface, opacity: disabled ? 0.35 : 1 }}>
+      <Icon name={icon} size={24} color={c.text} />
+    </PressableScale>
   );
 }

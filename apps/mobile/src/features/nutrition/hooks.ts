@@ -3,8 +3,8 @@ import type {
   CopyInput, DayFlagsInput, FoodDto, FoodLogInput, FoodLogPatch, FoodSearchResponse, NutritionDayResponse, NutritionProfile,
   NutritionSettings, NutritionSummaryResponse, WeighInInput,
 } from '@lb/contracts';
-import { gameDate } from '@lb/engine';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { gameDate, nutrientsForGrams } from '@lb/engine';
+import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocalHunter, useMe } from '@/features/progression';
 import { useSession } from '@/features/session';
@@ -81,6 +81,32 @@ export function useNutritionDay(date: string): { data: NutritionDayResponse | un
   return status === 'demo' ? { data: local?.response, isLoading: false } : { data: remote.data, isLoading: remote.isLoading };
 }
 
+/** Calories eaten vs target for several days (week strip). Signed in: the same cached day queries. */
+export function useNutritionDays(dates: string[]): Record<string, { kcal: number; target: number; logged: boolean } | undefined> {
+  const status = useSession((s) => s.status);
+  const n = useNutritionProfile();
+  const t = useTrainingProfile();
+  const d = useLocalData();
+  const today = useGameDate();
+  const remote = useQueries({
+    queries: dates.map((date) => ({
+      queryKey: nutritionKeys.day(date),
+      enabled: status === 'signedIn' && date <= today,
+      queryFn: async () => unwrap<NutritionDayResponse>(await api.nutrition.day.$get({ query: { date } })),
+      staleTime: 60_000,
+    })),
+  });
+  return useMemo(() => {
+    const out: Record<string, { kcal: number; target: number; logged: boolean } | undefined> = {};
+    dates.forEach((date, i) => {
+      if (date > today) return;
+      const day = status === 'demo' ? localDay(n, t, d, date, today, 0).response : remote[i]?.data;
+      if (day) out[date] = { kcal: day.totals.kcal, target: day.plan.kcal, logged: day.logs.length > 0 };
+    });
+    return out;
+  }, [dates, today, status, n, t, d, remote]);
+}
+
 export function useNutritionSummary(): { data: NutritionSummaryResponse | undefined } {
   const status = useSession((s) => s.status);
   const n = useNutritionProfile();
@@ -112,9 +138,38 @@ export function useFoodSearch(q: string): { foods: FoodDto[]; isLoading: boolean
     enabled: status === 'signedIn',
     queryFn: async () => (await unwrap<FoodSearchResponse>(await api.nutrition.foods.$get({ query: { q: debounced } }))).foods,
     staleTime: 60_000,
+    // keep the last results on screen while the next query loads (no flicker to "Searching…")
+    placeholderData: keepPreviousData,
   });
   const local = useMemo(() => (status === 'demo' ? localSearch(q, d, today) : []), [status, q, d, today]);
   return status === 'demo' ? { foods: local, isLoading: false } : { foods: remote.data ?? [], isLoading: remote.isLoading };
+}
+
+/* ---------------- optimistic day cache (signed in) ---------------- */
+
+type DayData = NutritionDayResponse;
+const dayTotals = (logs: DayData['logs']): DayData['totals'] => {
+  const t = { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 };
+  for (const l of logs) {
+    const n = nutrientsForGrams(l.food.per100, l.grams);
+    t.kcal += n.kcal; t.protein += n.protein; t.carbs += n.carbs; t.fat += n.fat; t.fiber += n.fiber ?? 0;
+  }
+  return { kcal: Math.round(t.kcal), protein: t.protein, carbs: t.carbs, fat: t.fat, fiber: t.fiber };
+};
+
+/**
+ * Apply a change to cached days right away (the screen updates on tap) and return an undo. The server
+ * write and refetch follow; on error the snapshot comes back.
+ */
+async function optimistic(qc: QueryClient, change: (d: DayData) => DayData | null) {
+  await qc.cancelQueries({ queryKey: ['nutrition', 'day'] });
+  const snaps = qc.getQueriesData<DayData>({ queryKey: ['nutrition', 'day'] });
+  for (const [key, d] of snaps) {
+    if (!d) continue;
+    const next = change(d);
+    if (next) qc.setQueryData(key, next.logs === d.logs ? next : { ...next, totals: dayTotals(next.logs) });
+  }
+  return () => { for (const [key, d] of snaps) qc.setQueryData(key, d); };
 }
 
 /** Every nutrition write. Demo mode mutates the on-device store; signed in, the server (then refetch). */
@@ -139,21 +194,32 @@ export function useNutritionActions() {
       } else await unwrap(await api.nutrition.logs.$post({ json: full }));
       track({ event: 'food_logged', source: input.food.source, meal: input.meal });
     },
-    onSuccess: refresh,
+    retry: 2,
+    onMutate: (full: FoodLogInput) => (demo ? undefined : optimistic(qc, (d) => (d.date === full.localDate && !d.logs.some((l) => l.id === full.id) ? { ...d, logs: [...d.logs, full] } : null))),
+    onError: (_e, _v, undo) => undo?.(),
+    onSettled: refresh,
   });
   const patchLog = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: FoodLogPatch }) => {
       if (demo) local().set({ logs: local().logs.map((l) => (l.id === id ? { ...l, ...patch, servingLabel: patch.servingLabel !== undefined ? patch.servingLabel : l.servingLabel } : l)) });
       else await unwrap(await api.nutrition.logs[':id'].$patch({ param: { id }, json: patch }));
     },
-    onSuccess: refresh,
+    retry: 2,
+    onMutate: ({ id, patch }) => (demo ? undefined : optimistic(qc, (d) => (d.logs.some((l) => l.id === id)
+      ? { ...d, logs: d.logs.map((l) => (l.id === id ? { ...l, ...patch, servingLabel: patch.servingLabel !== undefined ? patch.servingLabel : l.servingLabel } : l)) }
+      : null))),
+    onError: (_e, _v, undo) => undo?.(),
+    onSettled: refresh,
   });
   const deleteLog = useMutation({
     mutationFn: async (id: string) => {
       if (demo) local().set({ logs: local().logs.filter((l) => l.id !== id) });
       else await unwrap(await api.nutrition.logs[':id'].$delete({ param: { id } }));
     },
-    onSuccess: refresh,
+    retry: 2,
+    onMutate: (id: string) => (demo ? undefined : optimistic(qc, (d) => (d.logs.some((l) => l.id === id) ? { ...d, logs: d.logs.filter((l) => l.id !== id) } : null))),
+    onError: (_e, _v, undo) => undo?.(),
+    onSettled: refresh,
   });
   const copy = useMutation({
     mutationFn: async (input: CopyInput & { copyId: string }): Promise<number> => {
@@ -187,7 +253,16 @@ export function useNutritionActions() {
         });
       } else await unwrap(await api.nutrition.day.$post({ json: input }));
     },
-    onSuccess: refresh,
+    // day flags are absolute values (water 500 ml): run writes in order so a quick double tap can't land stale
+    scope: { id: 'nutrition-day-flags' },
+    onMutate: (input: DayFlagsInput) => (demo ? undefined : optimistic(qc, (d) => (d.date === input.localDate ? {
+      ...d,
+      waterMl: input.waterMl ?? d.waterMl,
+      markedComplete: input.markedComplete ?? d.markedComplete,
+      lowDayConfirm: input.lowDayConfirm ?? d.lowDayConfirm,
+    } : null))),
+    onError: (_e, _v, undo) => undo?.(),
+    onSettled: refresh,
   });
   const addWeighIn = useMutation({
     mutationFn: async (full: WeighInInput) => {

@@ -23,10 +23,18 @@ function trigrams(s: string): Set<string> {
   return out;
 }
 
-/** Trigram similarity (0–1) with a prefix/word boost, so "chick" finds "Chicken breast". */
+/** Simple English singular: "eggs" → egg, "tomatoes" → tomato, "berries" → berry. */
+const singular = (w: string) =>
+  w.length > 4 && w.endsWith('ies') ? `${w.slice(0, -3)}y`
+  : w.length > 4 && /(oes|ches|shes|xes|ses)$/.test(w) ? w.slice(0, -2)
+  : w.length > 3 && w.endsWith('s') && !w.endsWith('ss') ? w.slice(0, -1)
+  : w;
+const singularize = (s: string) => s.split(' ').map(singular).join(' ');
+
+/** Trigram similarity (0–1) with a prefix/word boost, so "chick" finds "Chicken breast" and "eggs" finds "Egg". */
 export function textMatch(query: string, text: string): number {
-  const q = norm(query);
-  const t = norm(text);
+  const q = singularize(norm(query));
+  const t = singularize(norm(text));
   if (!q) return 0;
   if (t === q) return 1;
   const a = trigrams(q);
