@@ -1,76 +1,134 @@
 import { heroes, workoutTypes } from '@lb/content';
-import { gameDate, levelProgress, powerLevel } from '@lb/engine';
-import { dataColors, rankColor, statColors } from '@lb/tokens';
+import { levelProgress, powerLevel } from '@lb/engine';
+import { dataColors } from '@lb/tokens';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { activeSlots, questRatio as questRatioOf } from '@lb/contracts';
 import { restDayContent } from '@/features/depth';
+import { BossTeaser, HunterCard, StatsChart, TodayList, UpNextCard, type TodayItem } from '@/features/home/HomeCards';
 import { useGameDate, useNutritionDay } from '@/features/nutrition';
-import { useQuestActions, useQuests } from '@/features/quests';
-import { SlotRow } from '@/features/quests/SlotRow';
+import { useBoss, useQuests } from '@/features/quests';
 import { useLocalHunter, useMe, useProgression } from '@/features/progression';
 import { useSession } from '@/features/session';
-import { useToday, useTraining, useTrainingProfile, useUpdateTraining, useWorkoutHistory, useWorkoutSession } from '@/features/training';
+import {
+  exerciseName, StaleSessionCard, useStaleSession, useToday, useTraining, useTrainingProfile, useUpdateTraining, useWorkoutHistory, useWorkoutSession,
+} from '@/features/training';
+import { estimateKcal, targetMuscles } from '@/features/training/TrainCards';
+import { bestSide, MuscleMap } from '@/features/visuals';
 import { useAnalyticsConsent } from '@/lib/analytics';
 import { env } from '@/lib/env';
 import { storage } from '@/lib/storage';
 import { greeting, useQuestDeadline } from '@/lib/time';
 import { useTheme } from '@/theme';
-import { Appear, Bar, Button, Card, CountUp, Icon, Pill, PressableScale, Screen, SectionHeader, SettingsGear, StatRow, SystemWindow, Text } from '@/ui';
-import { HeroEmblem, RankBadge, Ring } from '@/ui/fx';
+import { Appear, Button, Card, Icon, PressableScale, Screen, SectionHeader, SettingsGear, Text } from '@/ui';
 
-const STAT_KEYS = ['STR', 'AGI', 'END', 'VIT', 'SPI'] as const;
-
+/** Home is a dashboard (docs/plans/HOME_QUESTS_REDESIGN.md §3): what's next, today at a glance, who you are. */
 export default function HomeScreen() {
-  const { c, spacing } = useTheme();
+  const { c, spacing, radius } = useTheme();
   const sessionStatus = useSession((s) => s.status);
   const resetLocal = useLocalHunter((s) => s.reset);
   const { data: me, isLoading, error } = useMe();
   const { data: food } = useNutritionDay(useGameDate());
-  const protein = { eaten: Math.round(food?.totals.protein ?? 0), target: food?.plan.proteinG ?? 0 };
   const { data: prog } = useProgression();
   const deadline = useQuestDeadline();
   const { data: quests } = useQuests();
-  const { progress: questProgress } = useQuestActions();
+  const { data: boss } = useBoss();
   const today = useToday();
   const profile = useTrainingProfile();
   const history = useTraining((s) => s.history);
   const activeWorkout = useWorkoutSession((s) => s.active);
+  const stale = useStaleSession();
 
   if (isLoading || sessionStatus === 'booting') return <Screen><Text dim>Loading…</Text></Screen>;
-  if (error || !me) return <Screen><Text color={c.danger}>Couldn't reach the server. Your data is safe offline.</Text></Screen>;
+  if (error || !me) return <Screen><Text color={c.danger}>{"Couldn't reach the server. Your data is safe offline."}</Text></Screen>;
 
   const state = me.state;
   const hero = heroes.find((h) => h.id === me.heroId) ?? heroes[0]!;
-  const xp = state?.xp ?? 0;
-  const lp = levelProgress(xp);
+  const lp = levelProgress(state?.xp ?? 0);
   const rank = state?.rank ?? 'E';
   const raw = prog?.stats as Record<'STR' | 'AGI' | 'END' | 'VIT' | 'SPI', number> | undefined;
   // Display ×10 (SYSTEMS §4.3); fall back to the server's stored state while progression loads
   const stats = raw
     ? { STR: Math.round(raw.STR * 10), AGI: Math.round(raw.AGI * 10), END: Math.round(raw.END * 10), VIT: Math.round(raw.VIT * 10), SPI: Math.round(raw.SPI * 10) }
     : (state?.stats ?? { STR: 100, AGI: 100, END: 100, VIT: 100, SPI: 100 });
-  const power = powerLevel(
-    { STR: stats.STR / 10, AGI: stats.AGI / 10, END: stats.END / 10, VIT: stats.VIT / 10, SPI: stats.SPI / 10 },
-    lp.level,
-  );
+  const power = powerLevel({ STR: stats.STR / 10, AGI: stats.AGI / 10, END: stats.END / 10, VIT: stats.VIT / 10, SPI: stats.SPI / 10 }, lp.level);
   const trialHint = (() => {
     const t = prog?.trial;
     if (!t?.target) return null;
-    if (t.eligible) return { target: t.target, text: `${t.target}-Rank Trial unlocked. Tap to attempt.` };
-    if (t.reason === 'level') return { target: t.target, text: `${t.target}-Rank Trial unlocks at level ${t.levelRequired}` };
+    if (t.eligible) return { rank: t.target, text: `${t.target}-Rank Trial unlocked. Tap to attempt.` };
+    if (t.reason === 'level') return { rank: t.target, text: `${t.target}-Rank Trial unlocks at level ${t.levelRequired}` };
     return null;
   })();
+
   const daily = quests?.daily;
-  const questRatio = daily ? questRatioOf(daily) : 0;
+  const slots = daily ? activeSlots(daily) : [];
+  const slotsDone = daily ? slots.filter((s, i) => (daily.progress[String(i)] ?? 0) >= s.target).length : 0;
   const questDone = daily?.status === 'COMPLETED';
   const penaltyActive = !!quests?.penalty && quests.penalty.status !== 'COMPLETED';
-  const type = workoutTypes.find((t) => t.id === today.program.typeId)!;
-  const todayIso = gameDate(new Date(), profile.timezone || 'UTC');
-  const workoutsToday = history.filter((h) => h.date === todayIso).length;
-  const programDoneToday = history.some((h) => h.date === todayIso && h.kind === 'program');
-  const state_: 'active' | 'done' | 'train' | 'rest' = activeWorkout ? 'active' : programDoneToday ? 'done' : today.isTrainingDay ? 'train' : 'rest';
+  const streak = quests?.streak.current ?? state?.streak ?? 0;
+  const type = workoutTypes.find((t) => t.id === today.program.typeId);
+  const programDone = history.some((h) => h.date === today.todayIso && h.kind === 'program');
+  const anyWorkout = history.some((h) => h.date === today.todayIso);
+  const w = today.workout;
+  const muscles = targetMuscles(w.exercises.map((e) => e.exerciseId));
+  const protein = { eaten: Math.round(food?.totals.protein ?? 0), target: food?.plan.proteinG ?? 0 };
+  const rest = restDayContent(today.todayIso);
+
+  // One "Up next", by priority: unfinished workout → penalty → today's workout → daily quest → all clear
+  const upNext = stale ? (
+    <StaleSessionCard a={stale.active} finishAt={stale.finishAt} canSave={stale.canSave} />
+  ) : activeWorkout ? (
+    <UpNextCard color={c.accent} eyebrow="In progress" title={activeWorkout.name} icon="barbell"
+      body="Your workout is saved. Pick up right where you left off."
+      action={{ label: 'Resume workout', icon: 'play', onPress: () => router.push('/workout/session') }} />
+  ) : penaltyActive ? (
+    <UpNextCard color={c.danger} eyebrow="Penalty Zone" title="Save your streak" icon="warning"
+      body="You missed yesterday's quest. Survive 5 minutes and finish today's quest to keep your streak."
+      action={{ label: 'Open the Penalty Zone', icon: 'flash', onPress: () => router.push('/quests') }} />
+  ) : (today.isTrainingDay || today.schedule.canTrainInstead) && !programDone ? (
+    <UpNextCard color={type?.color ?? c.accent} eyebrow={today.isTrainingDay ? `Today · ${today.program.name}` : 'Make-up session'} title={w.name}
+      meta={[
+        { icon: 'time-outline', text: `${w.estimatedMinutes} min` },
+        { icon: 'list-outline', text: `${w.exercises.length} exercises` },
+        { icon: 'flame-outline', text: `~${estimateKcal(w.estimatedMinutes, profile.weightKg, today.mode.intensity)} kcal` },
+      ]}
+      art={<MuscleMap primary={muscles} side={bestSide(muscles)} width={56} showLabels={false} />}
+      action={{ label: 'Start workout', icon: 'play', onPress: () => router.push('/workout/preview') }}
+      secondary={{ label: 'Change today’s workout', onPress: () => router.push('/train') }} />
+  ) : daily && !questDone && !quests?.streak.sickToday ? (
+    <UpNextCard color={c.danger} eyebrow={`Daily Quest · ${deadline}`} title={daily.progress.option === 1 ? 'Rest Ritual' : 'Daily Quest'} icon="flag"
+      body={slots.map((s, i) => `${exerciseName(s.exerciseId)} ${Math.min(daily.progress[String(i)] ?? 0, s.target)}/${s.target}`).join(' · ')}
+      action={{ label: 'Follow along', icon: 'play-circle', onPress: () => router.push(`/workout/quest/${daily.id}`) }}
+      secondary={{ label: 'Log it in Quests', onPress: () => router.push('/quests') }} />
+  ) : (
+    <UpNextCard color={c.success} eyebrow={programDone || anyWorkout ? 'All clear' : 'Rest day'} title={programDone || anyWorkout ? 'Great work today.' : rest.title} icon="leaf"
+      body={programDone || anyWorkout ? `Muscles grow while you rest. Next up: ${w.name}.` : rest.body}
+      action={{ label: 'Mobility · 10 min', icon: 'leaf-outline', onPress: () => router.push('/workout/quick/mobility-10') }} />
+  );
+
+  const items: TodayItem[] = [
+    {
+      key: 'workout', icon: 'barbell', color: dataColors.workout, title: 'Workout', done: anyWorkout,
+      ratio: anyWorkout ? 1 : activeWorkout ? Object.values(activeWorkout.logs).reduce((n, l) => n + l.length, 0) / Math.max(1, activeWorkout.exercises.reduce((n, x) => n + x.sets.length, 0)) : 0,
+      detail: anyWorkout ? (history.find((h) => h.date === today.todayIso)?.name ?? 'Done')
+        : activeWorkout ? `In progress · ${activeWorkout.name}`
+        : today.isTrainingDay ? `${w.name} · ${w.estimatedMinutes} min`
+        : today.schedule.canTrainInstead ? `Rest day · make-up available: ${w.name}` : 'Rest day · mobility optional',
+      onPress: () => router.push('/train'),
+    },
+    {
+      key: 'quest', icon: 'flag', color: dataColors.quest, title: 'Daily Quest', ratio: daily ? questRatioOf(daily) : 0, done: !!questDone,
+      detail: questDone ? 'Cleared' : quests?.streak.sickToday ? 'Streak frozen today' : `${slotsDone} of ${slots.length} moves · ${deadline}`,
+      onPress: () => router.push('/quests'),
+    },
+    {
+      key: 'protein', icon: 'water', color: dataColors.protein, title: 'Protein', ratio: protein.target ? protein.eaten / protein.target : 0,
+      done: protein.target > 0 && protein.eaten >= protein.target,
+      detail: protein.target ? `${protein.eaten} / ${protein.target} g` : 'Set up your nutrition plan',
+      onPress: () => router.push('/nutrition'),
+    },
+  ];
 
   return (
     <Screen accent={hero.accent}>
@@ -78,145 +136,49 @@ export default function HomeScreen() {
       <Appear index={0} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View style={{ flex: 1 }}>
           <Text variant="callout" dim>{greeting()}</Text>
-          <Text variant="title">{me.hunterName ?? 'Hunter'}</Text>
+          <Text variant="title" numberOfLines={1}>{me.hunterName ?? 'Hunter'}</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
-          <Pill icon="flame" label={`${quests?.streak.current ?? state?.streak ?? 0} day streak`} color={penaltyActive ? c.danger : c.warning} />
+          <PressableScale haptic="tap" onPress={() => router.push('/quests')} accessibilityRole="button"
+            accessibilityLabel={streak ? `${streak} day streak` : 'Start a streak'}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, height: 32, borderRadius: radius.pill,
+              backgroundColor: penaltyActive ? `${c.danger}22` : streak ? `${c.warning}22` : c.surface, borderWidth: 1, borderColor: penaltyActive ? `${c.danger}55` : streak ? `${c.warning}44` : c.border }}>
+            <Icon name="flame" size={14} color={penaltyActive ? c.danger : streak ? c.warning : c.textMuted} />
+            <Text variant="caption" color={penaltyActive ? c.danger : streak ? c.text : c.textDim} style={{ fontFamily: 'Inter_600SemiBold' }}>
+              {streak ? `${streak}` : 'Start a streak'}
+            </Text>
+          </PressableScale>
           <SettingsGear />
         </View>
       </Appear>
 
-      {/* Hunter card */}
       <ConsentCard />
       <SaveProgressCard />
       <TrainingProfileCard />
-      <Appear index={1}>
-        <PressableScale haptic="tap" scaleTo={0.98} onPress={() => router.push('/profile')} accessibilityRole="button" accessibilityLabel="Open hunter profile">
-        <Card tint={hero.accent}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
-            <HeroEmblem size={104} color={hero.accent} initial={(me.hunterName ?? hero.name).charAt(0).toUpperCase()} />
-            <View style={{ flex: 1, gap: spacing[1] }}>
-              <Text variant="label" color={hero.accent}>{hero.epithet}</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: spacing[2] }}>
-                <Text variant="caption" dim>Level</Text>
-                <CountUp variant="stat" value={lp.level} />
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Icon name="flash" size={13} color={c.accentGlow} />
-                <CountUp variant="callout" value={power} duration={1200} color={c.text} />
-                <Text variant="caption" muted>power</Text>
-              </View>
-            </View>
-            <View style={{ alignItems: 'center' }}>
-              <RankBadge rank={rank} size={64} />
-              <Text variant="micro" color={rankColor[rank]}>{`${rank}-Rank`}</Text>
-            </View>
-          </View>
-          <Bar ratio={lp.ratio} height={6} color={c.accent} delayMs={250} />
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text variant="caption" muted>{`${lp.intoLevel.toLocaleString()} / ${lp.needed.toLocaleString()} XP`}</Text>
-            <Text variant="caption" dim>{`${(lp.needed - lp.intoLevel).toLocaleString()} XP to level ${lp.level + 1}`}</Text>
-          </View>
-          {trialHint ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Icon name="shield-checkmark" size={14} color={rankColor[trialHint.target]} />
-              <Text variant="caption" color={rankColor[trialHint.target]}>{trialHint.text}</Text>
-            </View>
-          ) : null}
-        </Card>
-        </PressableScale>
-      </Appear>
 
-      {/* Today rings */}
+      <Appear index={1}>{upNext}</Appear>
+
       <Appear index={2}>
-        <Card>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-            {[
-              { label: 'Workout', value: `${Math.min(workoutsToday, 1)} / 1`, ratio: Math.min(1, workoutsToday), color: dataColors.workout, icon: 'barbell' as const },
-              { label: 'Daily Quest', value: `${Math.round(questRatio * 100)}%`, ratio: questRatio, color: dataColors.quest, icon: 'flag' as const },
-              { label: 'Protein', value: `${protein.eaten}g`, ratio: protein.target ? protein.eaten / protein.target : 0, color: dataColors.protein, icon: 'water' as const },
-            ].map((r, i) => (
-              <View key={r.label} style={{ alignItems: 'center', gap: spacing[2] }}>
-                <Ring ratio={r.ratio} size={76} stroke={8} color={r.color} delayMs={200 + i * 120}>
-                  <Icon name={r.icon} size={20} color={r.color} />
-                </Ring>
-                <View style={{ alignItems: 'center' }}>
-                  <Text variant="heading">{r.value}</Text>
-                  <Text variant="caption" muted>{r.label}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        </Card>
+        <TodayList items={items} />
       </Appear>
 
-      {/* Today's workout */}
       <Appear index={3} style={{ gap: spacing[3] }}>
-        <SectionHeader
-          title={{ active: 'In progress', done: 'Done today', train: "Today's workout", rest: 'Rest day' }[state_]}
-          action="See plan"
-          onAction={() => router.push('/train')}
-        />
-        <Card tint={type.color}>
-          <Pill icon={type.icon as never} label={`${today.program.name} · ${type.name}`} color={type.color} />
-          <Text variant="headline">
-            {{ active: activeWorkout?.name ?? '', done: 'Workout complete. Great work.', train: today.workout.name, rest: 'Recovery day' }[state_]}
-          </Text>
-          {state_ === 'active' || state_ === 'train' ? (
-            <View style={{ flexDirection: 'row', gap: spacing[4] }}>
-              <Meta icon="time-outline" text={`~${today.workout.estimatedMinutes} min`} />
-              <Meta icon="list-outline" text={`${today.workout.exercises.length} exercises`} />
-              <Meta icon="trending-up-outline" text="Coached loads" />
-            </View>
-          ) : state_ === 'rest' ? (
-            <>
-              <Text variant="label" color={type.color}>{restDayContent(todayIso).title}</Text>
-              <Text variant="callout" dim>{restDayContent(todayIso).body}</Text>
-            </>
-          ) : (
-            <Text variant="callout" dim>{`Next up: ${today.workout.name}. A short mobility flow helps recovery.`}</Text>
-          )}
-          <Button
-            label={{ active: 'Resume workout', done: 'Mobility · 10 min', train: 'Start workout', rest: 'Mobility · 10 min' }[state_]}
-            icon={state_ === 'active' || state_ === 'train' ? 'play' : 'leaf-outline'}
-            variant={state_ === 'done' || state_ === 'rest' ? 'secondary' : 'primary'}
-            onPress={() =>
-              router.push(state_ === 'active' ? '/workout/session' : state_ === 'train' ? '/workout/preview' : '/workout/quick/mobility-10')
-            }
-          />
-        </Card>
+        <SectionHeader title="Your hunter" action="Profile" onAction={() => router.push('/profile')} />
+        <HunterCard name={me.hunterName ?? hero.name} epithet={hero.epithet} accent={hero.accent} level={lp.level} power={power} rank={rank}
+          xpInto={lp.intoLevel} xpNeeded={lp.needed} ratio={lp.ratio} trialHint={trialHint} onPress={() => router.push('/profile')} />
       </Appear>
 
-      {/* Daily Quest — the System's voice */}
-      {daily ? (
-        <Appear index={4}>
-          <SystemWindow
-            title={penaltyActive ? 'Penalty Zone' : daily.progress.option === 1 ? 'Rest Ritual' : 'Daily Quest'}
-            accent={c.danger}
-            typeDelayMs={400}
-            right={<Pill icon={questDone ? 'checkmark-circle' : 'time-outline'} label={questDone ? 'Cleared' : deadline} color={questDone ? c.success : c.textDim} />}>
-            {penaltyActive ? (
-              <Text variant="callout" color={c.danger}>You missed a day. Clear the penalty in Quests and finish today’s quest to save your streak.</Text>
-            ) : null}
-            {activeSlots(daily).map((s, i) => (
-              <SlotRow key={`${s.exerciseId}-${i}`} slot={s} done={daily.progress[String(i)] ?? 0} color={c.danger} locked={questDone || quests?.streak.sickToday}
-                onSet={(v) => questProgress.mutate({ quest: daily, progress: { [String(i)]: v } })} />
-            ))}
-            <Button variant={penaltyActive ? 'primary' : 'secondary'} size="md" label={penaltyActive ? 'Open Penalty Zone' : 'All quests'} onPress={() => router.push('/quests')} />
-          </SystemWindow>
+      <Appear index={4} style={{ gap: spacing[3] }}>
+        <SectionHeader title="True Stats" />
+        <StatsChart stats={stats} />
+      </Appear>
+
+      {boss ? (
+        <Appear index={5} style={{ gap: spacing[3] }}>
+          <SectionHeader title="Weekly boss" action="Resets Monday" />
+          <BossTeaser hpPct={boss.hpPct} won={boss.won} prophecy={boss.prophecy} onPress={() => router.push('/quests')} />
         </Appear>
       ) : null}
-
-      {/* True Stats */}
-      <Appear index={5} style={{ gap: spacing[3] }}>
-        <SectionHeader title="True Stats" />
-        <Card>
-          {STAT_KEYS.map((k, i) => (
-            <StatRow key={k} label={k} value={stats[k]} color={statColors[k][0]} delayMs={300 + i * 80} />
-          ))}
-          <Text variant="caption" muted>Stats come from real tests and training data. They can't be bought.</Text>
-        </Card>
-      </Appear>
 
       {sessionStatus === 'demo' ? (
         <Appear index={6}>
@@ -224,15 +186,6 @@ export default function HomeScreen() {
         </Appear>
       ) : null}
     </Screen>
-  );
-}
-
-function Meta({ icon, text }: { icon: React.ComponentProps<typeof Icon>['name']; text: string }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-      <Icon name={icon} size={15} />
-      <Text variant="caption" dim>{text}</Text>
-    </View>
   );
 }
 
@@ -263,7 +216,9 @@ function SaveProgressCard() {
   const isGuest = useSession((s) => s.isGuest);
   const { workouts } = useWorkoutHistory();
   const [dismissedAt, setDismissedAt] = useState(() => storage.getNumber(SAVE_DISMISSED) ?? 0);
-  if (!isGuest || workouts.length === 0 || Date.now() - dismissedAt < SAVE_SNOOZE_MS) return null;
+  // read the clock once per mount, not on every render
+  const [openedAt] = useState(() => Date.now());
+  if (!isGuest || workouts.length === 0 || openedAt - dismissedAt < SAVE_SNOOZE_MS) return null;
   return (
     <Card tint={c.accent}>
       <Text variant="label" color={c.accentGlow}>SYSTEM</Text>
