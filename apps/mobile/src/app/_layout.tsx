@@ -132,7 +132,8 @@ function Bootstrap() {
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.dark.background }, animation: 'fade' }}>
         <Stack.Protected guard={g.app}>
           <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="programs" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="programs" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="program/[id]" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="exercises" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="exercise/[id]" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="workout" options={{ animation: 'slide_from_bottom', gestureEnabled: false }} />

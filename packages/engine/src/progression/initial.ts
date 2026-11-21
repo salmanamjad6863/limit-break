@@ -8,7 +8,7 @@ import type { Sex } from '../body';
 import { XP } from '../constants';
 import { percentileFromNorms, type NormAnchors, type Stats } from './ranks';
 
-export type Experience = 'beginner' | 'novice' | 'intermediate' | 'advanced';
+export type Experience = 'beginner' | 'novice' | 'intermediate' | 'advanced' | 'pro';
 
 export interface AssessmentResult {
   pushups: number;
@@ -27,6 +27,7 @@ const EXPERIENCE_ESTIMATE: Record<Experience, number> = {
   novice: 35,
   intermediate: 50,
   advanced: 65,
+  pro: 78,
 };
 
 export const STARTING_PLACEHOLDERS = { AGI: 20, VIT: 30, SPI: 10 } as const;

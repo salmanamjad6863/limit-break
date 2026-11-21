@@ -92,7 +92,7 @@ export interface GeneratedWorkout {
   unfilled: string[];
 }
 
-const TARGET_DIFFICULTY: Record<Experience, number> = { beginner: 1.5, novice: 2.5, intermediate: 3.5, advanced: 4.5 };
+const TARGET_DIFFICULTY: Record<Experience, number> = { beginner: 1.5, novice: 2.5, intermediate: 3.5, advanced: 4.5, pro: 5 };
 export const LOAD_STEP: Record<LoadType, number | null> = {
   barbell: 2.5, dumbbell: 2, kettlebell: 4, machine: 2.5, band: null, bodyweight: null, none: null,
 };

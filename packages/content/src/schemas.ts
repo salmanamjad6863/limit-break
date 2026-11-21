@@ -136,7 +136,7 @@ export const ProgramTemplate = z.object({
   name: z.string(),
   typeId: z.string(),
   summary: z.string(),
-  levels: z.array(z.enum(['beginner', 'novice', 'intermediate', 'advanced'])).min(1),
+  levels: z.array(z.enum(['beginner', 'novice', 'intermediate', 'advanced', 'pro'])).min(1),
   locations: z.array(z.enum(['HOME', 'GYM', 'HYBRID'])).min(1),
   goals: z.array(z.enum(['cut', 'maintain', 'recomp', 'bulk'])).min(1),
   daysPerWeek: z.array(z.number().int().min(2).max(6)).min(1),

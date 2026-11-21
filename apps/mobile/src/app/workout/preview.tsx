@@ -1,12 +1,15 @@
 import { workoutTypes } from '@lb/content';
+import type { WorkoutEdits } from '@lb/engine';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
-import { exerciseById, useToday, useWorkoutSession } from '@/features/training';
+import { LayoutAnimationConfig, LinearTransition } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
+import { exerciseById, exerciseName, useToday, useTraining, useTrainingProfile, useWorkoutSession } from '@/features/training';
+import { estimateKcal, ExerciseRow, LevelChip, ModeBar, setsRepsText } from '@/features/training/TrainCards';
 import { ExerciseMedia, MuscleMap } from '@/features/visuals';
-import { range, ROLE_LABEL } from '@/features/training/format';
 import { useTheme } from '@/theme';
-import { Appear, Button, Card, Icon, Page, Pill, PressableScale, ScreenHeader, SectionHeader, Text } from '@/ui';
+import { Appear, Button, Card, Icon, type IconName, Page, Pill, PressableScale, ScreenHeader, SectionHeader, Text } from '@/ui';
 
 const READINESS = [
   { label: 'Great', value: 85, icon: 'flash' as const },
@@ -14,16 +17,53 @@ const READINESS = [
   { label: 'Tired', value: 30, icon: 'bed-outline' as const },
 ];
 
-/** Today's workout overview + 3-tap readiness check (SYSTEMS.md §3.5) before starting. */
+const KIT_LABEL: Record<string, string> = {
+  dumbbells: 'Dumbbells', bands: 'Bands', barbell: 'Barbell', pull_up_bar: 'Pull-up bar', bench: 'Bench', rack: 'Rack',
+  machines: 'Machines', cable: 'Cable', kettlebell: 'Kettlebell', dip_bars: 'Dip bars',
+};
+
+/**
+ * Workout preview (docs/plans/TRAIN_REDESIGN.md §3.2): demo hero, muscles worked, kit, the mode bar,
+ * and an editable exercise list (swap · reorder · remove) before starting. Edits apply to today only.
+ */
 export default function WorkoutPreview() {
   const { c, spacing, radius } = useTheme();
   const [readiness, setReadiness] = useState<number | null>(null);
   const [guided, setGuided] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [swapping, setSwapping] = useState<number | null>(null);
   const today = useToday(readiness);
+  const profile = useTrainingProfile();
   const start = useWorkoutSession((s) => s.start);
+  const setMode = useTraining((s) => s.setMode);
+  const setEdits = useTraining((s) => s.setEdits);
   const w = today.workout;
   const type = workoutTypes.find((t) => t.id === today.program.typeId);
   const sets = w.exercises.reduce((n, e) => n + e.sets.filter((s) => s.kind === 'working').length, 0);
+  const first = w.exercises[0];
+  const kit = [...new Set(w.exercises.flatMap((pe) => {
+    const e = exerciseById.get(pe.exerciseId);
+    return [...(e?.equipment ?? []), ...(e?.anyOf?.slice(0, 1) ?? [])];
+  }))];
+  const edited = !!(today.edits.swap && Object.keys(today.edits.swap).length) || !!today.edits.remove?.length || !!today.edits.order?.length;
+
+  const edit = (next: WorkoutEdits) => setEdits(today.todayIso, w.dayId, next);
+  const move = (i: number, d: -1 | 1) => {
+    const order = [...w.templateSlots];
+    const j = i + d;
+    if (j < 0 || j >= order.length) return;
+    [order[i], order[j]] = [order[j]!, order[i]!];
+    edit({ ...today.edits, order });
+  };
+  const remove = (i: number) => {
+    if (w.exercises.length <= 1) return;
+    setSwapping(null);
+    edit({ ...today.edits, remove: [...(today.edits.remove ?? []), w.templateSlots[i]!] });
+  };
+  const swap = (i: number, exerciseId: string) => {
+    setSwapping(null);
+    edit({ ...today.edits, swap: { ...(today.edits.swap ?? {}), [w.templateSlots[i]!]: exerciseId } });
+  };
 
   return (
     <Page
@@ -34,33 +74,68 @@ export default function WorkoutPreview() {
           label="Start workout"
           icon="play"
           onPress={() => {
-            start(w, { programId: today.program.id, dayId: w.dayId });
+            // Guided for Beginner/Novice, the set table for everyone else (switchable mid-workout)
+            const view = profile.experience === 'beginner' || profile.experience === 'novice' ? 'guided' : 'log';
+            start(w, { programId: today.program.id, dayId: w.dayId, view });
             router.replace(guided ? '/workout/flow?kind=warmup' : '/workout/session');
           }}
         />
       }>
-      <Appear index={0} style={{ gap: spacing[2] }}>
-        {type ? <Pill icon={type.icon as never} label={type.name} color={type.color} /> : null}
+      {/* hero: the first exercise's demo (placeholder until the clip provider is connected) */}
+      {first ? (
+        <Appear index={0}>
+          <View>
+            <ExerciseMedia exerciseId={first.exerciseId} variant="hero" height={210} />
+            <View pointerEvents="none" style={{ position: 'absolute', left: spacing[3], top: spacing[3] }}>
+              <Pill icon="play-circle" label={`First up: ${exerciseName(first.exerciseId)}`} color="#FFFFFF" />
+            </View>
+          </View>
+        </Appear>
+      ) : null}
+
+      <Appear index={1} style={{ gap: spacing[2] }}>
+        <View style={{ flexDirection: 'row', gap: spacing[2], flexWrap: 'wrap' }}>
+          {type ? <Pill icon={type.icon as never} label={type.name} color={type.color} /> : null}
+          <LevelChip level={profile.experience} />
+        </View>
         <Text variant="title">{w.name}</Text>
-        <View style={{ flexDirection: 'row', gap: spacing[4] }}>
-          <Meta icon="time-outline" text={`~${w.estimatedMinutes} min`} />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing[4], rowGap: 4 }}>
+          <Meta icon="time-outline" text={`${w.estimatedMinutes} min`} />
           <Meta icon="list-outline" text={`${w.exercises.length} exercises`} />
           <Meta icon="layers-outline" text={`${sets} working sets`} />
+          <Meta icon="flame-outline" text={`~${estimateKcal(w.estimatedMinutes, profile.weightKg, today.mode.intensity)} kcal`} />
         </View>
       </Appear>
 
       <Appear index={1}>
-        <Card style={{ alignItems: 'center' }}>
-          <Text variant="label" muted style={{ alignSelf: 'flex-start' }}>Muscles today</Text>
-          <MuscleMap
-            primary={[...new Set(w.exercises.filter((pe) => pe.role !== 'core').flatMap((pe) => exerciseById.get(pe.exerciseId)?.primary ?? []))].filter((m) => m !== 'full_body')}
-            secondary={[...new Set(w.exercises.flatMap((pe) => { const e = exerciseById.get(pe.exerciseId); return [...(e?.secondary ?? []), ...(e?.primary.includes('full_body') ? ['full_body'] : [])]; }))]}
-            width={240}
-          />
+        <Card>
+          <View style={{ flexDirection: 'row', gap: spacing[4], alignItems: 'center' }}>
+            <MuscleMap
+              primary={[...new Set(w.exercises.filter((pe) => pe.role !== 'core').flatMap((pe) => exerciseById.get(pe.exerciseId)?.primary ?? []))].filter((m) => m !== 'full_body')}
+              secondary={[...new Set(w.exercises.flatMap((pe) => exerciseById.get(pe.exerciseId)?.secondary ?? []))]}
+              width={170}
+            />
+            <View style={{ flex: 1, gap: spacing[2] }}>
+              <Text variant="label" muted>You need</Text>
+              {kit.length ? kit.map((k) => (
+                <View key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Icon name="checkmark-circle-outline" size={14} color={c.success} />
+                  <Text variant="caption" dim>{KIT_LABEL[k] ?? k}</Text>
+                </View>
+              )) : <Text variant="caption" dim>No equipment</Text>}
+            </View>
+          </View>
         </Card>
       </Appear>
 
-      <Appear index={1}>
+      <Appear index={2} style={{ gap: spacing[3] }}>
+        <SectionHeader title="Adjust today" />
+        <Card>
+          <ModeBar mode={today.mode} onChange={(m) => setMode(today.todayIso, m)} />
+        </Card>
+      </Appear>
+
+      <Appear index={2}>
         <Card>
           <Text variant="heading">How do you feel today?</Text>
           <View style={{ flexDirection: 'row', gap: spacing[2] }}>
@@ -92,8 +167,8 @@ export default function WorkoutPreview() {
         </Card>
       </Appear>
 
-      <Appear index={2} style={{ gap: spacing[3] }}>
-        <SectionHeader title="The plan" />
+      <Appear index={3} style={{ gap: spacing[3] }}>
+        <SectionHeader title="The plan" action={editing ? 'Done' : 'Edit'} onAction={() => { setEditing((e) => !e); setSwapping(null); }} />
         <Card padded={false}>
           <PressableScale haptic="tap" onPress={() => setGuided((g) => !g)} accessibilityRole="switch" accessibilityState={{ checked: guided }} accessibilityLabel="Guided warm-up">
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[3], paddingHorizontal: spacing[4] }}>
@@ -105,26 +180,32 @@ export default function WorkoutPreview() {
               <Icon name={guided ? 'toggle' : 'toggle-outline'} size={28} color={guided ? c.warning : c.textMuted} />
             </View>
           </PressableScale>
-          {w.exercises.map((pe) => {
-            const e = exerciseById.get(pe.exerciseId)!;
-            const working = pe.sets.filter((s) => s.kind === 'working');
-            const s0 = working[0]!;
-            const target = s0.seconds ? `${range(s0.seconds)} s` : `${range(s0.reps)} reps`;
-            return (
-              <PressableScale key={pe.slotIndex} haptic="tap" onPress={() => router.push(`/exercise/${e.id}`)} accessibilityRole="button" accessibilityLabel={e.name}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[3], paddingHorizontal: spacing[4], borderTopWidth: 1, borderColor: c.border }}>
-                  <ExerciseMedia exerciseId={e.id} variant="thumb" height={44} />
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <Text variant="callout">{e.name}</Text>
-                    <Text variant="caption" muted>{`${ROLE_LABEL[pe.role]} · ${working.length} × ${target}${s0.loadKg != null ? ` · ${s0.loadKg} kg` : ''}`}</Text>
-                  </View>
-                  <Icon name="information-circle-outline" size={18} color={c.textMuted} />
-                </View>
-              </PressableScale>
-            );
-          })}
+          <LayoutAnimationConfig skipEntering>
+            <View style={{ paddingHorizontal: spacing[4], borderTopWidth: 1, borderColor: c.border }}>
+              {w.exercises.map((pe, i) => (
+                <Animated.View key={`${w.templateSlots[i]}`} layout={LinearTransition.duration(220)}>
+                  {editing ? (
+                    <EditRow
+                      exerciseId={pe.exerciseId} detail={setsRepsText(pe)} last={i === w.exercises.length - 1}
+                      canUp={i > 0} canDown={i < w.exercises.length - 1} canRemove={w.exercises.length > 1}
+                      onUp={() => move(i, -1)} onDown={() => move(i, 1)} onRemove={() => remove(i)}
+                      swapOpen={swapping === i} onSwap={() => setSwapping(swapping === i ? null : i)}
+                      alternatives={pe.alternatives.filter((id) => !w.exercises.some((x) => x.exerciseId === id))} onPick={(id) => swap(i, id)}
+                    />
+                  ) : (
+                    <ExerciseRow e={pe} index={i} last={i === w.exercises.length - 1} />
+                  )}
+                </Animated.View>
+              ))}
+            </View>
+          </LayoutAnimationConfig>
           <Row icon="leaf-outline" title="Cool-down" detail="About 4 min, follow along · offered when you finish" />
         </Card>
+        {edited ? (
+          <Button variant="ghost" size="md" icon="refresh" label="Reset to the coach's plan" onPress={() => { setSwapping(null); setEdits(today.todayIso, w.dayId, null); }} />
+        ) : editing ? (
+          <Text variant="caption" muted>Swap, reorder or remove exercises. Changes apply to today only.</Text>
+        ) : null}
         {w.unfilled.length ? (
           <Text variant="caption" color={c.warning}>{`Skipped ${w.unfilled.length} slot(s) that need equipment you don't have.`}</Text>
         ) : null}
@@ -133,10 +214,70 @@ export default function WorkoutPreview() {
   );
 }
 
-function Row({ icon, title, detail, first }: { icon: React.ComponentProps<typeof Icon>['name']; title: string; detail: string; first?: boolean }) {
+function EditRow(p: {
+  exerciseId: string; detail: string; last: boolean; canUp: boolean; canDown: boolean; canRemove: boolean;
+  onUp: () => void; onDown: () => void; onRemove: () => void;
+  swapOpen: boolean; onSwap: () => void; alternatives: string[]; onPick: (id: string) => void;
+}) {
+  const { c, spacing, radius } = useTheme();
+  const name = exerciseName(p.exerciseId);
+  return (
+    <View style={{ borderBottomWidth: p.last ? 0 : 1, borderColor: c.border }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], paddingVertical: spacing[2] + 2 }}>
+        <View style={{ gap: 2 }}>
+          <IconBtn icon="chevron-up" label={`Move ${name} up`} disabled={!p.canUp} onPress={p.onUp} />
+          <IconBtn icon="chevron-down" label={`Move ${name} down`} disabled={!p.canDown} onPress={p.onDown} />
+        </View>
+        <ExerciseMedia exerciseId={p.exerciseId} variant="thumb" height={48} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text variant="callout" numberOfLines={1} style={{ fontFamily: 'Inter_600SemiBold' }}>{name}</Text>
+          <Text variant="caption" color={c.accentGlow}>{p.detail}</Text>
+        </View>
+        <PressableScale haptic="tap" onPress={p.onSwap} disabled={!p.alternatives.length} accessibilityRole="button" accessibilityLabel={`Swap ${name}`}
+          accessibilityState={{ expanded: p.swapOpen, disabled: !p.alternatives.length }}
+          style={{ width: 38, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: radius.pill, borderWidth: 1, borderColor: p.swapOpen ? c.accent : c.border, backgroundColor: p.swapOpen ? `${c.accent}26` : 'transparent', opacity: p.alternatives.length ? 1 : 0.35 }}>
+          <Icon name="swap-horizontal" size={16} color={p.swapOpen ? c.text : c.textDim} />
+        </PressableScale>
+        <IconBtn icon="trash-outline" label={`Remove ${name}`} disabled={!p.canRemove} onPress={p.onRemove} color={c.danger} />
+      </View>
+      {p.swapOpen ? (
+        <View style={{ gap: 2, paddingBottom: spacing[3], paddingLeft: spacing[8] }}>
+          <Text variant="label" muted>Swap for</Text>
+          {p.alternatives.map((id) => {
+            const e = exerciseById.get(id);
+            return (
+              <PressableScale key={id} haptic="press" onPress={() => p.onPick(id)} accessibilityRole="button" accessibilityLabel={`Swap to ${exerciseName(id)}`}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: 6 }}>
+                  <ExerciseMedia exerciseId={id} variant="thumb" height={40} />
+                  <View style={{ flex: 1 }}>
+                    <Text variant="callout" numberOfLines={1}>{exerciseName(id)}</Text>
+                    <Text variant="micro" muted>{(e?.equipment.length ? e.equipment.map((k) => KIT_LABEL[k] ?? k).join(' · ') : 'Bodyweight')}</Text>
+                  </View>
+                  <Icon name="arrow-forward-circle-outline" size={20} color={c.accentGlow} />
+                </View>
+              </PressableScale>
+            );
+          })}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function IconBtn({ icon, label, onPress, disabled, color }: { icon: IconName; label: string; onPress: () => void; disabled?: boolean; color?: string }) {
+  const { c } = useTheme();
+  return (
+    <PressableScale haptic="tap" onPress={onPress} disabled={disabled} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }}
+      hitSlop={6} style={{ width: 30, height: 26, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.25 : 1 }}>
+      <Icon name={icon} size={18} color={color ?? c.textDim} />
+    </PressableScale>
+  );
+}
+
+function Row({ icon, title, detail }: { icon: IconName; title: string; detail: string }) {
   const { c, spacing } = useTheme();
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[3], paddingHorizontal: spacing[4], borderTopWidth: first ? 0 : 1, borderColor: c.border }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[3], paddingHorizontal: spacing[4], borderTopWidth: 1, borderColor: c.border }}>
       <Icon name={icon} size={18} />
       <View style={{ flex: 1 }}>
         <Text variant="callout" dim>{title}</Text>
@@ -146,7 +287,7 @@ function Row({ icon, title, detail, first }: { icon: React.ComponentProps<typeof
   );
 }
 
-function Meta({ icon, text }: { icon: React.ComponentProps<typeof Icon>['name']; text: string }) {
+function Meta({ icon, text }: { icon: IconName; text: string }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
       <Icon name={icon} size={15} />

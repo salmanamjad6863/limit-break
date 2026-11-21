@@ -18,9 +18,9 @@ export interface StatNorms {
 
 export const KEY_LIFTS = ['back-squat', 'bench-press', 'deadlift', 'overhead-press'] as const;
 
-const EXPERIENCE_ESTIMATE: Record<Experience, number> = { beginner: 20, novice: 35, intermediate: 50, advanced: 65 };
+const EXPERIENCE_ESTIMATE: Record<Experience, number> = { beginner: 20, novice: 35, intermediate: 50, advanced: 65, pro: 78 };
 /** Weekly hard-set target across the whole body (§3.2 tiers × ~5 muscle groups). */
-export const WEEKLY_HARD_SET_TARGET: Record<Experience, number> = { beginner: 30, novice: 40, intermediate: 50, advanced: 60 };
+export const WEEKLY_HARD_SET_TARGET: Record<Experience, number> = { beginner: 30, novice: 40, intermediate: 50, advanced: 60, pro: 70 };
 
 export function bySex(value: number, table: BySex, sex: Sex): number {
   if (sex === 'male') return percentileFromNorms(value, table.male);

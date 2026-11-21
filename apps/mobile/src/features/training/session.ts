@@ -39,15 +39,30 @@ export interface ActiveSession {
   notes?: string | null;
   /** frozen on the first Save tap, so retries (even after the 03:00 rollover) keep the same game day */
   finishedAt?: string | null;
+  /** player layout: one exercise at a time (guided) or every exercise as a set table (log) */
+  view?: 'guided' | 'log';
+}
+
+/** Time of the last logged set (null before the first set). */
+export function lastActivityAt(a: ActiveSession): string | null {
+  let last: string | null = null;
+  for (const list of Object.values(a.logs)) for (const l of list) if (!last || l.completedAt > last) last = l.completedAt;
+  return last;
 }
 
 interface SessionState {
   active: ActiveSession | null;
-  start: (w: GeneratedWorkout, meta: { programId: string | null; dayId: string | null }) => void;
+  start: (w: GeneratedWorkout, meta: { programId: string | null; dayId: string | null; view?: 'guided' | 'log' }) => void;
   logSet: (exIndex: number, entry: Omit<LoggedEntry, 'id' | 'completedAt'>) => void;
   undoLast: (exIndex: number) => void;
   setLoad: (exIndex: number, setIndex: number, loadKg: number | null) => void;
-  swap: (exIndex: number, exerciseId: string) => void;
+  /** loadKg: suggested working load for the new exercise (startingLoad), null = pick a weight */
+  swap: (exIndex: number, exerciseId: string, loadKg?: number | null) => void;
+  /** one more working set like the last one */
+  addSet: (exIndex: number) => void;
+  setView: (view: 'guided' | 'log') => void;
+  /** finish as of a given time (stale sessions finish at their last set) */
+  finishAt: (iso: string) => void;
   go: (index: number) => void;
   startRest: (seconds: number) => void;
   clearRest: () => void;
@@ -69,6 +84,7 @@ export const useWorkoutSession = create<SessionState>()(
           active: {
             id: newId(), kind: 'program', programId: meta.programId, dayId: meta.dayId, name: w.name,
             startedAt: new Date().toISOString(), exercises: clone(w.exercises), logs: {}, current: 0, restUntil: null, restTotal: 0, coachNote: null,
+            view: meta.view ?? 'guided',
           },
         }),
       logSet: (exIndex, entry) =>
@@ -111,14 +127,26 @@ export const useWorkoutSession = create<SessionState>()(
           if (st) st.loadKg = loadKg;
           return { active: { ...s.active, exercises } };
         }),
-      swap: (exIndex, exerciseId) =>
+      addSet: (exIndex) =>
+        set((s) => {
+          if (!s.active) return s;
+          const exercises = clone(s.active.exercises);
+          const pe = exercises[exIndex];
+          const last = pe?.sets.filter((x) => x.kind === 'working').at(-1) ?? pe?.sets.at(-1);
+          if (!pe || !last || pe.sets.length >= 12) return s;
+          pe.sets.push({ ...last, kind: 'working' });
+          return { active: { ...s.active, exercises } };
+        }),
+      setView: (view) => set((s) => (s.active ? { active: { ...s.active, view } } : s)),
+      finishAt: (iso) => set((s) => (s.active ? { active: { ...s.active, finishedAt: iso } } : s)),
+      swap: (exIndex, exerciseId, loadKg = null) =>
         set((s) => {
           if (!s.active) return s;
           const exercises = clone(s.active.exercises);
           const pe = exercises[exIndex]!;
           pe.alternatives = [pe.exerciseId, ...pe.alternatives.filter((x) => x !== exerciseId)];
           pe.exerciseId = exerciseId;
-          pe.sets = pe.sets.filter((x) => x.kind === 'working').map((x) => ({ ...x, loadKg: null }));
+          pe.sets = pe.sets.filter((x) => x.kind === 'working').map((x) => ({ ...x, loadKg }));
           return { active: { ...s.active, exercises, logs: { ...s.active.logs, [exIndex]: [] }, coachNote: null } };
         }),
       go: (index) => set((s) => (s.active ? { active: { ...s.active, current: index, coachNote: null } } : s)),

@@ -11,7 +11,7 @@ import { useQuestActions, useQuests } from '@/features/quests';
 import { SlotRow } from '@/features/quests/SlotRow';
 import { useLocalHunter, useMe, useProgression } from '@/features/progression';
 import { useSession } from '@/features/session';
-import { useToday, useTraining, useTrainingProfile, useWorkoutHistory, useWorkoutSession } from '@/features/training';
+import { useToday, useTraining, useTrainingProfile, useUpdateTraining, useWorkoutHistory, useWorkoutSession } from '@/features/training';
 import { useAnalyticsConsent } from '@/lib/analytics';
 import { env } from '@/lib/env';
 import { storage } from '@/lib/storage';
@@ -89,6 +89,7 @@ export default function HomeScreen() {
       {/* Hunter card */}
       <ConsentCard />
       <SaveProgressCard />
+      <TrainingProfileCard />
       <Appear index={1}>
         <PressableScale haptic="tap" scaleTo={0.98} onPress={() => router.push('/profile')} accessibilityRole="button" accessibilityLabel="Open hunter profile">
         <Card tint={hero.accent}>
@@ -273,6 +274,38 @@ function SaveProgressCard() {
         <View style={{ flex: 1 }}>
           <Button variant="secondary" size="md" label="Later" onPress={() => { const now = Date.now(); storage.set(SAVE_DISMISSED, now); setDismissedAt(now); }} />
         </View>
+      </View>
+    </Card>
+  );
+}
+
+/**
+ * Profiles created before male/female became required (docs/plans/TRAIN_REDESIGN.md §4.2) choose once:
+ * it sets starting weights and strength levels. Shown until answered.
+ */
+function TrainingProfileCard() {
+  const { c, spacing } = useTheme();
+  const profile = useTrainingProfile();
+  const save = useUpdateTraining();
+  const today = useToday();
+  if (profile.sex !== 'unspecified') return null;
+  const choose = (sex: 'male' | 'female') =>
+    save.mutate({
+      input: {
+        experience: profile.experience, location: profile.location, equipment: profile.equipment, injuries: profile.injuries,
+        sessionMinutes: profile.sessionMinutes as 15 | 30 | 45 | 60 | 75 | 90,
+        weekdays: today.weekdays, workoutTime: profile.workoutTime ?? null, sex,
+      },
+      nextWorkout: today.workout.name,
+    });
+  return (
+    <Card tint={c.accent}>
+      <Text variant="label" color={c.accentGlow}>SYSTEM</Text>
+      <Text variant="headline">Set your training profile</Text>
+      <Text variant="callout" dim>Workouts now set your starting weights and strength levels from your profile. Every program stays open to everyone.</Text>
+      <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+        <View style={{ flex: 1 }}><Button size="md" label="Male" loading={save.isPending} onPress={() => choose('male')} /></View>
+        <View style={{ flex: 1 }}><Button size="md" label="Female" loading={save.isPending} onPress={() => choose('female')} /></View>
       </View>
     </Card>
   );

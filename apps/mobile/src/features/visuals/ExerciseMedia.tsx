@@ -8,10 +8,14 @@ import { useTheme } from '@/theme';
 import { Icon, PressableScale, Pill, Text } from '@/ui';
 import { AuraLayer, type AuraState } from './AuraLayer';
 import { bundledMedia } from './bundled.generated';
-import { MuscleMap } from './MuscleMap';
+import { bestSide, MuscleMap } from './MuscleMap';
 import { hasTrainer, TrainerFigure } from './TrainerFigure';
 
 type Kind = 'loop' | 'side' | 'thumb';
+
+const EQUIP_ICON: Partial<Record<string, React.ComponentProps<typeof Icon>['name']>> = {
+  barbell: 'barbell-outline', dumbbell: 'barbell-outline', kettlebell: 'barbell-outline', machine: 'cog-outline', band: 'git-commit-outline', bodyweight: 'body-outline',
+};
 type Source = number | { uri: string };
 
 /** Bundled Tier-1 file first (offline, no bandwidth), then the CDN (VISUALS.md §3.5). */
@@ -65,7 +69,13 @@ export function ExerciseMedia({
         {thumb && !failed ? (
           <Image source={thumb} style={{ width: h, height: h }} contentFit="cover" onError={() => setFailed(true)} />
         ) : ex ? (
-          <MuscleMap primary={ex.primary} secondary={ex.secondary} width={h * 1.6} showLabels={false} />
+          // placeholder poster until a clip provider is plugged in: the worked side of the body + equipment badge
+          <>
+            <MuscleMap primary={ex.primary} secondary={ex.secondary} side={bestSide(ex.primary)} width={h * 0.62} showLabels={false} />
+            <View style={{ position: 'absolute', right: 3, bottom: 3, width: h * 0.3, height: h * 0.3, borderRadius: h * 0.1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.45)' }}>
+              <Icon name={EQUIP_ICON[ex.loadType] ?? 'body-outline'} size={h * 0.18} color={c.textDim} />
+            </View>
+          </>
         ) : null}
       </View>
     );

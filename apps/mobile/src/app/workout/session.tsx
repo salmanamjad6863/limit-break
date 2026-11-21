@@ -4,13 +4,18 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { endRestActivity, startRestActivity, updateRestActivity, useGymMode } from '@/features/depth';
 import { haptics } from '@/lib/haptics';
+import { startingLoad } from '@lb/engine';
 import {
   exerciseById,
   exerciseName,
   patternLabel,
+  StaleSessionCard,
+  usePersonalContext,
+  useStaleSession,
   useTraining,
   useWorkoutSession,
 } from '@/features/training';
+import { LogView } from '@/features/training/LogView';
 import { ExerciseMedia } from '@/features/visuals';
 import { mmss, ROLE_LABEL } from '@/features/training/format';
 import { SetRow } from '@/features/training/SetRow';
@@ -31,6 +36,10 @@ export default function WorkoutSession() {
   const startRest = useWorkoutSession((s) => s.startRest);
   const clearRest = useWorkoutSession((s) => s.clearRest);
   const end = useWorkoutSession((s) => s.end);
+  const addSet = useWorkoutSession((s) => s.addSet);
+  const setView = useWorkoutSession((s) => s.setView);
+  const stale = useStaleSession();
+  const ctx = usePersonalContext();
   const lastSet = useTraining((s) => s.lastSet);
   const { flagPain } = usePainFlags();
   const [now, setNow] = useState(Date.now());
@@ -88,13 +97,27 @@ export default function WorkoutSession() {
       ? isLast
         ? 'Finish workout'
         : exerciseName(active.exercises[i + 1]!.exerciseId)
-      : `${ex?.name ?? 'Exercise'} · set ${logs.length + 1}`;
+      : `${ex?.name ?? 'Exercise'} · ${setLabel(pe.sets, logs.length)}`;
     const payload = { exerciseName: ex?.name ?? 'Rest', secondsLeft: restLeftNow, upNext: nextLabel };
     void startRestActivity(payload);
     void updateRestActivity(payload);
   }, [active, restingNow, restLeftNow]);
 
   if (!active) return <Redirect href="/train" />;
+
+  // an abandoned session asks "save or discard?" instead of showing a 1000-minute timer
+  if (stale) {
+    return (
+      <Page header={<View style={{ paddingHorizontal: spacing[4], paddingTop: spacing[2] }}>
+        <PressableScale haptic="tap" onPress={() => router.dismissTo('/train')} accessibilityRole="button" accessibilityLabel="Back to Train"
+          style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: c.surfaceRaised }}>
+          <Icon name="close" size={20} color={c.text} />
+        </PressableScale>
+      </View>}>
+        <StaleSessionCard a={stale.active} finishAt={stale.finishAt} canSave={stale.canSave} />
+      </Page>
+    );
+  }
 
   const i = active.current;
   const pe = active.exercises[i]!;
@@ -117,8 +140,66 @@ export default function WorkoutSession() {
     ? isLast
       ? 'Finish workout'
       : exerciseName(active.exercises[i + 1]!.exerciseId)
-    : `${ex.name} · set ${nextSetIndex + 1}`;
+    : `${ex.name} · ${setLabel(pe.sets, nextSetIndex)}`;
   const upNextId = exerciseDone ? (isLast ? null : active.exercises[i + 1]!.exerciseId) : ex.id;
+  const view = active.view ?? 'guided';
+  const totalSets = active.exercises.reduce((n, x) => n + x.sets.length, 0);
+  const loggedSets = Object.values(active.logs).reduce((n, l) => n + l.length, 0);
+
+  /** log a set (either view), then rest: shorter after warm-ups, capped between exercises */
+  const logAndRest = (k: number, setIndex: number, e: { reps: number | null; loadKg: number | null; rir: number | null; durationS: number | null; setType?: 'normal' | 'drop' | 'failure' }) => {
+    const x = active.exercises[k]!;
+    const planned = x.sets[setIndex]!;
+    if (k !== i) go(k);
+    logSet(k, { setIndex, isWarmup: planned.kind === 'warmup', ...e });
+    const finishedExercise = setIndex === x.sets.length - 1;
+    const lastExercise = k === active.exercises.length - 1;
+    if (!finishedExercise) startRest(planned.kind === 'warmup' ? 60 : x.restSeconds);
+    else if (!lastExercise) startRest(Math.min(x.restSeconds, 120));
+  };
+  const swapTo = (id: string) => {
+    const next = exerciseById.get(id);
+    const firstWorking = pe.sets.find((x) => x.kind === 'working') ?? pe.sets[0];
+    swap(i, id, next && firstWorking ? startingLoad(next, firstWorking, ctx) : null);
+  };
+  const finishButton = (
+    <Button
+      size="md"
+      icon="flag"
+      label={doneCount === active.exercises.length ? 'Finish' : 'Finish early'}
+      onPress={() => router.replace('/workout/flow?kind=cooldown')}
+    />
+  );
+  const restCard = (compact: boolean) => (
+    <Card tint={c.accent}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[4] }}>
+        <Ring
+          ratio={restLeft / Math.max(1, active.restTotal || restLeft)}
+          size={compact ? 56 : gymMode ? 112 : 84}
+          stroke={compact ? 6 : gymMode ? 10 : 8}
+          color={c.accent}
+        >
+          <Text variant="stat" style={{ fontSize: compact ? 15 : gymMode ? 28 : 22, lineHeight: compact ? 18 : gymMode ? 32 : 26 }}>
+            {mmss(restLeft)}
+          </Text>
+        </Ring>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text variant="label" color={c.accentGlow}>Rest</Text>
+          <Text variant="caption" muted>Up next</Text>
+          <Text variant="callout" numberOfLines={1}>{upNext}</Text>
+        </View>
+        {!compact && upNextId && upNextId !== ex.id ? <ExerciseMedia exerciseId={upNextId} variant="thumb" height={56} /> : null}
+      </View>
+      <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+        <View style={{ flex: 1 }}>
+          <Button variant="secondary" size="md" label="+30 s" onPress={() => startRest(restLeft + 30)} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Button variant="secondary" size="md" label="Skip rest" onPress={clearRest} />
+        </View>
+      </View>
+    </Card>
+  );
 
   return (
     <View style={{ flex: 1 }}>
@@ -149,12 +230,13 @@ export default function WorkoutSession() {
                 <Text
                   variant="caption"
                   muted
-                >{`Exercise ${i + 1} of ${active.exercises.length}`}</Text>
+                >{view === 'log' ? `${loggedSets} of ${totalSets} sets` : `Exercise ${i + 1} of ${active.exercises.length}`}</Text>
               </View>
               {gymMode ? <Pill icon="phone-landscape-outline" label="Gym" color={c.mana} /> : null}
               <Pill icon="time-outline" label={mmss(elapsed)} />
             </View>
-            <View style={{ flexDirection: 'row', gap: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
+            <View style={{ flex: 1, flexDirection: 'row', gap: 4 }}>
               {active.exercises.map((x, k) => {
                 const full = (active.logs[k]?.length ?? 0) >= x.sets.length;
                 return (
@@ -176,9 +258,12 @@ export default function WorkoutSession() {
                 );
               })}
             </View>
+            <ViewToggle view={view} onChange={setView} />
+            </View>
           </View>
         }
         footer={
+          view === 'log' ? (resting ? restCard(true) : finishButton) : (
           <View style={{ flexDirection: 'row', gap: spacing[2] }}>
             <View style={{ flex: 1 }}>
               <Button
@@ -192,12 +277,7 @@ export default function WorkoutSession() {
             </View>
             <View style={{ flex: 2 }}>
               {isLast ? (
-                <Button
-                  size="md"
-                  icon="flag"
-                  label={doneCount === active.exercises.length ? 'Finish' : 'Finish early'}
-                  onPress={() => router.replace('/workout/flow?kind=cooldown')}
-                />
+                finishButton
               ) : (
                 <Button
                   size="md"
@@ -208,8 +288,20 @@ export default function WorkoutSession() {
               )}
             </View>
           </View>
+          )
         }
       >
+        {view === 'log' && active.coachNote ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], padding: spacing[3], borderRadius: radius.md, backgroundColor: `${c.mana}1A` }}>
+            <Icon name="sparkles" size={16} color={c.mana} />
+            <Text variant="callout" color={c.mana} style={{ flex: 1 }}>{active.coachNote}</Text>
+          </View>
+        ) : null}
+        {view === 'log' ? (
+          <LogView active={active} lastSet={lastSet} notes={notes} onLog={logAndRest} onAddSet={addSet}
+            onSwap={(k) => { if (k !== i) go(k); setSheet('swap'); }} />
+        ) : (
+        <>
         <Card>
           <View style={{ flexDirection: 'row', gap: spacing[2], flexWrap: 'wrap' }}>
             <Pill
@@ -316,53 +408,14 @@ export default function WorkoutSession() {
               large={gymMode}
               onLog={(e) => {
                 haptics.press();
-                logSet(i, { setIndex: k, isWarmup: s.kind === 'warmup', ...e });
-                const finishedExercise = k === pe.sets.length - 1;
-                if (!finishedExercise) startRest(s.kind === 'warmup' ? 60 : pe.restSeconds);
-                else if (!isLast) startRest(Math.min(pe.restSeconds, 120));
+                logAndRest(i, k, e);
               }}
             />
           ))}
         </View>
 
         {resting ? (
-          <Card tint={c.accent}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[4] }}>
-              <Ring
-                ratio={restLeft / Math.max(1, active.restTotal || restLeft)}
-                size={gymMode ? 112 : 84}
-                stroke={gymMode ? 10 : 8}
-                color={c.accent}
-              >
-                <Text variant="stat" style={{ fontSize: gymMode ? 28 : 22, lineHeight: gymMode ? 32 : 26 }}>
-                  {mmss(restLeft)}
-                </Text>
-              </Ring>
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text variant="label" color={c.accentGlow}>
-                  Rest
-                </Text>
-                <Text variant="caption" muted>
-                  Up next
-                </Text>
-                <Text variant="callout">{upNext}</Text>
-              </View>
-              {upNextId && upNextId !== ex.id ? <ExerciseMedia exerciseId={upNextId} variant="thumb" height={56} /> : null}
-            </View>
-            <View style={{ flexDirection: 'row', gap: spacing[2] }}>
-              <View style={{ flex: 1 }}>
-                <Button
-                  variant="secondary"
-                  size="md"
-                  label="+30 s"
-                  onPress={() => startRest(restLeft + 30)}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Button variant="secondary" size="md" label="Skip rest" onPress={clearRest} />
-              </View>
-            </View>
-          </Card>
+          restCard(false)
         ) : exerciseDone ? (
           <Card>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
@@ -374,6 +427,8 @@ export default function WorkoutSession() {
             </Text>
           </Card>
         ) : null}
+        </>
+        )}
       </Page>
       {sheet !== 'none' ? (
         <View style={{ position: 'absolute', inset: 0, justifyContent: 'flex-end' }}>
@@ -446,7 +501,7 @@ export default function WorkoutSession() {
                       haptic="press"
                       onPress={() => {
                         if (sheet === 'pain') flagPain(ex.id);
-                        swap(i, id);
+                        swapTo(id);
                         setSheet('none');
                       }}
                       accessibilityRole="button"
@@ -520,4 +575,31 @@ function Chip({
       </Text>
     </PressableScale>
   );
+}
+
+function ViewToggle({ view, onChange }: { view: 'guided' | 'log'; onChange: (v: 'guided' | 'log') => void }) {
+  const { c, radius } = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', padding: 2, borderRadius: radius.pill, backgroundColor: c.surfaceRaised }} accessibilityRole="radiogroup" accessibilityLabel="Workout view">
+      {(['guided', 'log'] as const).map((v) => {
+        const on = v === view;
+        return (
+          <PressableScale key={v} haptic="tap" onPress={() => onChange(v)} accessibilityRole="radio" accessibilityState={{ selected: on }}
+            accessibilityLabel={v === 'guided' ? 'Guided: one exercise at a time' : 'Log: every set in a table'}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, height: 30, borderRadius: radius.pill, backgroundColor: on ? c.accent : 'transparent' }}>
+            <Icon name={v === 'guided' ? 'play-circle-outline' : 'list'} size={14} color={on ? '#FFFFFF' : c.textDim} />
+            <Text variant="caption" color={on ? '#FFFFFF' : c.textDim}>{v === 'guided' ? 'Guided' : 'Log'}</Text>
+          </PressableScale>
+        );
+      })}
+    </View>
+  );
+}
+
+/** "warm-up" or "set 2" (working sets numbered on their own, like the table) */
+function setLabel(sets: { kind: 'warmup' | 'working' }[], index: number): string {
+  const s = sets[index];
+  if (!s) return 'next set';
+  if (s.kind === 'warmup') return 'warm-up';
+  return `set ${sets.slice(0, index + 1).filter((x) => x.kind === 'working').length}`;
 }

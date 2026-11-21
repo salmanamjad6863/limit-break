@@ -53,7 +53,7 @@ const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 /** Everything about training the user can change at any time (Training settings screen). */
 export const TrainingSettingsInput = z.object({
-  experience: z.enum(['beginner', 'novice', 'intermediate', 'advanced']),
+  experience: z.enum(['beginner', 'novice', 'intermediate', 'advanced', 'pro']),
   location: z.enum(['HOME', 'GYM', 'HYBRID']),
   equipment: z.array(z.string()).max(50),
   injuries: z.array(z.string()).max(20),
@@ -62,6 +62,8 @@ export const TrainingSettingsInput = z.object({
   weekdays: z.array(z.number().int().min(0).max(6)).min(2).max(6).refine((w) => new Set(w).size === w.length, 'duplicate weekday'),
   /** when you usually train; reminders fire 30 min before. null = no reminders */
   workoutTime: hhmm.nullable(),
+  /** set once by profiles created before male/female became required; optional otherwise */
+  sex: z.enum(['male', 'female']).optional(),
 });
 export type TrainingSettingsInput = z.infer<typeof TrainingSettingsInput>;
 

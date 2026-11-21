@@ -84,9 +84,15 @@ export default function TrainingSettings() {
         onChange={(location) => set({ location, ...(location === 'GYM' ? { equipment: FULL_GYM } : {}) })} />
       <Chips options={EQUIPMENT} value={s.equipment} onToggle={(v) => toggle('equipment', v)} />
 
-      <SectionHeader title="Experience" />
-      <Segmented options={[{ value: 'beginner', label: 'New' }, { value: 'novice', label: 'Novice' }, { value: 'intermediate', label: 'Inter.' }, { value: 'advanced', label: 'Adv.' }]}
+      <SectionHeader title="Level" />
+      <Segmented options={[{ value: 'beginner', label: 'Begin.' }, { value: 'novice', label: 'Novice' }, { value: 'intermediate', label: 'Inter.' }, { value: 'advanced', label: 'Adv.' }, { value: 'pro', label: 'Pro' }]}
         value={s.experience} onChange={(experience) => set({ experience })} />
+      <Text variant="caption" muted>Sets, reps and effort adapt to your level. Change it any time; the System suggests moving up when you’re ready.</Text>
+
+      <SectionHeader title="Training profile" />
+      <Segmented options={[{ value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }]}
+        value={s.sex ?? (profile.sex === 'unspecified' ? undefined : profile.sex)} onChange={(sex) => set({ sex })} />
+      <Text variant="caption" muted>Used for starting weights and strength levels. Every program is open to everyone.</Text>
 
       <SectionHeader title="Injuries to work around" />
       <Chips options={INJURIES} value={s.injuries} onToggle={(v) => toggle('injuries', v)} accent={c.danger} />

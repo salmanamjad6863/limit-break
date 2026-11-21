@@ -89,30 +89,49 @@ function box(s: Shape, k: number, color: string, key: string) {
   );
 }
 
+/** The view (front or back) that shows more of these muscles: single-figure thumbnails use it. */
+export function bestSide(primary: readonly string[]): 'front' | 'back' {
+  let front = 0;
+  let backN = 0;
+  for (const r of primary.flatMap(regionsFor)) for (const s of REGIONS[r] ?? []) (s.x >= 100 ? backN++ : front++);
+  return backN > front ? 'back' : 'front';
+}
+
 export function MuscleMap({
   primary,
   secondary = [],
   width = 200,
   showLabels = true,
+  side = 'both',
 }: {
   primary: readonly string[];
   secondary?: readonly string[];
   width?: number;
   showLabels?: boolean;
+  /** one figure only (thumbnails, posters); `width` is then the width of that one figure */
+  side?: 'both' | 'front' | 'back';
 }) {
   const { c } = useTheme();
-  const scale = width / 200;
+  const single = side !== 'both';
+  const scale = width / (single ? 100 : 200);
   const height = 170 * scale;
   const prim = new Set(primary.flatMap(regionsFor));
   const sec = new Set(secondary.flatMap(regionsFor).filter((r) => !prim.has(r)));
+  // single figure: keep that half of the design space and shift it to x 0–100
+  const dx = side === 'back' ? -100 : 0;
+  const keep = (s: Shape) => !single || (side === 'back' ? s.x >= 100 : s.x < 100);
+  const at = (s: Shape): Shape => (dx ? { ...s, x: s.x + dx } : s);
+  const silhouette = SILHOUETTE.filter(keep).map(at);
+  const regions = Object.entries(REGIONS).map(([name, shapes]) => [name, shapes.filter(keep).map(at)] as const);
+  const singleLabel = side === 'back' ? 'Back' : 'Front';
   return (
     <View style={{ alignItems: 'center', gap: 4 }} accessibilityRole="image"
       accessibilityLabel={`Muscles worked: ${primary.join(', ').replace(/_/g, ' ')}${secondary.length ? `; also ${secondary.join(', ').replace(/_/g, ' ')}` : ''}`}>
       {width <= THUMB_MAX ? (
         // thumbnails: plain views, no GPU surface (lists of maps stay smooth on low-end Android)
         <View style={{ width, height }}>
-          {SILHOUETTE.map((s, i) => box(s, scale, 'rgba(255,255,255,0.06)', `s${i}`))}
-          {Object.entries(REGIONS).flatMap(([name, shapes]) =>
+          {silhouette.map((s, i) => box(s, scale, 'rgba(255,255,255,0.06)', `s${i}`))}
+          {regions.flatMap(([name, shapes]) =>
             shapes.map((s, i) => box(s, scale, prim.has(name) ? c.accent : sec.has(name) ? `${c.accent}66` : 'rgba(255,255,255,0.09)', `${name}${i}`)),
           )}
         </View>
@@ -120,8 +139,8 @@ export function MuscleMap({
         /* static drawing: on web, free the WebGL context after painting (browsers cap live contexts at ~16) */
         <Canvas style={{ width, height }} __destroyWebGLContextAfterRender={Platform.OS === 'web'}>
           <Group transform={[{ scale }]}>
-            {SILHOUETTE.map((s, i) => draw(s, 'rgba(255,255,255,0.06)', `s${i}`))}
-            {Object.entries(REGIONS).flatMap(([name, shapes]) =>
+            {silhouette.map((s, i) => draw(s, 'rgba(255,255,255,0.06)', `s${i}`))}
+            {regions.flatMap(([name, shapes]) =>
               shapes.map((s, i) => draw(s, prim.has(name) ? c.accent : sec.has(name) ? `${c.accent}66` : 'rgba(255,255,255,0.09)', `${name}${i}`)),
             )}
           </Group>
@@ -129,8 +148,12 @@ export function MuscleMap({
       )}
       {showLabels ? (
         <View style={{ flexDirection: 'row', width, justifyContent: 'space-around' }}>
-          <Text variant="micro" muted>Front</Text>
-          <Text variant="micro" muted>Back</Text>
+          {single ? <Text variant="micro" muted>{singleLabel}</Text> : (
+            <>
+              <Text variant="micro" muted>Front</Text>
+              <Text variant="micro" muted>Back</Text>
+            </>
+          )}
         </View>
       ) : null}
     </View>
