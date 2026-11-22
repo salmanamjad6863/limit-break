@@ -7,6 +7,7 @@
  *   node scripts/smoke.mjs                         # API at http://localhost:8787
  *   SMOKE_API_URL=https://… node scripts/smoke.mjs  # deployed API
  */
+
 import { randomBytes, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
