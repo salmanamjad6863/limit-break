@@ -158,14 +158,14 @@ export default function HomeScreen() {
 
       <Appear index={1}>{upNext}</Appear>
 
-      <Appear index={2}>
-        <TodayList items={items} />
-      </Appear>
-
-      <Appear index={3} style={{ gap: spacing[3] }}>
+      <Appear index={2} style={{ gap: spacing[3] }}>
         <SectionHeader title="Your hunter" action="Profile" onAction={() => router.push('/profile')} />
         <HunterCard name={me.hunterName ?? hero.name} epithet={hero.epithet} accent={hero.accent} level={lp.level} power={power} rank={rank}
           xpInto={lp.intoLevel} xpNeeded={lp.needed} ratio={lp.ratio} trialHint={trialHint} onPress={() => router.push('/profile')} />
+      </Appear>
+
+      <Appear index={3}>
+        <TodayList items={items} />
       </Appear>
 
       <Appear index={4} style={{ gap: spacing[3] }}>

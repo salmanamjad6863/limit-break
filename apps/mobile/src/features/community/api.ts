@@ -4,12 +4,14 @@
  * buttons that would fail.
  */
 import type {
-  BoardId, BoardResponse, CommentDto, CommunityMeResponse, CreateCommentInput, CreatePostInput, Division, FeedResponse, FeedTab,
+  HunterCardDto,
+  BoardId, BoardResponse, CommentDto, CommentsResponse, CommunityMeResponse, CreateCommentInput, CreatePostInput, Division, FeedResponse, FeedTab,
   PostDto, PublicProfileResponse, ReportInput, Sticker, UpdateCommunityProfileInput,
 } from '@lb/contracts';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { useSession } from '@/features/session';
-import { ApiError, api, unwrap } from '@/lib/api';
+import { ApiError, api } from '@/lib/api';
 import { newId } from '@/lib/id';
 
 export const communityKeys = {
@@ -21,6 +23,29 @@ export const communityKeys = {
   hunter: (handle: string) => ['community', 'hunter', handle] as const,
   board: (board: BoardId, division: Division) => ['community', 'board', board, division] as const,
 };
+
+type CommentsData = InfiniteData<CommentsResponse, string | undefined>;
+
+/** Append a comment to the last loaded page (optimistic send). */
+function appendComment(qc: ReturnType<typeof useQueryClient>, postId: string, c: CommentDto) {
+  qc.setQueryData<CommentsData>(communityKeys.comments(postId), (d) => {
+    if (!d?.pages.length) return { pages: [{ comments: [c], nextCursor: null }], pageParams: [undefined] };
+    const pages = d.pages.map((pg, i) => (i === d.pages.length - 1 ? { ...pg, comments: [...pg.comments, c] } : pg));
+    return { ...d, pages };
+  });
+}
+
+/** Remove a comment from whichever page holds it (optimistic delete / undo). */
+function removeComment(qc: ReturnType<typeof useQueryClient>, postId: string, id: string) {
+  qc.setQueryData<CommentsData>(communityKeys.comments(postId), (d) =>
+    d ? { ...d, pages: d.pages.map((pg) => ({ ...pg, comments: pg.comments.filter((x) => x.id !== id) })) } : d);
+}
+
+/** Swap the optimistic `sending:` row for the real server comment. */
+function replaceComment(qc: ReturnType<typeof useQueryClient>, postId: string, fromId: string, next: CommentDto) {
+  qc.setQueryData<CommentsData>(communityKeys.comments(postId), (d) =>
+    d ? { ...d, pages: d.pages.map((pg) => ({ ...pg, comments: pg.comments.map((x) => (x.id === fromId ? next : x)) })) } : d);
+}
 
 /** Server error text is written for people ("comments are turned off"); show it as-is. */
 export async function unwrapCommunity<T>(res: Response | { ok: boolean; status: number; json(): Promise<unknown> }): Promise<T> {
@@ -142,24 +167,56 @@ export function useReact() {
   });
 }
 
+/** Comments for a post: pages of top-level threads (with replies), flattened for the screen. */
 export function useComments(postId: string) {
   const on = useSignedIn();
-  return useQuery({
-    queryKey: communityKeys.comments(postId), enabled: on,
-    queryFn: async () => (await unwrapCommunity<{ comments: CommentDto[] }>(await api.community.posts[':id'].comments.$get({ param: { id: postId } }))).comments,
+  const q = useInfiniteQuery({
+    queryKey: communityKeys.comments(postId), enabled: on, staleTime: 30_000,
+    initialPageParam: undefined as string | undefined,
+    queryFn: async ({ pageParam }) =>
+      unwrapCommunity<CommentsResponse>(await api.community.posts[':id'].comments.$get({
+        param: { id: postId },
+        query: pageParam ? { cursor: pageParam } : {},
+      })),
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
   });
+  const data = useMemo(() => q.data?.pages.flatMap((p) => p.comments) ?? undefined, [q.data]);
+  return { ...q, data };
 }
 
+/**
+ * Comment on a post. The comment shows on tap ("Sending…") with the author's own card; the id is
+ * stamped once per send so a retry never doubles it, and a refused comment is removed with its error.
+ */
 export function useCreateComment(postId: string) {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: Omit<CreateCommentInput, 'id'>) =>
-      unwrapCommunity<CommentDto>(await api.community.posts[':id'].comments.$post({ param: { id: postId }, json: { id: newId(), ...input } })),
-    onSuccess: (c) => {
-      qc.setQueryData<CommentDto[]>(communityKeys.comments(postId), (list) => [...(list ?? []), c]);
-      if (c.status === 'visible') patchPost(qc, postId, (p) => ({ ...p, commentCount: p.commentCount + 1 }));
+  const m = useMutation({
+    retry: 2,
+    mutationFn: async ({ input }: { input: CreateCommentInput & { id: string }; author: HunterCardDto }) =>
+      unwrapCommunity<CommentDto>(await api.community.posts[':id'].comments.$post({ param: { id: postId }, json: input })),
+    onMutate: ({ input, author }) => {
+      const optimistic: CommentDto = {
+        id: `sending:${input.id}`, postId, parentId: input.parentId ?? null, author, body: input.body,
+        status: 'visible', mine: true, createdAt: new Date().toISOString(),
+      };
+      appendComment(qc, postId, optimistic);
+      patchPost(qc, postId, (p) => ({ ...p, commentCount: p.commentCount + 1 }));
+      return () => {
+        removeComment(qc, postId, optimistic.id);
+        patchPost(qc, postId, (p) => ({ ...p, commentCount: Math.max(0, p.commentCount - 1) }));
+      };
+    },
+    onError: (_e, _v, undo) => undo?.(),
+    onSuccess: (c, { input }) => {
+      // swap the placeholder for the real row; held comments don't count publicly
+      replaceComment(qc, postId, `sending:${input.id}`, c);
+      if (c.status !== 'visible') patchPost(qc, postId, (p) => ({ ...p, commentCount: Math.max(0, p.commentCount - 1) }));
     },
   });
+  return {
+    ...m,
+    send: (body: string, parentId: string | null, author: HunterCardDto) => m.mutate({ input: { id: newId(), body, parentId }, author }),
+  };
 }
 
 export function useDeleteComment(postId: string) {
@@ -169,8 +226,8 @@ export function useDeleteComment(postId: string) {
     retry: 2,
     // gone on tap; put back if the server refuses
     onMutate: (c: CommentDto) => {
-      const prev = qc.getQueryData<CommentDto[]>(communityKeys.comments(postId));
-      qc.setQueryData<CommentDto[]>(communityKeys.comments(postId), (list) => (list ?? []).filter((x) => x.id !== c.id));
+      const prev = qc.getQueryData<CommentsData>(communityKeys.comments(postId));
+      removeComment(qc, postId, c.id);
       if (c.status === 'visible') patchPost(qc, postId, (p) => ({ ...p, commentCount: Math.max(0, p.commentCount - 1) }));
       return () => {
         qc.setQueryData(communityKeys.comments(postId), prev);

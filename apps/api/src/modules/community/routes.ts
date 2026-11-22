@@ -52,7 +52,12 @@ export const communityRoutes = new Hono<AppEnv>()
     c.json(await guard(() => s.react(ctx(c), c.req.valid('param').id, c.req.valid('json').sticker))),
   )
   .delete('/posts/:id/reaction', zValidator('param', uuid), async (c) => c.json(await guard(() => s.unreact(ctx(c), c.req.valid('param').id))))
-  .get('/posts/:id/comments', zValidator('param', uuid), async (c) => c.json({ comments: await guard(() => s.listComments(ctx(c), c.req.valid('param').id)) }))
+  .get(
+    '/posts/:id/comments',
+    zValidator('param', uuid),
+    zValidator('query', z.object({ cursor: z.string().max(80).optional() })),
+    async (c) => c.json(await guard(() => s.listComments(ctx(c), c.req.valid('param').id, c.req.valid('query').cursor))),
+  )
   .post('/posts/:id/comments', zValidator('param', uuid), zValidator('json', CreateCommentInput), async (c) =>
     c.json(await guard(() => s.createComment(ctx(c), c.req.valid('param').id, c.req.valid('json')))),
   )

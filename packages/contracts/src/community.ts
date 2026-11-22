@@ -132,6 +132,13 @@ export const CommentDto = z.object({
 });
 export type CommentDto = z.infer<typeof CommentDto>;
 
+/** Top-level comments page (oldest → newest); each page includes that page's replies. */
+export const CommentsResponse = z.object({
+  comments: z.array(CommentDto),
+  nextCursor: z.string().nullable(),
+});
+export type CommentsResponse = z.infer<typeof CommentsResponse>;
+
 export const CreateCommentInput = z.object({
   id: z.uuid(),
   body: z.string().trim().min(1).max(280),

@@ -214,12 +214,74 @@ describe('scale fixes (docs/plans/COMMUNITY_REVIEW.md)', async () => {
   const { FeedTab } = await import('@lb/contracts');
   const { z } = await import('zod');
 
-  it('a keyset cursor (ISO time | uuid) fits the feed route limit', () => {
+  it('a keyset cursor (ISO time | uuid) fits the feed and comments route limits', () => {
     const cursor = `${new Date('2026-11-18T12:00:00.000Z').toISOString()}|0b8f6c1e-4a1f-4c3e-9b5e-2f7d1a2b3c4d`;
     expect(cursor.length).toBe(61);
     // the same schema the /feed route validates with
-    const q = z.object({ tab: FeedTab.default('global'), cursor: z.string().max(100).optional() });
-    expect(q.safeParse({ tab: 'following', cursor }).success).toBe(true);
+    const feed = z.object({ tab: FeedTab.default('global'), cursor: z.string().max(100).optional() });
+    expect(feed.safeParse({ tab: 'following', cursor }).success).toBe(true);
+    // comments pages use the same keyset shape with max(80)
+    const comments = z.object({ cursor: z.string().max(80).optional() });
+    expect(comments.safeParse({ cursor }).success).toBe(true);
+  });
+
+  it('listComments pages top-level threads and carries their replies', async () => {
+    const { listComments } = await import('../src/modules/community/service');
+    const POST = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const ME = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    const tops = Array.from({ length: 45 }, (_, i) => ({
+      id: `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`,
+      postId: POST, authorId: ME, parentId: null as string | null,
+      body: `top ${i}`, status: 'visible', createdAt: new Date(Date.UTC(2026, 10, 1, 0, 0, i)),
+    }));
+    const reply = {
+      id: '00000000-0000-4000-8000-000000000099', postId: POST, authorId: ME, parentId: tops[0]!.id,
+      body: 'reply', status: 'visible', createdAt: new Date(Date.UTC(2026, 10, 1, 0, 1, 0)),
+    };
+    const all = [...tops, reply];
+    const matchAfter = (rows: typeof all, or: any[]) => {
+      const gt = or.find((x) => x.createdAt?.gt)?.createdAt.gt as Date | undefined;
+      if (!gt) return rows;
+      const tie = or.find((x) => x.id?.gt);
+      const eqAt = tie?.createdAt as Date | undefined;
+      const idGt = tie?.id?.gt as string | undefined;
+      return rows.filter((c) => c.createdAt > gt || (!!eqAt && c.createdAt.getTime() === eqAt.getTime() && !!idGt && c.id > idGt));
+    };
+    const prisma: any = {
+      post: {
+        findFirst: async () => ({ id: POST, authorId: ME, status: 'visible', visibility: 'public', commentsMode: 'all' }),
+      },
+      follow: { findMany: async () => [] },
+      block: { findMany: async () => [] },
+      comment: {
+        findMany: async ({ where, take, orderBy }: any) => {
+          let rows = [...all];
+          for (const clause of where?.AND ?? []) {
+            if (clause.parentId === null) rows = rows.filter((c) => c.parentId == null);
+            if (clause.parentId?.in) rows = rows.filter((c) => clause.parentId.in.includes(c.parentId));
+            if (Array.isArray(clause.OR) && clause.OR.some((x: any) => x.createdAt?.gt || x.id?.gt)) rows = matchAfter(rows, clause.OR);
+          }
+          if (orderBy?.[0]?.createdAt === 'asc') {
+            rows.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || a.id.localeCompare(b.id));
+          }
+          return rows.slice(0, take ?? rows.length);
+        },
+      },
+      publicProfile: {
+        findMany: async ({ where }: any) => (where?.userId?.in ?? [ME]).includes(ME) ? [{
+          userId: ME, handle: 'kaze',
+          profile: { heroId: null, heroClass: null, state: { level: 5, rank: 'D', str: 1, agi: 1, end: 1, vit: 1, spi: 1 } },
+        }] : [],
+      },
+    };
+    const ctx = { prisma, userId: ME, isGuest: false } as any;
+    const page1 = await listComments(ctx, POST);
+    expect(page1.comments.filter((c) => !c.parentId)).toHaveLength(40);
+    expect(page1.comments.some((c) => c.parentId === tops[0]!.id)).toBe(true);
+    expect(page1.nextCursor).toBeTruthy();
+    const page2 = await listComments(ctx, POST, page1.nextCursor!);
+    expect(page2.comments.filter((c) => !c.parentId)).toHaveLength(5);
+    expect(page2.nextCursor).toBeNull();
   });
 
   it('boards are computed once and served from cache for every viewer', async () => {

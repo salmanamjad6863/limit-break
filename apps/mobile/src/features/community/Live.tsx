@@ -10,7 +10,7 @@ import { useTheme } from '@/theme';
 import { Appear, Button, Card, Icon, PressableScale, Text } from '@/ui';
 import { useBoard, useCommunityMe, useFeed } from './api';
 import { Avatar } from './Avatar';
-import { BOARDS } from './demo';
+import { BOARDS, type Rank } from './demo';
 import { heroColor, PostCard } from './PostCard';
 
 /** Guests save their account first; everyone else picks a handle once. */
@@ -115,6 +115,13 @@ export function LiveTopHunters() {
   const [division, setDivision] = useState<Division>('all');
   const q = useBoard(board, division);
   const meta = BOARDS.find((b) => b.id === board)!;
+  type ViewRow = { place: number; handle: string; color: string; rank: Rank; score: number };
+  const view: { rows: ViewRow[]; me: { place: number; score: number } | null } | null = q.data
+    ? {
+      rows: q.data.rows.map((r) => ({ place: r.place, handle: r.hunter.handle, color: heroColor(r.hunter), rank: r.hunter.rank as Rank, score: r.score })),
+      me: q.data.me ? { place: q.data.me.place, score: q.data.me.score } : null,
+    }
+    : null;
   const month = new Date().toLocaleString('en', { month: 'long' });
   const fmt = (v: number) => `${v % 1 ? v.toFixed(1) : v.toLocaleString()}${meta.unit}`;
   const chip = (on: boolean) => ({
@@ -150,33 +157,37 @@ export function LiveTopHunters() {
           <Button variant="secondary" size="md" icon="refresh" label="Try again" loading={q.isFetching} onPress={() => void q.refetch()} />
         </Card>
       ) : null}
-      {q.data ? (
-        <Card padded={false}>
-          {q.data.rows.length ? q.data.rows.slice(0, 50).map((r, i) => (
-            <PressableScale key={r.hunter.userId} haptic="tap" onPress={() => router.push(`/community/hunter/${r.hunter.handle}`)}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderTopWidth: i ? 1 : 0, borderColor: c.border }}>
-              <Text variant="callout" color={r.place <= 3 ? '#F5C451' : c.textMuted} style={{ width: 28 }}>{r.place}</Text>
-              <Avatar handle={r.hunter.handle} color={heroColor(r.hunter)} rank={r.hunter.rank} size={34} />
-              <Text variant="callout" style={{ flex: 1 }} numberOfLines={1}>{`@${r.hunter.handle}`}</Text>
-              <Text variant="callout">{fmt(r.score)}</Text>
-            </PressableScale>
-          )) : (
-            <View style={{ padding: spacing[4] }}>
-              <Text variant="callout" dim>{board === 'improved' ? q.data.meIneligible : 'No eligible hunters on this board yet this month.'}</Text>
-            </View>
-          )}
-          {q.data.me ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderTopWidth: 1, borderColor: c.border, backgroundColor: `${c.accent}14` }}>
-              <Text variant="callout" color={c.accentGlow} style={{ width: 40 }}>{`#${q.data.me.place}`}</Text>
-              <Text variant="callout" style={{ flex: 1 }}>You</Text>
-              <Text variant="callout" color={c.accentGlow}>{fmt(q.data.me.score)}</Text>
-            </View>
-          ) : q.data.meIneligible && board !== 'improved' ? (
-            <View style={{ padding: spacing[4], borderTopWidth: 1, borderColor: c.border }}>
-              <Text variant="caption" muted>{q.data.meIneligible}</Text>
-            </View>
-          ) : null}
-        </Card>
+      {view ? (
+        <>
+          {view.rows.length >= 3 ? <Podium rows={view.rows.slice(0, 3)} fmt={fmt} onOpen={(h) => router.push(`/community/hunter/${h}`)} /> : null}
+          <Card padded={false}>
+            {view.rows.length ? view.rows.slice(view.rows.length >= 3 ? 3 : 0, 50).map((r, i) => (
+              <PressableScale key={r.handle} haptic="tap" onPress={() => router.push(`/community/hunter/${r.handle}`)}
+                accessibilityRole="button" accessibilityLabel={`${r.place}. @${r.handle}, ${fmt(r.score)}`}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderTopWidth: i ? 1 : 0, borderColor: c.border }}>
+                <Text variant="callout" color={c.textMuted} style={{ width: 28 }}>{r.place}</Text>
+                <Avatar handle={r.handle} color={r.color} rank={r.rank} size={34} />
+                <Text variant="callout" style={{ flex: 1 }} numberOfLines={1}>{`@${r.handle}`}</Text>
+                <Text variant="callout">{fmt(r.score)}</Text>
+              </PressableScale>
+            )) : (
+              <View style={{ padding: spacing[4] }}>
+                <Text variant="callout" dim>{board === 'improved' ? q.data?.meIneligible : 'No eligible hunters on this board yet this month.'}</Text>
+              </View>
+            )}
+            {view.me ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderTopWidth: 1, borderColor: c.border, backgroundColor: `${c.accent}14` }}>
+                <Text variant="callout" color={c.accentGlow} style={{ width: 52 }}>{`#${view.me.place.toLocaleString()}`}</Text>
+                <Text variant="callout" style={{ flex: 1 }}>You</Text>
+                <Text variant="callout" color={c.accentGlow}>{fmt(view.me.score)}</Text>
+              </View>
+            ) : q.data?.meIneligible && board !== 'improved' ? (
+              <View style={{ padding: spacing[4], borderTopWidth: 1, borderColor: c.border }}>
+                <Text variant="caption" muted>{q.data.meIneligible}</Text>
+              </View>
+            ) : null}
+          </Card>
+        </>
       ) : null}
 
       <Card>
@@ -221,5 +232,40 @@ function BoardSkeleton() {
         </View>
       ))}
     </View>
+  );
+}
+
+const MEDAL = { 1: '#F5C451', 2: '#C0C7D1', 3: '#D9925B' } as const;
+
+/** Top 3 on steps: 2nd, 1st, 3rd, with medal colours; the winner gets a trophy and a bigger avatar. */
+function Podium({ rows, fmt, onOpen }: {
+  rows: { place: number; handle: string; color: string; rank: Rank; score: number }[];
+  fmt: (v: number) => string;
+  onOpen?: (handle: string) => void;
+}) {
+  const { spacing } = useTheme();
+  const order = [rows[1]!, rows[0]!, rows[2]!];
+  return (
+    <Card tint="#F5C451">
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', paddingTop: spacing[2] }}>
+        {order.map((r, i) => {
+          const step = (i === 1 ? 1 : i === 0 ? 2 : 3) as 1 | 2 | 3;
+          const color = MEDAL[step];
+          return (
+            <PressableScale key={r.handle} haptic="tap" disabled={!onOpen} onPress={() => onOpen?.(r.handle)}
+              accessibilityRole="button" accessibilityLabel={`Place ${r.place}: @${r.handle}, ${fmt(r.score)}`}
+              style={{ alignItems: 'center', gap: spacing[1], width: '31%' }}>
+              {step === 1 ? <Icon name="trophy" size={20} color={color} /> : null}
+              <Avatar handle={r.handle} color={r.color} rank={r.rank} size={step === 1 ? 60 : 48} />
+              <Text variant="callout" numberOfLines={1}>{`@${r.handle}`}</Text>
+              <Text variant="heading" color={color} style={{ fontFamily: 'Rajdhani_700Bold', fontSize: 18 }}>{fmt(r.score)}</Text>
+              <View style={{ width: '100%', height: step === 1 ? 54 : step === 2 ? 38 : 28, borderTopLeftRadius: 8, borderTopRightRadius: 8, backgroundColor: `${color}2E`, alignItems: 'center', justifyContent: 'center' }}>
+                <Text variant="headline" color={color}>{r.place}</Text>
+              </View>
+            </PressableScale>
+          );
+        })}
+      </View>
+    </Card>
   );
 }

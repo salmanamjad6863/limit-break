@@ -5,7 +5,7 @@
  */
 import { createHash, randomUUID } from 'node:crypto';
 import type {
-  CommentDto, CommunityMeResponse, CreateCommentInput, CreatePostInput, FeedResponse, FeedTab, HunterCardDto,
+  CommentDto, CommentsResponse, CommunityMeResponse, CreateCommentInput, CreatePostInput, FeedResponse, FeedTab, HunterCardDto,
   MilestonePayload, ModerationItem, PostDto, PostMediaDto, PublicProfileResponse, ReportInput, SignPostMediaResponse, Sticker,
   UpdateCommunityProfileInput, WorkoutCard,
 } from '@lb/contracts';
@@ -463,31 +463,71 @@ export async function unreact(ctx: CommunityCtx, postId: string) {
 
 /* ---------------- comments ---------------- */
 
-export async function listComments(ctx: CommunityCtx, postId: string): Promise<CommentDto[]> {
+/** Top-level comments per page (replies for those parents ride along). */
+const COMMENTS_PAGE = 40;
+
+function toCommentDto(
+  r: { id: string; postId: string; parentId: string | null; authorId: string; body: string; status: string; createdAt: Date },
+  author: HunterCardDto,
+  userId: string,
+): CommentDto {
+  return {
+    id: r.id, postId: r.postId, parentId: r.parentId, author, body: r.body,
+    status: r.status as CommentDto['status'], mine: r.authorId === userId, createdAt: r.createdAt.toISOString(),
+  };
+}
+
+/**
+ * Page top-level comments oldest → newest (cursor `createdAtISO|id`). Each page includes the replies
+ * under those parents so the thread stays intact; clients ask for the next page near the bottom.
+ */
+export async function listComments(ctx: CommunityCtx, postId: string, cursor?: string): Promise<CommentsResponse> {
+  const { prisma, userId } = ctx;
   const { rel } = await postVisibleTo(ctx, postId);
-  const rows = await ctx.prisma.comment.findMany({
-    where: {
-      postId, authorId: { notIn: rel.hidden },
-      OR: [{ status: 'visible' }, { authorId: ctx.userId, status: { in: ['pending', 'hidden'] } }],
-    },
-    orderBy: { createdAt: 'asc' }, take: 200,
+  const visible = {
+    authorId: { notIn: rel.hidden },
+    OR: [{ status: 'visible' as const }, { authorId: userId, status: { in: ['pending', 'hidden'] } }],
+  };
+  const [cIso, cId] = (cursor ?? '').split('|');
+  const afterAt = cIso ? new Date(cIso) : undefined;
+  const after = afterAt && !Number.isNaN(afterAt.getTime())
+    ? [{ OR: [{ createdAt: { gt: afterAt } }, ...(cId ? [{ createdAt: afterAt, id: { gt: cId } }] : [])] }]
+    : [];
+  const tops = await prisma.comment.findMany({
+    where: { AND: [{ postId, parentId: null }, visible, ...after] },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    take: COMMENTS_PAGE,
   });
-  const cards = await hunterCards(ctx.prisma, rows.map((r) => r.authorId));
-  const shownTop = new Set(rows.filter((r) => !r.parentId && cards.has(r.authorId)).map((r) => r.id));
-  return rows.flatMap((r) => {
+  const topIds = tops.map((r) => r.id);
+  const replies = topIds.length
+    ? await prisma.comment.findMany({
+      where: { AND: [{ postId, parentId: { in: topIds } }, visible] },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: 300,
+    })
+    : [];
+  const rows = [...tops, ...replies];
+  const cards = await hunterCards(prisma, rows.map((r) => r.authorId));
+  const shownTop = new Set(tops.filter((r) => cards.has(r.authorId)).map((r) => r.id));
+  const comments = rows.flatMap((r) => {
     const author = cards.get(r.authorId);
-    // a reply is only shown under a parent this viewer can see
-    return author && (!r.parentId || shownTop.has(r.parentId)) ? [{ id: r.id, postId: r.postId, parentId: r.parentId, author, body: r.body, status: r.status as CommentDto['status'], mine: r.authorId === ctx.userId, createdAt: r.createdAt.toISOString() }] : [];
+    return author && (!r.parentId || shownTop.has(r.parentId)) ? [toCommentDto(r, author, userId)] : [];
   });
+  const last = tops.at(-1);
+  return {
+    comments,
+    nextCursor: tops.length === COMMENTS_PAGE && last ? `${last.createdAt.toISOString()}|${last.id}` : null,
+  };
 }
 
 export async function createComment(ctx: CommunityCtx, postId: string, input: CreateCommentInput & { body: string }): Promise<CommentDto> {
   const { prisma, userId } = ctx;
   const dup = await prisma.comment.findUnique({ where: { id: input.id } });
   if (dup) {
-    const again = dup.authorId === userId && dup.postId === postId ? (await listComments(ctx, postId)).find((c) => c.id === dup.id) : undefined;
-    if (!again) throw new CommunityError(409, 'comment id already used');
-    return again;
+    if (dup.authorId !== userId || dup.postId !== postId) throw new CommunityError(409, 'comment id already used');
+    const card = (await hunterCards(prisma, [userId])).get(userId);
+    if (!card) throw new CommunityError(409, 'comment id already used');
+    return toCommentDto(dup, card, userId);
   }
   const v = await viewer(ctx);
   if (!v.can.comment) throw new CommunityError(403, v.nextUnlock ?? 'comments are not available on your account');
@@ -513,7 +553,7 @@ export async function createComment(ctx: CommunityCtx, postId: string, input: Cr
   });
   await audit(prisma, 'comment', row.id, verdict);
   const card = (await hunterCards(prisma, [userId])).get(userId)!;
-  return { id: row.id, postId, parentId: row.parentId, author: card, body: row.body, status, mine: true, createdAt: row.createdAt.toISOString() };
+  return toCommentDto(row, card, userId);
 }
 
 export async function deleteComment(ctx: CommunityCtx, commentId: string) {

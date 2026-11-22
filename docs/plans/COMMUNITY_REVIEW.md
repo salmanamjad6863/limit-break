@@ -30,7 +30,8 @@ Full review of `apps/api/src/modules/community` and `social` with the schema. In
 - `react()` insert + counter not in one transaction → fixed.
 - DM / guild chat history paging marked the thread read on every older page → only the newest page marks read.
 - Indexes for friend streaks, shield gifts, duels, guild discovery, leaderboards.
-- Follow-ups: global feed ranked-ID cache, comments pagination, batch photo-URL signing, guild `memberCount`, league membership uniqueness per week, friends list pagination.
+- Comments pagination: top-level pages of 40 (cursor `createdAt|id`) with that page’s replies; post screen “Load more comments”. **Fixed.**
+- Follow-ups: global feed ranked-ID cache, batch photo-URL signing, guild `memberCount`, league membership uniqueness per week, friends list pagination.
 
 ## 3. App fixes
 - Pull-to-refresh on Community (refreshes the pane you're on).
