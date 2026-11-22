@@ -1,3 +1,4 @@
+import { useCommunityMe } from '@/features/community/api';
 /**
  * Live Guild / Friends / League panel for the Community tab (SYSTEMS.md §5.6).
  */
@@ -41,13 +42,16 @@ export function LiveGuild() {
 function QuickLinks() {
   const { spacing } = useTheme();
   const inbox = useConversations();
+  const me = useCommunityMe();
   const unread = (inbox.data?.conversations ?? []).reduce((n, c) => n + c.unread, 0);
   return (
     <Appear index={1} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
       <Button size="md" variant="secondary" icon="chatbubbles-outline" label={unread ? `Messages (${unread})` : 'Messages'}
         onPress={() => router.push('/social/messages')} />
-      <Button size="md" variant="ghost" icon="shield-checkmark-outline" label="Mod queue"
-        onPress={() => router.push('/community/moderation')} />
+      {me.data?.isModerator ? (
+        <Button size="md" variant="ghost" icon="shield-checkmark-outline" label="Mod queue"
+          onPress={() => router.push('/community/moderation')} />
+      ) : null}
     </Appear>
   );
 }

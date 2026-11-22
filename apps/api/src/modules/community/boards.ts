@@ -97,7 +97,40 @@ async function ranked(prisma: PrismaClient, scores: Prisma.Sql, me: string | nul
           SELECT "userId", "score", (RANK() OVER (ORDER BY "score" DESC))::int AS "place" FROM (${scores}) s
         ) r WHERE r."userId" = ${me}`
     : [];
-  return { top, mine: mine[0] };
+  return { top, mine: mine[0] as (Row & { place: number }) | undefined };
+}
+
+/* ---------------- cache ---------------- */
+
+/**
+ * Boards aggregate a whole month across every hunter, so they are computed once and shared:
+ * the top list is cached per (board, division, month) for 3 minutes (forever once final), and each
+ * viewer's own place is cached for the same window. Thousands of opens cost a handful of queries.
+ */
+const TTL_MS = 3 * 60_000;
+type Standing = Awaited<ReturnType<typeof ranked>>;
+const topCache = new Map<string, { at: number; top: Row[]; final: boolean }>();
+const placeCache = new Map<string, { at: number; mine: Standing['mine'] }>();
+const fresh = (e: { at: number; final?: boolean } | undefined) => !!e && (e.final || Date.now() - e.at < TTL_MS);
+/** keep memory bounded: drop the oldest entries past this many keys */
+const prune = (m: Map<string, unknown>, max: number) => { while (m.size > max) m.delete(m.keys().next().value as string); };
+
+export function clearBoardCache() { topCache.clear(); placeCache.clear(); }
+
+async function standings(prisma: PrismaClient, id: BoardId, division: Division, month: string, final: boolean, userId: string | null): Promise<Standing> {
+  const { start, end } = monthBounds(month);
+  const ranks = division === 'all' ? ALL_RANKS : TIERS[division as Exclude<Division, 'all'>];
+  const scores = () => (id === 'xp' ? xpScores(start, end, ranks) : consistentScores(start, end, ranks, final ? 8 : 2));
+  const key = `${id}:${division}:${month}`;
+  const top = topCache.get(key);
+  const place = userId ? placeCache.get(`${key}:${userId}`) : undefined;
+  if (fresh(top) && (!userId || fresh(place))) return { top: top!.top, mine: place?.mine };
+  const r = await ranked(prisma, scores(), userId);
+  topCache.set(key, { at: Date.now(), top: r.top, final });
+  if (userId) placeCache.set(`${key}:${userId}`, { at: Date.now(), mine: r.mine });
+  prune(topCache, 200);
+  prune(placeCache, 20_000);
+  return r;
 }
 
 export async function board(
@@ -107,15 +140,12 @@ export async function board(
   division: Division,
   month = currentMonth(),
 ): Promise<BoardResponse> {
-  const { start, end } = monthBounds(month);
-  const ranks = division === 'all' ? ALL_RANKS : TIERS[division];
   const final = isFinal(month);
   if (id === 'improved') {
     // needs stats re-tested ≥ 21 days apart; opens once the re-test history exists (Sprint 10)
     return { board: id, division, month, final, rows: [], me: null, meIneligible: 'Most Improved opens once hunters have re-tested (21 days after their first test).' };
   }
-  const scores = id === 'xp' ? xpScores(start, end, ranks) : consistentScores(start, end, ranks, final ? 8 : 2);
-  const { top: rows, mine } = await ranked(prisma, scores, viewer.ineligible ? null : viewer.userId);
+  const { top: rows, mine } = await standings(prisma, id, division, month, final, viewer.ineligible ? null : viewer.userId);
   const meRow: Row | undefined = mine ? { userId: mine.userId, score: mine.score } : undefined;
   // ties share a place on the list too
   const topPlace = (i: number) => rows.findIndex((r) => r.score === rows[i]!.score) + 1;

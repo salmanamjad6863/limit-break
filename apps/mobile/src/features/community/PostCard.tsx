@@ -1,7 +1,7 @@
 import { heroes } from '@lb/content';
 import type { HunterCardDto, PostDto, Sticker } from '@lb/contracts';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Image } from 'expo-image';
 import { ActionSheetIOS, Alert, Platform, View } from 'react-native';
 import { exerciseName } from '@/features/training/catalog';
@@ -69,7 +69,8 @@ function usePostMenu(post: PostDto) {
   };
 }
 
-export function PostCard({ post, canReact, showComments = true }: { post: PostDto; canReact: boolean; showComments?: boolean }) {
+/** Memoised: a reaction on one post re-renders that card only, not the whole feed. */
+export const PostCard = memo(function PostCard({ post, canReact, showComments = true }: { post: PostDto; canReact: boolean; showComments?: boolean }) {
   const { c, spacing, radius } = useTheme();
   const react = useReact();
   const menu = usePostMenu(post);
@@ -173,4 +174,4 @@ export function PostCard({ post, canReact, showComments = true }: { post: PostDt
       </View>
     </Card>
   );
-}
+});

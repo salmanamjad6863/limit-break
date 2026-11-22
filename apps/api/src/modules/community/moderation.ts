@@ -92,15 +92,15 @@ Allow: normal fitness talk, swearing that isn't aimed at anyone ("this workout w
 severity: "none" if allowed; "low" if borderline; "high" if clearly harmful.`;
 
 /**
- * Claude Haiku 5.5 with structured output. Short timeout and one retry: moderation sits on the
+ * Claude Haiku 5.5 with structured output. Short timeout, no retry: moderation sits on the
  * request path. A refusal or unparsable answer counts as "not allowed" (held for a human).
  */
 export function claudeClassifier(apiKey: string, model = 'claude-haiku-5-5'): Classifier {
-  const client = new Anthropic({ apiKey, timeout: 8_000, maxRetries: 1 });
+  const client = new Anthropic({ apiKey, timeout: 3_000, maxRetries: 0 });
   return async (text) => {
     const res = await client.messages.parse({
       model,
-      max_tokens: 1024,
+      max_tokens: 200,
       system: SYSTEM,
       messages: [{ role: 'user', content: `<user_text>\n${text}\n</user_text>` }],
       output_config: { format: zodOutputFormat(VerdictSchema), effort: 'low' },

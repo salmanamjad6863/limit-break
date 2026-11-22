@@ -208,3 +208,37 @@ describe('photo posts', async () => {
     await expect(signPostMedia(fake(false).ctx, M1)).rejects.toMatchObject({ status: 403 });
   });
 });
+
+describe('scale fixes (docs/plans/COMMUNITY_REVIEW.md)', async () => {
+  const { board, clearBoardCache } = await import('../src/modules/community/boards');
+  const { FeedTab } = await import('@lb/contracts');
+  const { z } = await import('zod');
+
+  it('a keyset cursor (ISO time | uuid) fits the feed route limit', () => {
+    const cursor = `${new Date('2026-11-18T12:00:00.000Z').toISOString()}|0b8f6c1e-4a1f-4c3e-9b5e-2f7d1a2b3c4d`;
+    expect(cursor.length).toBe(61);
+    // the same schema the /feed route validates with
+    const q = z.object({ tab: FeedTab.default('global'), cursor: z.string().max(100).optional() });
+    expect(q.safeParse({ tab: 'following', cursor }).success).toBe(true);
+  });
+
+  it('boards are computed once and served from cache for every viewer', async () => {
+    clearBoardCache();
+    let rawCalls = 0;
+    const prisma: any = {
+      $queryRaw: async () => { rawCalls++; return [{ userId: '11111111-1111-4111-8111-111111111111', score: 42, place: 1 }]; },
+      publicProfile: { findMany: async () => [] },
+    };
+    const viewer = { userId: '22222222-2222-4222-8222-222222222222', ineligible: null };
+    await board(prisma, viewer, 'xp', 'all', '2026-11');
+    const afterFirst = rawCalls;
+    expect(afterFirst).toBeGreaterThan(0);
+    // same viewer again: no new aggregation
+    await board(prisma, viewer, 'xp', 'all', '2026-11');
+    expect(rawCalls).toBe(afterFirst);
+    // a different viewer who can't appear on the board reuses the cached top list
+    await board(prisma, { userId: '33333333-3333-4333-8333-333333333333', ineligible: 'not eligible' }, 'xp', 'all', '2026-11');
+    expect(rawCalls).toBe(afterFirst);
+    clearBoardCache();
+  });
+});

@@ -175,6 +175,8 @@ export const CommunityMeResponse = z.object({
   nextUnlock: z.string().nullable(),
   followers: z.number().int(),
   following: z.number().int(),
+  /** shows the moderation queue entry point (the server still checks on every call) */
+  isModerator: z.boolean().default(false),
 });
 export type CommunityMeResponse = z.infer<typeof CommunityMeResponse>;
 

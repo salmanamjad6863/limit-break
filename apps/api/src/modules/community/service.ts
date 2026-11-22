@@ -73,8 +73,9 @@ async function upheldReportsAgainst(prisma: PrismaClient, userId: string) {
     WHERE r."status" = 'upheld' AND r."resolvedAt" >= now() - interval '30 days'
       AND (
         (r."targetType" = 'profile' AND r."targetId" = ${userId})
-        OR (r."targetType" = 'post' AND EXISTS (SELECT 1 FROM "Post" p WHERE p."id"::text = r."targetId" AND p."authorId" = ${userId}::uuid))
-        OR (r."targetType" = 'comment' AND EXISTS (SELECT 1 FROM "Comment" c WHERE c."id"::text = r."targetId" AND c."authorId" = ${userId}::uuid))
+        -- cast the report side (targetId is validated as a uuid on insert) so the primary keys are used
+        OR (r."targetType" = 'post' AND EXISTS (SELECT 1 FROM "Post" p WHERE p."id" = r."targetId"::uuid AND p."authorId" = ${userId}::uuid))
+        OR (r."targetType" = 'comment' AND EXISTS (SELECT 1 FROM "Comment" c WHERE c."id" = r."targetId"::uuid AND c."authorId" = ${userId}::uuid))
       )`;
   return rows[0]?.n ?? 0;
 }
@@ -186,6 +187,7 @@ export async function getCommunityMe(ctx: CommunityCtx): Promise<CommunityMeResp
   return {
     handle: v.pub?.handle ?? null, isPublic: v.pub?.isPublic ?? true, bio: v.pub?.bio ?? null,
     trustLevel: v.trustLevel, isGuest: v.isGuest, isMinor: v.isMinor, can: v.can, nextUnlock: v.nextUnlock, followers, following,
+    isModerator: v.input.isModerator,
   };
 }
 
@@ -437,12 +439,15 @@ export async function react(ctx: CommunityCtx, postId: string, sticker: Sticker)
   const { post } = await postVisibleTo(ctx, postId);
   if (post.status !== 'visible') throw new CommunityError(400, 'this post is not public yet');
   const { prisma, userId } = ctx;
-  // insert-if-absent: two taps at once can't both count (the primary key decides)
-  const inserted = await prisma.$executeRaw`
-    INSERT INTO "Reaction" ("postId", "userId", "sticker", "createdAt") VALUES (${postId}::uuid, ${userId}::uuid, ${sticker}, now())
-    ON CONFLICT ("postId", "userId") DO NOTHING`;
-  if (inserted === 1) await prisma.post.update({ where: { id: postId }, data: { respectCount: { increment: 1 } } });
-  else await prisma.reaction.updateMany({ where: { postId, userId }, data: { sticker } });
+  // insert-if-absent: two taps at once can't both count (the primary key decides); the counter moves
+  // in the same transaction, so a crash can never leave it out of step with the rows
+  await prisma.$transaction(async (tx) => {
+    const inserted = await tx.$executeRaw`
+      INSERT INTO "Reaction" ("postId", "userId", "sticker", "createdAt") VALUES (${postId}::uuid, ${userId}::uuid, ${sticker}, now())
+      ON CONFLICT ("postId", "userId") DO NOTHING`;
+    if (inserted === 1) await tx.post.update({ where: { id: postId }, data: { respectCount: { increment: 1 } } });
+    else await tx.reaction.updateMany({ where: { postId, userId }, data: { sticker } });
+  });
   return { ok: true };
 }
 
@@ -674,7 +679,7 @@ export async function moderationQueue(ctx: CommunityCtx): Promise<ModerationItem
   ]);
   const reportCount = new Map(reports.map((r) => [`${r.targetType}:${r.targetId}`, r._count._all]));
   const ids = [...posts.map((p) => p.id), ...comments.map((c) => c.id)];
-  const actions = ids.length ? await prisma.moderationAction.findMany({ where: { targetId: { in: ids } }, orderBy: { createdAt: 'asc' } }) : [];
+  const actions = ids.length ? await prisma.moderationAction.findMany({ where: { targetType: { in: ['post', 'comment'] }, targetId: { in: ids } }, orderBy: { createdAt: 'asc' } }) : [];
   const reasons = new Map<string, string[]>();
   for (const a of actions) reasons.set(a.targetId, [...(reasons.get(a.targetId) ?? []), a.reason]);
   const cards = await hunterCards(prisma, [...posts.map((p) => p.authorId), ...comments.map((c) => c.authorId)]);

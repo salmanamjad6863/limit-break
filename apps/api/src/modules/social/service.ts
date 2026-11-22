@@ -869,7 +869,8 @@ async function conversationDto(prisma: PrismaClient, userId: string, c: Conversa
 export async function listConversations(ctx: SocialCtx): Promise<{ conversations: ConversationDto[] }> {
   const { prisma, userId } = ctx;
   const [rows, hidden] = await Promise.all([
-    prisma.conversation.findMany({ where: { OR: [{ userA: userId }, { userB: userId }] }, take: 50 }),
+    // newest threads first (lastMessageAt is set on every send), so a busy inbox never drops the latest one
+    prisma.conversation.findMany({ where: { OR: [{ userA: userId }, { userB: userId }] }, orderBy: [{ lastMessageAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }], take: 50 }),
     blockedIds(prisma, userId),
   ]);
   const peerOf = (c: { userA: string; userB: string }) => (c.userA === userId ? c.userB : c.userA);
@@ -914,7 +915,8 @@ export async function markConversationRead(ctx: SocialCtx, conversationId: strin
 export async function listMessages(ctx: SocialCtx, conversationId: string, before?: string, now = new Date()): Promise<{ messages: MessageDto[] }> {
   const { prisma, userId } = ctx;
   const c = await ownConversation(prisma, userId, conversationId);
-  await markRead(prisma, userId, c, now);
+  // only opening the newest page counts as reading; scrolling back through history writes nothing
+  if (!before) await markRead(prisma, userId, c, now);
   const cutoff = before ? new Date(before) : undefined;
   const rows = await prisma.message.findMany({
     where: { conversationId, ...shownTo(userId), ...(cutoff && !Number.isNaN(cutoff.getTime()) ? { createdAt: { lt: cutoff } } : {}) },
@@ -937,6 +939,8 @@ export async function sendMessage(ctx: SocialCtx, input: SendMessageInput & { bo
   const c = (await conversationWith(prisma, userId, input.peerId, true))!;
   const verdict = await moderate(input.body, { classifier: ctx.classifier, trustLevel: v.trustLevel, extraWords: ctx.extraWords });
   const row = await prisma.message.create({ data: { id: input.id, conversationId: c.id, senderId: userId, body: input.body, status: verdict.allow ? 'visible' : 'pending' } });
+  // keeps the inbox ordered without scanning messages
+  await prisma.conversation.update({ where: { id: c.id }, data: { lastMessageAt: row.createdAt } });
   await audit(prisma, 'message', row.id, verdict);
   return toMessage(row, userId);
 }

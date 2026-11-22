@@ -202,6 +202,7 @@ model XpLedger {
   event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([userId, localDate])
+  @@index([localDate, userId])
 }
 
 model Exercise {
@@ -257,6 +258,7 @@ model WorkoutSession {
   profile          Profile      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, localDate])
+  @@index([localDate, userId])
 }
 
 model WorkoutSet {
@@ -307,6 +309,7 @@ model QuestInstance {
 
   @@unique([userId, localDate, templateId])
   @@index([userId, status, dueAt])
+  @@index([kind, status, localDate])
 }
 
 model Food {
@@ -509,7 +512,8 @@ model Post {
   author       Profile     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([status, createdAt])
-  @@index([authorId, createdAt])
+  @@index([authorId, createdAt, id])
+  @@index([visibility, status, authorRank, createdAt, id])
 }
 
 /// photo attachments on progress posts (SYSTEMS.md §5.2); status pending until image moderation
@@ -584,6 +588,8 @@ model Report {
 
   @@unique([reporterId, targetType, targetId])
   @@index([status, createdAt])
+  @@index([targetType, targetId, status])
+  @@index([status, resolvedAt])
 }
 
 /// audit log of every moderation decision (automatic or human)
@@ -629,6 +635,7 @@ model FriendStreak {
   b            Profile  @relation("streakB", fields: [userB], references: [id], onDelete: Cascade)
 
   @@id([userA, userB])
+  @@index([userB])
 }
 
 /// one Streak Shield gift per friend per calendar month
@@ -642,6 +649,7 @@ model FriendShieldGift {
   receiver   Profile  @relation("shieldReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
 
   @@id([giverId, receiverId, month])
+  @@index([receiverId, month])
 }
 
 model Duel {
@@ -663,6 +671,8 @@ model Duel {
 
   @@index([challengerId, status])
   @@index([opponentId, status])
+  @@index([challengerId, createdAt])
+  @@index([opponentId, createdAt])
 }
 
 model Guild {
@@ -681,6 +691,7 @@ model Guild {
   raids     Raid[]
 
   @@index([isPublic, createdAt])
+  @@index([isPublic, language, createdAt])
 }
 
 model GuildMember {
@@ -709,6 +720,7 @@ model GuildMessage {
   author    Profile  @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([guildId, createdAt])
+  @@index([authorId, createdAt])
 }
 
 model Raid {
@@ -776,13 +788,16 @@ model Conversation {
   /// when userA / userB last opened the thread (unread = peer messages after this)
   readAtA   DateTime?
   readAtB   DateTime?
+  /// newest message time: orders the inbox without scanning messages
+  lastMessageAt DateTime?
   createdAt DateTime  @default(now())
   a         Profile   @relation("convoA", fields: [userA], references: [id], onDelete: Cascade)
   b         Profile   @relation("convoB", fields: [userB], references: [id], onDelete: Cascade)
   messages  Message[]
 
   @@unique([userA, userB])
-  @@index([userB])
+  @@index([userA, lastMessageAt])
+  @@index([userB, lastMessageAt])
 }
 
 model Message {
@@ -797,6 +812,7 @@ model Message {
   sender         Profile      @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
+  @@index([senderId, createdAt])
 }
 
 /// Private progress photos (SYSTEMS.md §6). Storage bucket `progress-photos` is PRIVATE; never shown in community payloads.

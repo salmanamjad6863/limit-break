@@ -35,9 +35,12 @@ export const communityRoutes = new Hono<AppEnv>()
   .use('/reports', userRateLimit('community-reports', { limit: 20, windowMs: 3_600_000 }))
   .use('/media/*', userRateLimit('community-media', { limit: 20, windowMs: 60_000 }))
   .use('/boards/*', userRateLimit('community-boards', { limit: 30, windowMs: 60_000 }))
+  // reads are cheap per call but unbounded loops (a stuck client, a scraper) are not
+  .use('/feed', userRateLimit('community-feed', { limit: 120, windowMs: 60_000 }))
+  .use('/hunters/*', userRateLimit('community-profiles', { limit: 120, windowMs: 60_000 }))
   .get('/me', async (c) => c.json(await guard(() => s.getCommunityMe(ctx(c)))))
   .put('/me', zValidator('json', UpdateCommunityProfileInput), async (c) => c.json(await guard(() => s.updateCommunityProfile(ctx(c), c.req.valid('json')))))
-  .get('/feed', zValidator('query', z.object({ tab: FeedTab.default('global'), cursor: z.string().max(40).optional() })), async (c) => {
+  .get('/feed', zValidator('query', z.object({ tab: FeedTab.default('global'), cursor: z.string().max(100).optional() })), async (c) => {
     const q = c.req.valid('query');
     return c.json(await guard(() => s.feed(ctx(c), q.tab, q.cursor)));
   })

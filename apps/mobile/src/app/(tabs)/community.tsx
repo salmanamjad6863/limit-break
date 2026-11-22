@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useRef, useState } from 'react';
 import { View } from 'react-native';
 import { Avatar } from '@/features/community/Avatar';
 import { LiveHall, LiveTopHunters } from '@/features/community/Live';
@@ -19,8 +20,13 @@ export default function CommunityScreen() {
   const Hall = live ? LiveHall : DemoHall;
   const TopHunters = live ? LiveTopHunters : DemoTopHunters;
   const GuildPane = live ? LiveGuild : DemoGuild;
+  const qc = useQueryClient();
+  const endReached = useRef<(() => void) | null>(null);
   return (
-    <Screen title="Community" subtitle="Hunters worldwide, levelling up together." accent="#F5C451" right={live ? undefined : <Pill icon="sparkles" label="Preview" />}>
+    <Screen title="Community" subtitle="Hunters worldwide, levelling up together." accent="#F5C451" right={live ? undefined : <Pill icon="sparkles" label="Preview" />}
+      // pull to refresh the pane you're looking at; the feed loads more on its own near the bottom
+      onRefresh={live ? () => qc.refetchQueries({ queryKey: view === 'guild' ? ['social'] : ['community'], type: 'active' }) : undefined}
+      onEndReached={live && view === 'hall' ? () => endReached.current?.() : undefined}>
       <Appear index={1}>
         <Segmented
           options={[{ value: 'hall', label: 'The Hall' }, { value: 'top', label: 'Top Hunters' }, { value: 'guild', label: 'Guild' }]}
@@ -29,14 +35,14 @@ export default function CommunityScreen() {
         />
       </Appear>
       <View key={view} style={{ gap: spacing[5] }}>
-        {view === 'hall' ? <Hall /> : view === 'top' ? <TopHunters /> : <GuildPane />}
+        {view === 'hall' ? <Hall endReachedRef={endReached} /> : view === 'top' ? <TopHunters /> : <GuildPane />}
       </View>
     </Screen>
   );
 }
 
 /* ---------------- The Hall: global feed ---------------- */
-function DemoHall() {
+function DemoHall(_: { endReachedRef?: { current: (() => void) | null } }) {
   const { c, spacing, radius } = useTheme();
   const [feed, setFeed] = useState<'following' | 'global' | 'rank'>('global');
   const [respected, setRespected] = useState<Record<string, boolean>>({});
