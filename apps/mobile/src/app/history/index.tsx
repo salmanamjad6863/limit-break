@@ -73,10 +73,10 @@ export default function History() {
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text variant="callout" numberOfLines={1}>{w.name}</Text>
                   <Text variant="caption" muted numberOfLines={1}>
-                    {`${nice(w.date)} · ${Math.round(w.minutes)} min${w.workingSets ? ` · ${w.workingSets} sets` : ''}${w.prs.length ? ` · ${w.prs.length} PR` : ''}${w.source === 'manual' ? ' · logged after' : ''}`}
+                    {`${nice(w.date)} · ${Math.round(w.minutes)} min${w.workingSets ? ` · ${w.workingSets} ${w.workingSets === 1 ? 'set' : 'sets'}` : ''}${w.prs.length ? ` · ${w.prs.length} PR` : ''}${w.source === 'manual' ? ' · logged after' : ''}`}
                   </Text>
                 </View>
-                <Text variant="callout" color={c.accentGlow}>{`+${w.xp}`}</Text>
+                <Text variant="callout" color={c.accentGlow}>{`+${w.xp} XP`}</Text>
                 <Icon name="chevron-forward" size={16} color={c.textMuted} />
               </View>
             </PressableScale>

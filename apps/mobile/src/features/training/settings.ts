@@ -31,5 +31,22 @@ export function useUpdateTraining() {
       const remind = workoutRemindersOn() && !!input.workoutTime;
       await scheduleWorkoutReminders(remind ? reminderSlots(weekdays, input.workoutTime!) : [], nextWorkout).catch(() => {});
     },
+    retry: 2,
+    // the new plan shows on tap (today's workout, week strip, level); the server confirms in the background
+    onMutate: async ({ input }) => {
+      if (status !== 'signedIn') return undefined;
+      const key = progressionKeys.me();
+      await qc.cancelQueries({ queryKey: key });
+      const prev = qc.getQueryData<MeResponse>(key);
+      const weekdays = [...new Set(input.weekdays)].sort((a, b) => a - b);
+      if (prev?.profile) {
+        qc.setQueryData<MeResponse>(key, {
+          ...prev,
+          profile: { ...prev.profile, ...input, weekdays, daysPerWeek: weekdays.length, workoutTime: input.workoutTime, sex: input.sex ?? prev.profile.sex },
+        });
+      }
+      return () => qc.setQueryData(key, prev);
+    },
+    onError: (_e, _v, undo) => undo?.(),
   });
 }

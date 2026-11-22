@@ -44,16 +44,24 @@ export function useWorkoutHistory(): { workouts: WorkoutSummaryDto[]; isLoading:
   return status === 'signedIn' ? { workouts: remote.data ?? [], isLoading: remote.isLoading } : { workouts: local, isLoading: false };
 }
 
-export function useWorkoutDetail(id: string): { data: WorkoutDetailDto | undefined; isLoading: boolean } {
+export function useWorkoutDetail(id: string): { data: WorkoutDetailDto | undefined; isLoading: boolean; placeholder: boolean } {
   const status = useSession((s) => s.status);
+  const qc = useQueryClient();
   const h = useTraining((s) => s.history.find((x) => x.id === id));
   const remote = useQuery({
     queryKey: historyKeys.detail(id),
     enabled: status === 'signedIn',
     queryFn: async () => unwrap<WorkoutDetailDto>(await api.workouts[':id'].$get({ param: { id } })),
+    // open instantly: the list row already has the name, date and totals; sets fill in when they arrive
+    placeholderData: () => {
+      const row = qc.getQueryData<WorkoutSummaryDto[]>(historyKeys.list)?.find((x) => x.id === id);
+      return row ? ({ ...row, sets: [] } as unknown as WorkoutDetailDto) : undefined;
+    },
   });
   const local = useMemo(() => (h ? toDetail(h) : undefined), [h]);
-  return status === 'signedIn' ? { data: remote.data, isLoading: remote.isLoading } : { data: local, isLoading: false };
+  return status === 'signedIn'
+    ? { data: remote.data, isLoading: remote.isLoading, placeholder: remote.isPlaceholderData }
+    : { data: local, isLoading: false, placeholder: false };
 }
 
 /** True while a workout may still be edited or deleted. */

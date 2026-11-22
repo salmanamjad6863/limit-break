@@ -166,10 +166,18 @@ export function useDeleteComment(postId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (c: CommentDto) => unwrapCommunity(await api.community.comments[':id'].$delete({ param: { id: c.id } })),
-    onSuccess: (_r, c) => {
+    retry: 2,
+    // gone on tap; put back if the server refuses
+    onMutate: (c: CommentDto) => {
+      const prev = qc.getQueryData<CommentDto[]>(communityKeys.comments(postId));
       qc.setQueryData<CommentDto[]>(communityKeys.comments(postId), (list) => (list ?? []).filter((x) => x.id !== c.id));
       if (c.status === 'visible') patchPost(qc, postId, (p) => ({ ...p, commentCount: Math.max(0, p.commentCount - 1) }));
+      return () => {
+        qc.setQueryData(communityKeys.comments(postId), prev);
+        if (c.status === 'visible') patchPost(qc, postId, (p) => ({ ...p, commentCount: p.commentCount + 1 }));
+      };
     },
+    onError: (_e, _v, undo) => undo?.(),
   });
 }
 
@@ -188,7 +196,19 @@ export function useFollow() {
       follow
         ? unwrapCommunity(await api.community.follows[':id'].$put({ param: { id: userId } }))
         : unwrapCommunity(await api.community.follows[':id'].$delete({ param: { id: userId } })),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: communityKeys.all }),
+    retry: 2,
+    // the button and follower count flip on tap; a failure flips them back
+    onMutate: async ({ userId, follow }) => {
+      await qc.cancelQueries({ queryKey: ['community', 'hunter'] });
+      const snaps = qc.getQueriesData<PublicProfileResponse>({ queryKey: ['community', 'hunter'] });
+      for (const [key, p] of snaps) {
+        if (p?.hunter.userId !== userId || p.iFollow === follow) continue;
+        qc.setQueryData<PublicProfileResponse>(key, { ...p, iFollow: follow, followers: Math.max(0, p.followers + (follow ? 1 : -1)) });
+      }
+      return () => { for (const [key, p] of snaps) qc.setQueryData(key, p); };
+    },
+    onError: (_e, _v, undo) => undo?.(),
+    onSettled: () => void qc.invalidateQueries({ queryKey: communityKeys.all }),
   });
 }
 

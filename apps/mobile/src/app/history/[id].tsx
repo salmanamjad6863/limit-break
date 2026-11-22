@@ -11,7 +11,7 @@ const nice = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString(un
 export default function WorkoutDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { c, spacing } = useTheme();
-  const { data: w, isLoading } = useWorkoutDetail(id);
+  const { data: w, isLoading, placeholder } = useWorkoutDetail(id);
   const editable = useEditable(w);
   const { remove } = useHistoryActions();
   const [confirm, setConfirm] = useState(false);
@@ -30,7 +30,7 @@ export default function WorkoutDetail() {
     <Page header={<ScreenHeader title={w.name} />}
       footer={editable ? (
         <View style={{ flexDirection: 'row', gap: spacing[2] }}>
-          {w.sets.length ? <View style={{ flex: 1 }}><Button variant="secondary" size="md" icon="create-outline" label="Edit" onPress={() => router.push(`/history/edit/${w.id}`)} /></View> : null}
+          {w.sets.length && !placeholder ? <View style={{ flex: 1 }}><Button variant="secondary" size="md" icon="create-outline" label="Edit" onPress={() => router.push(`/history/edit/${w.id}`)} /></View> : null}
           <View style={{ flex: 1 }}>
             <Button variant={confirm ? 'primary' : 'secondary'} size="md" icon="trash-outline" label={confirm ? `Delete (−${w.xp} XP)` : 'Delete'} loading={remove.isPending}
               onPress={() => (confirm ? remove.mutate(w.id, { onSuccess: () => router.back() }) : setConfirm(true))} />
@@ -63,6 +63,10 @@ export default function WorkoutDetail() {
           <Text variant="label" muted>Notes</Text>
           <Text variant="callout">{w.notes}</Text>
         </Card>
+      ) : null}
+      {placeholder && !w.sets.length && w.workingSets ? (
+        // header and totals came from the list; the sets are on their way
+        <Card><Text variant="callout" muted>Loading sets…</Text></Card>
       ) : null}
       {groups.map((g) => (
         <Card key={g.exerciseId}>

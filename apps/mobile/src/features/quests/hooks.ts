@@ -1,4 +1,4 @@
-import type { BossResponse, QuestDto, QuestProgressResponse, Reward, TodayQuestsResponse } from '@lb/contracts';
+import { isQuestComplete, type BossResponse, type QuestDto, type QuestProgressResponse, type Reward, type TodayQuestsResponse } from '@lb/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { useCelebrations } from '@/features/celebrations';
@@ -80,9 +80,37 @@ export function useQuestActions() {
       status === 'signedIn'
         ? unwrap<QuestProgressResponse>(await api.quests[':id'].progress.$post({ param: { id: quest.id }, json: { progress } }))
         : localProgress(quest.id, progress, profile.timezone),
+    // progress values are absolute ("8 of 10"): send them in order so quick taps never land stale
+    scope: { id: 'quest-progress' },
+    retry: 2,
+    // the ring moves on tap; the server confirms in the background, and a failure puts it back
+    onMutate: async ({ quest, progress }) => {
+      if (status !== 'signedIn') return undefined;
+      await qc.cancelQueries({ queryKey: questKeys.today });
+      const prev = qc.getQueryData<TodayQuestsResponse>(questKeys.today);
+      if (prev) {
+        const patch = (q: QuestDto): QuestDto => {
+          if (q.id !== quest.id) return q;
+          const next = { ...q, progress: { ...q.progress, ...progress } };
+          return isQuestComplete(next) && q.status === 'ACTIVE' ? { ...next, status: 'COMPLETED', completedAt: new Date().toISOString() } : next;
+        };
+        qc.setQueryData<TodayQuestsResponse>(questKeys.today, {
+          ...prev, daily: patch(prev.daily), penalty: prev.penalty ? patch(prev.penalty) : null, sides: prev.sides.map(patch),
+        });
+      }
+      return () => qc.setQueryData(questKeys.today, prev);
+    },
+    onError: (_e, _v, undo) => undo?.(),
     onSuccess: (r) => {
-      after(r.rewards);
+      enqueue(r.rewards as Reward[]);
       if (r.quest.status === 'COMPLETED') track({ event: 'quest_completed', kind: r.quest.kind });
+    },
+    onSettled: () => {
+      if (status !== 'signedIn') return;
+      // refetch once the last queued write lands, not after every tap
+      if (qc.isMutating({ mutationKey: undefined, predicate: (m) => m.options.scope?.id === 'quest-progress' }) > 1) return;
+      qc.invalidateQueries({ queryKey: questKeys.today });
+      qc.invalidateQueries({ queryKey: ['progression'] });
     },
   });
   const chooseSides = useMutation({
@@ -95,7 +123,15 @@ export function useQuestActions() {
       if (status === 'signedIn') await unwrap(await api.quests.sick.$post({ json: { on } }));
       else localSetSick(on);
     },
-    onSuccess: () => after([]),
+    onMutate: async (on: boolean) => {
+      if (status !== 'signedIn') return undefined;
+      await qc.cancelQueries({ queryKey: questKeys.today });
+      const prev = qc.getQueryData<TodayQuestsResponse>(questKeys.today);
+      if (prev) qc.setQueryData<TodayQuestsResponse>(questKeys.today, { ...prev, streak: { ...prev.streak, sickToday: on } });
+      return () => qc.setQueryData(questKeys.today, prev);
+    },
+    onError: (_e, _v, undo) => undo?.(),
+    onSettled: () => after([]),
   });
   const claimBoss = useMutation({
     mutationFn: async (boss: BossResponse): Promise<unknown[]> => {

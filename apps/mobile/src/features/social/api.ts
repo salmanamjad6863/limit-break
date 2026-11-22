@@ -150,15 +150,29 @@ export function useGuildMessages(guildId: string | undefined) {
   });
 }
 
+/** Post to guild chat: shows on tap ("Sending…"), stamped id for safe retries, removed again on failure. */
 export function usePostGuildMessage(guildId: string | undefined) {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (body: string) => {
-      const json: CreateGuildMessageInput = { id: newId(), body };
-      return unwrapCommunity<GuildMessageDto>(await api.social.guilds[':id'].messages.$post({ param: { id: guildId! }, json }));
+  const m = useMutation({
+    retry: 2,
+    mutationFn: async (json: CreateGuildMessageInput) =>
+      unwrapCommunity<GuildMessageDto>(await api.social.guilds[':id'].messages.$post({ param: { id: guildId! }, json })),
+    onMutate: async (json: CreateGuildMessageInput) => {
+      if (!guildId) return undefined;
+      const key = socialKeys.guildMessages(guildId);
+      await qc.cancelQueries({ queryKey: key });
+      const prev = qc.getQueryData<{ messages: GuildMessageDto[] }>(key);
+      const optimistic = {
+        id: `sending:${json.id}`, body: json.body, status: 'visible', mine: true, createdAt: new Date().toISOString(),
+        author: { userId: 'me', handle: 'you', heroId: null, heroClass: null, rank: 'E', level: 1, powerLevel: 0 },
+      } as GuildMessageDto;
+      qc.setQueryData<{ messages: GuildMessageDto[] }>(key, { ...(prev ?? {}), messages: [optimistic, ...(prev?.messages ?? [])] });
+      return () => qc.setQueryData(key, prev);
     },
-    onSuccess: () => guildId && void qc.invalidateQueries({ queryKey: socialKeys.guildMessages(guildId) }),
+    onError: (_e, _v, undo) => undo?.(),
+    onSettled: () => guildId && void qc.invalidateQueries({ queryKey: socialKeys.guildMessages(guildId) }),
   });
+  return { ...m, send: (body: string) => m.mutate({ id: newId(), body }) };
 }
 
 export function useLeague() {
@@ -185,18 +199,31 @@ export function useMessages(conversationId: string | undefined) {
   });
 }
 
-export function useSendMessage() {
+/**
+ * Send a DM. The message shows in the thread on tap ("Sending…"); the id is stamped once per send so a
+ * retry never duplicates it, and a failure removes it again.
+ */
+export function useSendMessage(conversationId?: string) {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: Omit<SendMessageInput, 'id'> & { id?: string }) => {
-      const json: SendMessageInput = { id: input.id ?? newId(), peerId: input.peerId, body: input.body };
-      return unwrapCommunity<MessageDto>(await api.social.messages.$post({ json }));
+  const m = useMutation({
+    retry: 2,
+    mutationFn: async (input: SendMessageInput) => unwrapCommunity<MessageDto>(await api.social.messages.$post({ json: input })),
+    onMutate: async (input: SendMessageInput) => {
+      if (!conversationId) return undefined;
+      const key = socialKeys.messages(conversationId);
+      await qc.cancelQueries({ queryKey: key });
+      const prev = qc.getQueryData<{ messages: MessageDto[] }>(key);
+      const optimistic: MessageDto = { id: `sending:${input.id}`, senderId: 'me', body: input.body, status: 'visible', mine: true, createdAt: new Date().toISOString() };
+      qc.setQueryData<{ messages: MessageDto[] }>(key, { messages: [optimistic, ...(prev?.messages ?? [])] });
+      return () => qc.setQueryData(key, prev);
     },
-    onSuccess: () => {
+    onError: (_e, _v, undo) => undo?.(),
+    onSettled: () => {
       void qc.invalidateQueries({ queryKey: socialKeys.conversations });
       void qc.invalidateQueries({ queryKey: ['social', 'messages'] });
     },
   });
+  return { ...m, send: (peerId: string, body: string) => m.mutate({ id: newId(), peerId, body }) };
 }
 
 export function useOpenConversation() {

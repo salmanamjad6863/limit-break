@@ -53,7 +53,8 @@ export default function TrainingSettings() {
       footer={<Button label="Save" icon="checkmark" disabled={!valid} loading={save.isPending}
         onPress={async () => {
           if (s.workoutTime) await requestNotificationPermission().catch(() => false);
-          save.mutate({ input: s, nextWorkout: today.workout.name }, { onSuccess: () => router.back() });
+          save.mutate({ input: s, nextWorkout: today.workout.name });
+          router.back();
         }} />}>
       <SectionHeader title="Training days" />
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
