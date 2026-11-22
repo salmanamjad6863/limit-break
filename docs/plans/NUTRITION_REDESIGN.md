@@ -38,8 +38,8 @@ Goal: logging food should feel instant, obvious and calm. The tab should look as
 - Serving label "2 × large egg"; portion quantity stepper (0.5 steps, up to 20×) next to the quick chips.
 - Water label formatting.
 
-## 5. Follow-up (not in this pass)
-- Grow the food catalog from a real data import (USDA FoodData Central), not hand-typed values.
+## 5. Follow-up
+- ✅ Grow the food catalog from a real data import (USDA FoodData Central), not hand-typed values. `tools/foods/import-fdc.mjs` downloads the FDC CSV releases (SR Legacy, Foundation, and FNDDS for South Asian and mixed dishes such as paneer, dal, biryani, dosa and samosa) and writes `foods.json` from the list in `tools/foods/catalog.mjs`: 53 → 587 foods. Nutrients and household servings come from FDC; a glass or can is sized from FDC's own fl-oz density. Existing ids and recipes are unchanged. Search: `textMatch` now scores in tiers (starts with the query as a whole word > contains the whole word > prefix) so name length no longer beats popularity, and staples carry `popularity: 1`. "egg", "eggs", "rice", "chicken", "milk", "paneer" and "curd" each return the obvious food first (covered by tests).
 
 ## 6. Retest after the build
 Search "eggs" finds all four egg foods; adding, editing (2.5×) and removing a food all show instantly; water + twice gives 2 glasses and survives a reload; Complete day toggles instantly; switching days via the week strip is instant; "Back to today" is a real button.

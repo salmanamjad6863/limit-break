@@ -31,7 +31,13 @@ const singular = (w: string) =>
   : w;
 const singularize = (s: string) => s.split(' ').map(singular).join(' ');
 
-/** Trigram similarity (0–1) with a prefix/word boost, so "chick" finds "Chicken breast" and "eggs" finds "Egg". */
+/**
+ * Trigram similarity (0–1) with a tiered prefix boost, so "chick" finds "Chicken breast" and "eggs"
+ * finds "Egg". Word matches land in tiers (name starts with the query as whole words > every query
+ * word is a whole word > every query word is a prefix); trigram similarity only orders within a
+ * tier. Without tiers a short name ("Rice cakes") always beat the staple ("Rice, white, cooked")
+ * on length alone, and popularity/history could never put the obvious food first.
+ */
 export function textMatch(query: string, text: string): number {
   const q = singularize(norm(query));
   const t = singularize(norm(text));
@@ -44,9 +50,12 @@ export function textMatch(query: string, text: string): number {
   const sim = hit / (a.size + b.size - hit);
   const words = t.split(' ');
   const qWords = q.split(' ');
-  const allPrefix = qWords.every((w) => words.some((x) => x.startsWith(w)));
-  const startsWith = t.startsWith(q);
-  return Math.min(1, sim + (allPrefix ? 0.35 : 0) + (startsWith ? 0.15 : 0));
+  const tier =
+    t.startsWith(`${q} `) ? 0.9
+    : qWords.every((w) => words.includes(w)) ? 0.8
+    : qWords.every((w) => words.some((x) => x.startsWith(w))) ? 0.7
+    : 0;
+  return tier ? tier + 0.08 * sim : sim;
 }
 
 export function foodScore(query: string, f: SearchableFood, use?: PersonalUse): number {

@@ -84,21 +84,37 @@ describe('visuals content (VISUALS.md)', () => {
 });
 
 import { curatedFoodById, curatedFoods } from '../src';
-import { kcalFromMacros } from '@lb/engine';
+import { kcalFromMacros, rankFoods } from '@lb/engine';
 
 describe('curated foods', () => {
   it('have unique ids and sensible servings', () => {
     expect(new Set(curatedFoods.map((f) => f.id)).size).toBe(curatedFoods.length);
     for (const f of curatedFoods) for (const s of f.servings) expect(s.grams, `${f.id} ${s.label}`).toBeLessThan(1000);
   });
+  it('covers a real catalog (USDA FDC import, tools/foods/import-fdc.mjs)', () => {
+    expect(curatedFoods.filter((f) => f.source === 'usda').length).toBeGreaterThanOrEqual(400);
+  });
   it('label kcal agrees with macros (fiber-adjusted Atwater, ±15%) for every food', () => {
+    // USDA derives cocoa's energy from cocoa-specific factors (protein 1.83, carbs 1.33 kcal/g)
+    const specificFactors = new Set(['cocoa-powder']);
     for (const f of curatedFoods) {
-      if (f.per100.kcal < 20) continue; // near-zero foods (coffee, greens) are dominated by rounding
+      // low-energy foods (coffee, greens, citrus, mushrooms) are dominated by rounding and organic acids
+      if (f.per100.kcal < 40 || specificFactors.has(f.id)) continue;
       // fiber yields ~2 kcal/g, not 4 — USDA's own factors account for this
       const fiber = f.per100.fiber ?? 0;
       const fromMacros = kcalFromMacros({ ...f.per100, carbs: f.per100.carbs - fiber }) + 2 * fiber;
       expect(Math.abs(f.per100.kcal - fromMacros) / f.per100.kcal, f.id).toBeLessThan(0.15);
     }
+  });
+  it('search puts the obvious food first across the full catalog', () => {
+    const top = (q: string) => rankFoods(q, curatedFoods)[0]!.id;
+    expect(top('egg')).toBe('egg-whole');
+    expect(top('eggs')).toBe('egg-whole');
+    expect(top('rice')).toBe('rice-white-cooked');
+    expect(top('chicken')).toBe('chicken-breast-roasted');
+    expect(top('milk')).toBe('milk-whole');
+    expect(top('paneer')).toBe('paneer');
+    expect(top('curd')).toBe('yogurt-whole');
   });
   it('builds recipes from ingredients by cooked weight', () => {
     // roti: 100 g whole-wheat flour (340 kcal) → 130 g cooked = 261.5 kcal / 100 g

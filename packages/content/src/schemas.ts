@@ -223,13 +223,15 @@ export const Per100 = z.object({
   carbs: z.number().min(0).max(100),
   fat: z.number().min(0).max(100),
   fiber: z.number().min(0).max(100).optional(),
+  /** grams of alcohol (7 kcal/g) — beer, wine, spirits */
+  alcohol: z.number().min(0).max(100).optional(),
 });
 export type Per100 = z.infer<typeof Per100>;
 
 export const Serving = z.object({ label: z.string().min(1), grams: z.number().positive() });
 export type Serving = z.infer<typeof Serving>;
 
-export const FoodGroup = z.enum(['protein', 'dairy', 'legumes', 'grains', 'fruit', 'veg', 'fats', 'drinks', 'sweets', 'meals']);
+export const FoodGroup = z.enum(['protein', 'dairy', 'legumes', 'grains', 'fruit', 'veg', 'fats', 'condiments', 'drinks', 'sweets', 'meals']);
 
 export const CuratedFood = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
@@ -237,8 +239,12 @@ export const CuratedFood = z.object({
   group: FoodGroup,
   per100: Per100,
   servings: z.array(Serving).min(1),
-  /** exact USDA SR Legacy description, for the verifier (scripts/verify-foods.mjs) */
+  /** exact FoodData Central description (SR Legacy unless `dataset` says otherwise) */
   usda: z.string(),
+  /** FDC dataset when not SR Legacy (tools/foods/import-fdc.mjs) */
+  dataset: z.enum(['foundation', 'fndds']).optional(),
+  /** 0–1 search prior override (default 0.6) */
+  popularity: z.number().min(0).max(1).optional(),
   fdcId: z.number().int().optional(),
   /** date the values were last confirmed against USDA */
   checkedAt: z.string().optional(),

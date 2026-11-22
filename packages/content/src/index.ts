@@ -81,17 +81,19 @@ const foodsFile = FoodsFile.parse(foodsJson);
 export const curatedFoods: FoodItem[] = (() => {
   const base = new Map(foodsFile.foods.map((f) => [f.id, f]));
   const out: FoodItem[] = foodsFile.foods.map((f) => ({
-    id: f.id, name: f.name, group: f.group, per100: f.per100, servings: f.servings, source: 'usda', verified: true, popularity: 0.6,
+    id: f.id, name: f.name, group: f.group, per100: f.per100, servings: f.servings, source: 'usda', verified: true,
+    // staples carry popularity 1 in the catalog; mixed dishes sit below single foods
+    popularity: f.popularity ?? (f.group === 'meals' ? 0.4 : 0.6),
   }));
   for (const r of foodsFile.recipes) {
-    const total: Required<Per100> = { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 };
+    const total: Required<Omit<Per100, 'alcohol'>> = { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 };
     for (const ing of r.ingredients) {
       const f = base.get(ing.food);
       if (!f) throw new Error(`recipe ${r.id}: unknown ingredient ${ing.food}`);
-      for (const k of Object.keys(total) as (keyof Per100)[]) total[k] += ((f.per100[k] ?? 0) * ing.grams) / 100;
+      for (const k of Object.keys(total) as (keyof typeof total)[]) total[k] += ((f.per100[k] ?? 0) * ing.grams) / 100;
     }
     const per100 = Object.fromEntries(
-      (Object.keys(total) as (keyof Per100)[]).map((k) => [k, Math.round((total[k] / r.cookedWeightG) * 1000) / 10]),
+      (Object.keys(total) as (keyof typeof total)[]).map((k) => [k, Math.round((total[k] / r.cookedWeightG) * 1000) / 10]),
     ) as Required<Per100>;
     out.push({ id: r.id, name: r.name, group: r.group, per100, servings: r.servings, source: 'recipe', verified: true, popularity: 0.3 });
   }

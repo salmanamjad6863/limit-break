@@ -123,4 +123,16 @@ describe('food search forgives plurals', () => {
     expect(rankFoods('strawberry', foods)[0]!.id).toBe('straw');
     expect(rankFoods('hummus', foods)[0]!.id).toBe('hummus');
   });
+  it('a short name does not beat the staple on length alone; popularity decides within a tier', () => {
+    const pool = [
+      { id: 'cakes', name: 'Rice cakes', verified: true, popularity: 0.6 },
+      { id: 'rice', name: 'Rice, white, cooked', verified: true, popularity: 1 },
+      { id: 'cheesecake', name: 'Cheesecake', verified: true, popularity: 0.6 },
+      { id: 'cheddar', name: 'Cheddar cheese', verified: true, popularity: 0.6 },
+    ];
+    expect(rankFoods('rice', pool)[0]!.id).toBe('rice');
+    // "cheese" is a whole word in "Cheddar cheese" but only a prefix of "Cheesecake"
+    expect(rankFoods('cheese', pool)[0]!.id).toBe('cheddar');
+    expect(rankFoods('chee', pool).map((f) => f.id)).toEqual(expect.arrayContaining(['cheddar', 'cheesecake']));
+  });
 });

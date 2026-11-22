@@ -12,3 +12,6 @@ apps/mobile/android/
 .DS_Store
 coverage/
 apps/mobile/public/canvaskit.wasm
+
+# USDA FoodData Central downloads (tools/foods/import-fdc.mjs)
+tools/foods/.cache/

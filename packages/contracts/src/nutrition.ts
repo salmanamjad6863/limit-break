@@ -13,6 +13,8 @@ export const FoodPer100 = z.object({
   carbs: z.number().min(0).max(100),
   fat: z.number().min(0).max(100),
   fiber: z.number().min(0).max(100).optional(),
+  /** grams of alcohol (7 kcal/g) — beer, wine, spirits */
+  alcohol: z.number().min(0).max(100).optional(),
 });
 export type FoodPer100 = z.infer<typeof FoodPer100>;
 

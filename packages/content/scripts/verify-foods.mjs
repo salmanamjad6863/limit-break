@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Verifies curated foods against USDA FoodData Central (SR Legacy) and records the fdcId.
+ * Spot-checks curated foods against the live USDA FoodData Central API and records the fdcId.
+ * The catalog itself is generated offline from the FDC CSV release by tools/foods/import-fdc.mjs.
  *
  *   USDA_API_KEY=xxxx node packages/content/scripts/verify-foods.mjs [--ids a,b] [--write]
  *
@@ -21,7 +22,8 @@ const NUT = { kcal: ['Energy', 'KCAL'], protein: ['Protein', 'G'], carbs: ['Carb
 
 let bad = 0;
 for (const f of data.foods.filter((x) => !ids.length || ids.includes(x.id))) {
-  const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${KEY}&dataType=SR%20Legacy&pageSize=10&query=${encodeURIComponent(f.usda.replace(/[/%(),]/g, " "))}`;
+  const dataType = encodeURIComponent({ foundation: 'Foundation', fndds: 'Survey (FNDDS)' }[f.dataset] ?? 'SR Legacy');
+  const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${KEY}&dataType=${dataType}&pageSize=10&query=${encodeURIComponent(f.usda.replace(/[/%(),]/g, " "))}`;
   const res = await fetch(url);
   const left = res.headers.get('x-ratelimit-remaining');
   if (!res.ok) { console.error(`${f.id}: HTTP ${res.status}${left === '0' ? ' (rate limit: set USDA_API_KEY)' : ''}`); break; }
