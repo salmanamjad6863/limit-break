@@ -1,7 +1,7 @@
 import { Redirect, router } from 'expo-router';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { endRestActivity, startRestActivity, updateRestActivity, useGymMode } from '@/features/depth';
 import { haptics } from '@/lib/haptics';
 import { canPerform, startingLoad } from '@lb/engine';
@@ -44,7 +44,7 @@ export default function WorkoutSession() {
   const ctx = usePersonalContext();
   const lastSet = useTraining((s) => s.lastSet);
   const { flagPain } = usePainFlags();
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const [showHow, setShowHow] = useState(false);
   const [sheet, setSheet] = useState<'none' | 'swap' | 'pain' | 'exit' | 'note' | 'add'>('none');
   const [addQuery, setAddQuery] = useState('');
@@ -448,7 +448,8 @@ export default function WorkoutSession() {
         )}
       </Page>
       {sheet !== 'none' ? (
-        <View style={{ position: 'absolute', inset: 0, justifyContent: 'flex-end' }}>
+        // the exercise picker sits at the top so the keyboard never covers its search box
+        <View style={{ position: 'absolute', inset: 0, justifyContent: sheet === 'add' ? 'flex-start' : 'flex-end', paddingTop: sheet === 'add' ? 56 : 0 }}>
           <PressableScale
             haptic="none"
             scaleTo={1}
@@ -461,7 +462,7 @@ export default function WorkoutSession() {
           <View
             style={{
               padding: spacing[3],
-              paddingBottom: spacing[8],
+              paddingBottom: sheet === 'add' ? spacing[3] : spacing[8],
               width: '100%',
               maxWidth: 560,
               alignSelf: 'center',
@@ -505,29 +506,31 @@ export default function WorkoutSession() {
                   {addCandidates.length === 0 ? (
                     <Text variant="callout" muted>No matching exercises for your kit.</Text>
                   ) : null}
-                  {addCandidates.map((e) => (
-                    <PressableScale
-                      key={e.id}
-                      haptic="press"
-                      onPress={() => addToSession(e.id)}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Add ${e.name}`}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: spacing[3],
-                        padding: spacing[3],
-                        borderRadius: radius.md,
-                        backgroundColor: c.surfaceRaised,
-                      }}
-                    >
-                      <View style={{ flex: 1, gap: 2 }}>
-                        <Text variant="callout">{e.name}</Text>
-                        <Text variant="caption" muted>{patternLabel(e.pattern)}</Text>
-                      </View>
-                      <Icon name="add" size={16} />
-                    </PressableScale>
-                  ))}
+                  <ScrollView style={{ maxHeight: 300 }} contentContainerStyle={{ gap: spacing[2] }} keyboardShouldPersistTaps="handled">
+                    {addCandidates.map((e) => (
+                      <PressableScale
+                        key={e.id}
+                        haptic="press"
+                        onPress={() => addToSession(e.id)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Add ${e.name}`}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: spacing[3],
+                          padding: spacing[3],
+                          borderRadius: radius.md,
+                          backgroundColor: c.surfaceRaised,
+                        }}
+                      >
+                        <View style={{ flex: 1, gap: 2 }}>
+                          <Text variant="callout">{e.name}</Text>
+                          <Text variant="caption" muted>{patternLabel(e.pattern)}</Text>
+                        </View>
+                        <Icon name="add" size={16} />
+                      </PressableScale>
+                    ))}
+                  </ScrollView>
                   <Button variant="ghost" label="Cancel" onPress={() => setSheet('none')} />
                 </>
               ) : (

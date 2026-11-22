@@ -144,9 +144,10 @@ export const useWorkoutSession = create<SessionState>()(
           if (!s.active) return s;
           const e = exerciseById.get(exerciseId);
           if (!e || s.active.exercises.some((x) => x.exerciseId === exerciseId)) return s;
-          const timed = e.pattern === 'cardio' || e.pattern === 'mobility' || e.pattern === 'conditioning';
+          // holds (plank, wall-sit, carries) are timed too, not just cardio/mobility
+          const timed = e.kind === 'time';
           const role = e.pattern.startsWith('core') ? 'core' as const
-            : timed ? 'finisher' as const
+            : e.pattern === 'cardio' || e.pattern === 'conditioning' ? 'finisher' as const
             : 'accessory' as const;
           const working = Array.from({ length: 3 }, () => ({
             kind: 'working' as const,
