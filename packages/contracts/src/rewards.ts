@@ -8,6 +8,8 @@ export const Reward = z.discriminatedUnion('type', [
   z.object({ type: z.literal('pr'), exerciseId: z.string(), e1rmKg: z.number() }),
   z.object({ type: z.literal('questComplete'), questId: z.string() }),
   z.object({ type: z.literal('title'), titleId: z.string() }),
+  z.object({ type: z.literal('achievement'), achievementId: z.string(), tier: z.number().int() }),
+  z.object({ type: z.literal('challengeComplete'), name: z.string(), days: z.number().int(), flawless: z.boolean() }),
   z.object({ type: z.literal('capReached'), dropped: z.number().int() }),
 ]);
 export type Reward = z.infer<typeof Reward>;

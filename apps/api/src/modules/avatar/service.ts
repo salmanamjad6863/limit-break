@@ -2,9 +2,9 @@
  * Avatar Forge service (VISUALS.md §7 / docs/AVATAR.md).
  */
 import type { AvatarLoadoutDto, AvatarMeResponse, BuyCosmeticInput, CosmeticDto, CosmeticSlot, EquipCosmeticInput } from '@lb/contracts';
-import { cosmeticById, cosmetics } from '@lb/content';
+import { achievementById, cosmeticById, cosmetics } from '@lb/content';
 import type { PrismaClient } from '@lb/db';
-import { gameDate } from '@lb/engine';
+import { gameDate, tierName } from '@lb/engine';
 import { EssenceError, grantEssence } from './essence';
 
 const RANKS = ['E', 'D', 'C', 'B', 'A', 'S'] as const;
@@ -34,9 +34,25 @@ function rankAtLeast(have: string, need: string | null) {
   return RANKS.indexOf(have as (typeof RANKS)[number]) >= RANKS.indexOf(need as (typeof RANKS)[number]);
 }
 
+/** achievement id → highest tier earned */
+async function earnedTiers(prisma: PrismaClient, userId: string) {
+  const rows = await prisma.achievementUnlock.findMany({ where: { userId }, select: { achievementId: true, tier: true } });
+  const m = new Map<string, number>();
+  for (const r of rows) m.set(r.achievementId, Math.max(m.get(r.achievementId) ?? -1, r.tier));
+  return m;
+}
+const earnedFor = (c: (typeof cosmetics)[number], earned: ReadonlyMap<string, number>) => !!c.unlock && (earned.get(c.unlock.achievement) ?? -1) >= c.unlock.tier;
+const unlockText = (c: (typeof cosmetics)[number]) => {
+  const a = c.unlock ? achievementById.get(c.unlock.achievement) : null;
+  if (!c.unlock || !a) return null;
+  const t = tierName(a, c.unlock.tier);
+  return `Earn ${a.hidden ? 'a hidden achievement' : `${a.name} ${t.charAt(0).toUpperCase()}${t.slice(1)}`}`;
+};
+
 async function ensureStarter(prisma: PrismaClient, userId: string) {
-  // Only auto-grant free items with no rank/class gate — the rest are previewable, then claimed when unlocked.
-  const free = cosmetics.filter((c) => c.free && !c.rankLock && !c.classLock);
+  // Auto-grant free items with no rank/class gate, and every item whose achievement tier is earned.
+  const earned = await earnedTiers(prisma, userId);
+  const free = cosmetics.filter((c) => (c.free && !c.rankLock && !c.classLock) || earnedFor(c, earned));
   const owned = await prisma.cosmeticOwned.findMany({ where: { userId }, select: { cosmeticId: true } });
   const have = new Set(owned.map((o) => o.cosmeticId));
   const missing = free.filter((c) => !have.has(c.id));
@@ -89,12 +105,14 @@ export async function getAvatarMe(prisma: PrismaClient, userId: string): Promise
 
   const catalog: CosmeticDto[] = cosmetics.map((c) => {
     let lockedReason: string | null = null;
-    if (!rankAtLeast(rank, c.rankLock)) lockedReason = `Requires ${c.rankLock}-Rank`;
+    if (c.unlock && !have.has(c.id)) lockedReason = unlockText(c);
+    else if (!rankAtLeast(rank, c.rankLock)) lockedReason = `Requires ${c.rankLock}-Rank`;
     else if (c.classLock && c.classLock !== heroClass) lockedReason = `Requires ${c.classLock} class`;
     return {
       id: c.id, slot: c.slot, name: c.name, rarity: c.rarity, price: c.price, free: c.free,
       tint: c.tint, shape: c.shape, rankLock: c.rankLock, classLock: c.classLock,
       owned: have.has(c.id), equipped: equipped.has(c.id), lockedReason,
+      unlock: c.unlock ?? null, style: c.style ?? null, colors: c.colors ?? null,
     };
   });
 
@@ -131,6 +149,7 @@ export async function buyCosmetic(prisma: PrismaClient, userId: string, input: B
 
   const owned = await prisma.cosmeticOwned.findUnique({ where: { userId_cosmeticId: { userId, cosmeticId: item.id } } });
   if (owned) return getAvatarMe(prisma, userId);
+  if (item.unlock) throw new AvatarError(403, unlockText(item) ?? 'earned from an achievement');
 
   const state = await prisma.hunterState.findUnique({ where: { userId } });
   const profile = await prisma.profile.findUnique({ where: { id: userId }, select: { heroClass: true, timezone: true } });

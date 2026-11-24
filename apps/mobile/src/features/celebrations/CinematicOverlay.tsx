@@ -1,3 +1,5 @@
+import { achievementById, cosmetics } from '@lb/content';
+import { describeTier, tierName, tierXp } from '@lb/engine';
 import { rankColor } from '@lb/tokens';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -5,7 +7,8 @@ import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
 import { haptics } from '@/lib/haptics';
 import { useTheme } from '@/theme';
 import { Text } from '@/ui';
-import { ParticleBurst, RankBadge } from '@/ui/fx';
+import { AchievementBadge, ParticleBurst, RankBadge, TIER_METAL } from '@/ui/fx';
+import type { IconName } from '@/ui';
 import { CountUp, GlitchText, TypewriterText } from '@/ui/motion';
 import { useCelebrations, type Celebration } from './store';
 
@@ -19,6 +22,24 @@ function copyFor(c: Celebration): { kicker: string; headline: string; line: stri
       return { kicker: '[ LIMIT BROKEN ]', headline: 'NEW RECORD', line: `Estimated max: ${Math.round(c.e1rmKg)} kg` };
     case 'title':
       return { kicker: '[ TITLE ACQUIRED ]', headline: c.titleId.toUpperCase(), line: 'A new title echoes through the System.' };
+    case 'achievement': {
+      const def = achievementById.get(c.achievementId);
+      if (!def) return { kicker: '[ ACHIEVEMENT ]', headline: 'UNLOCKED', line: '' };
+      const tier = tierName(def, c.tier);
+      const title = def.tiers[c.tier]?.title;
+      const looks = cosmetics.filter((x) => x.unlock?.achievement === def.id && x.unlock.tier === c.tier).map((x) => `${x.name} ${x.slot}`);
+      return {
+        kicker: def.hidden ? '[ HIDDEN ACHIEVEMENT ]' : `[ ${tier.toUpperCase()} ACHIEVEMENT ]`,
+        headline: def.name.toUpperCase(),
+        line: `${describeTier(def, c.tier)}. +${tierXp(def, c.tier)} XP${title ? ` · Title: ${title}` : ''}${looks.length ? ` · Unlocked: ${looks.join(', ')}` : ''}`,
+        color: TIER_METAL[tier].light,
+      };
+    }
+    case 'challengeComplete':
+      return {
+        kicker: '[ CHALLENGE CLEARED ]', headline: `${c.days} DAYS`,
+        line: c.flawless ? `${c.name}: flawless. Not a single day missed.` : `${c.name}: complete. You kept going.`,
+      };
   }
 }
 
@@ -53,6 +74,10 @@ export function CinematicOverlay() {
         <ParticleBurst width={width} height={height} color={color} trigger={burst} />
         <Animated.View entering={ZoomIn.springify().damping(12).stiffness(140)} style={{ alignItems: 'center', gap: spacing[3] }}>
           {current.type === 'rankUp' ? <RankBadge rank={current.to} size={150} /> : null}
+          {current.type === 'achievement' && achievementById.get(current.achievementId) ? (
+            <AchievementBadge size={160} icon={achievementById.get(current.achievementId)!.icon as IconName}
+              tier={tierName(achievementById.get(current.achievementId)!, current.tier)} />
+          ) : null}
           <Text variant="label" color={c.textDim}>{copy.kicker}</Text>
           <GlitchText variant="display" color={color} repeatEveryMs={2600} style={{ textAlign: 'center', textShadowColor: color, textShadowRadius: 24 }}>
             {copy.headline}

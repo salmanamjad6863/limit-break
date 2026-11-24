@@ -2,6 +2,10 @@
  * On-device personal data. Imports the stores directly (not the feature barrels) so the session layer can
  * use it without an import cycle.
  */
+import { useAchievementLocal } from '@/features/achievements/local';
+import { useLookLocal } from '@/features/avatar/look';
+import { useProfilePhoto } from '@/features/avatar/photo';
+import { useChallengeStore } from '@/features/challenges/store';
 import { useOnboarding } from '@/features/onboarding/store';
 import { useNutritionLocal } from '@/features/nutrition/local';
 import { useLocalHunter } from '@/features/progression/localHunter';
@@ -15,7 +19,7 @@ import { storage } from '@/lib/storage';
 import { useVoicePref } from '@/lib/voice';
 
 /** Every persisted store that can hold personal data. */
-const STORES = [useLocalHunter, useTraining, useWorkoutSession, useProgress, useNutritionLocal, useQuestLocal, useOnboarding, useVoicePref, useAnalyticsConsent] as const;
+const STORES = [useLocalHunter, useTraining, useChallengeStore, useAchievementLocal, useLookLocal, useProfilePhoto, useWorkoutSession, useProgress, useNutritionLocal, useQuestLocal, useOnboarding, useVoicePref, useAnalyticsConsent] as const;
 
 type Persisted = { persist?: { clearStorage: () => void }; getInitialState: () => unknown; setState: (s: never, replace: true) => void };
 

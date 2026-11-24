@@ -1,4 +1,5 @@
 import { assessmentNorms } from '@lb/content';
+import { refreshAchievements } from '@/features/achievements/api';
 import type { FitnessTests, TrialAttemptResponse } from '@lb/contracts';
 import {
   applyDailyCap, evaluateTrial, gameDate, RANK_REQUIREMENTS, scoreTrialEvents, trialStatus, XP,
@@ -65,6 +66,7 @@ export function useAttemptTrial() {
       }
       useProgress.getState().mergeTests(results);
       enqueue(res.rewards as never);
+      refreshAchievements();
       track({ event: 'trial_attempted', target_rank: res.target, passed: res.passed });
       return res;
     },

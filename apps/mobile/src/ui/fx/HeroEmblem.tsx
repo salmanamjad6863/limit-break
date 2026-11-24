@@ -19,8 +19,21 @@ import { Text } from '../Text';
  * Animated hero sigil — a stand-in for the VRoid hero art (ARCHITECTURE.md §4.2):
  * pulsing aura, counter-rotating rune rings, a hexagram core, rising embers and the hero's initial.
  */
-export function HeroEmblem({ size = 220, color, initial }: { size?: number; color: string; initial: string }) {
+export type AuraStyle = 'pulse' | 'orbit' | 'flare' | 'storm';
+
+export function HeroEmblem({
+  size = 220, color, initial, aura,
+}: {
+  size?: number;
+  color: string;
+  initial: string;
+  /** equipped aura cosmetic: its colours tint the glow, orbs, rays or lightning; the runes keep the hero's colour */
+  aura?: { colors?: readonly [string, string] | null; style?: AuraStyle | null } | null;
+}) {
   const reduce = useReducedMotion();
+  const auraA = aura?.colors?.[0] ?? color;
+  const auraB = aura?.colors?.[1] ?? color;
+  const auraStyle = aura?.style ?? 'pulse';
   const clock = useClock();
   const cx = size / 2;
   const cy = size / 2;
@@ -64,12 +77,75 @@ export function HeroEmblem({ size = 220, color, initial }: { size?: number; colo
     return p.detach();
   });
 
+  // orbit: five orbs circling just outside the runes
+  const orbs = useDerivedValue(() => {
+    const p = Skia.PathBuilder.Make();
+    if (auraStyle !== 'orbit') return p.detach();
+    for (let i = 0; i < 5; i++) {
+      const a = t.get() * 0.9 + (i * 2 * Math.PI) / 5;
+      const rr = r * (1.22 + 0.04 * Math.sin(t.get() * 2 + i));
+      p.addCircle(cx + rr * Math.cos(a), cy + rr * Math.sin(a), size * (0.012 + (i % 2) * 0.006));
+    }
+    return p.detach();
+  });
+  // flare: twelve light rays turning slowly
+  const rays = useMemo(() => {
+    const p = Skia.PathBuilder.Make();
+    for (let i = 0; i < 12; i++) {
+      const a = (i * Math.PI) / 6;
+      const w = 0.07;
+      p.moveTo(cx + r * 0.9 * Math.cos(a - w), cy + r * 0.9 * Math.sin(a - w));
+      p.lineTo(cx + r * (i % 2 ? 1.38 : 1.55) * Math.cos(a), cy + r * (i % 2 ? 1.38 : 1.55) * Math.sin(a));
+      p.lineTo(cx + r * 0.9 * Math.cos(a + w), cy + r * 0.9 * Math.sin(a + w));
+      p.close();
+    }
+    return p.detach();
+  }, [cx, cy, r]);
+  const spinRays = useDerivedValue(() => [{ rotate: t.get() * 0.12 }]);
+  // storm: jagged arcs that re-strike several times a second
+  const bolts = useDerivedValue(() => {
+    const p = Skia.PathBuilder.Make();
+    if (auraStyle !== 'storm') return p.detach();
+    const strike = Math.floor(t.get() * 7);
+    for (let k = 0; k < 3; k++) {
+      const seed = strike * 3 + k;
+      const start = ((seed * 2.399) % (Math.PI * 2));
+      for (let j = 0; j <= 6; j++) {
+        const a = start + j * 0.09;
+        const jitter = Math.sin(seed * 12.9898 + j * 78.233) * 43758.5453;
+        const rr = r * (1.2 + 0.12 * (jitter - Math.floor(jitter) - 0.5));
+        const x = cx + rr * Math.cos(a);
+        const y = cy + rr * Math.sin(a);
+        if (j === 0) p.moveTo(x, y);
+        else p.lineTo(x, y);
+      }
+    }
+    return p.detach();
+  });
+
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
       <Canvas style={{ position: 'absolute', width: size, height: size }}>
         <Circle cx={cx} cy={cy} r={pulse}>
-          <RadialGradient c={vec(cx, cy)} r={r * 1.4} colors={[`${color}66`, `${color}10`, `${color}00`]} />
+          <RadialGradient c={vec(cx, cy)} r={r * 1.4} colors={[`${auraA}77`, `${auraB}22`, `${auraB}00`]} />
         </Circle>
+        {auraStyle === 'flare' ? (
+          <Group transform={spinRays} origin={vec(cx, cy)} opacity={0.5}>
+            <Path path={rays}>
+              <RadialGradient c={vec(cx, cy)} r={r * 1.55} colors={[`${auraA}CC`, `${auraB}00`]} />
+            </Path>
+          </Group>
+        ) : null}
+        {auraStyle === 'orbit' ? (
+          <Path path={orbs} color={auraA}>
+            <BlurMask blur={2.5} style="solid" />
+          </Path>
+        ) : null}
+        {auraStyle === 'storm' ? (
+          <Path path={bolts} style="stroke" strokeWidth={1.4} strokeJoin="round" color={auraA}>
+            <BlurMask blur={3} style="solid" />
+          </Path>
+        ) : null}
         <Group transform={spinA} origin={vec(cx, cy)}>
           <Circle cx={cx} cy={cy} r={r} style="stroke" strokeWidth={1.5} color={`${color}CC`}>
             <DashPathEffect intervals={[10, 6, 2, 6]} />
@@ -89,7 +165,7 @@ export function HeroEmblem({ size = 220, color, initial }: { size?: number; colo
         <Circle cx={cx} cy={cy} r={r * 0.42} color={color} opacity={coreGlow}>
           <BlurMask blur={18} style="normal" />
         </Circle>
-        <Path path={embers} color={`${color}`} opacity={0.85}>
+        <Path path={embers} color={auraA} opacity={0.85}>
           <BlurMask blur={1.5} style="solid" />
         </Path>
       </Canvas>

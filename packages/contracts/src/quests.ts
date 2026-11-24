@@ -90,3 +90,58 @@ export function questRatio(q: QuestDto): number {
   if (!slots.length) return 0;
   return slots.reduce((s, sl, i) => s + Math.min(1, (q.progress[String(i)] ?? 0) / sl.target), 0) / slots.length;
 }
+
+/* ---------------- habit challenges (own, solo, always flexible) ---------------- */
+
+const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+export const ChallengeTaskDto = z
+  .object({
+    id: z.string().regex(/^[a-z0-9-]{1,20}$/),
+    kind: z.enum(['exercise', 'habit']),
+    exerciseId: z.string().min(1).max(80).optional(),
+    title: z.string().trim().max(60),
+    target: z.number().int().min(1).max(10_000).optional(),
+    unit: z.enum(['reps', 'sec', 'min']).optional(),
+    addPerStep: z.number().int().min(0).max(1_000).optional(),
+    stepDays: z.number().int().min(1).max(30).optional(),
+  })
+  .refine((t) => (t.kind === 'exercise' ? !!t.exerciseId && !!t.target : t.title.length > 0), 'exercise tasks need an exercise and a target; habits need a name');
+export type ChallengeTaskDto = z.infer<typeof ChallengeTaskDto>;
+
+export const CreateChallengeInput = z
+  .object({
+    id: z.uuid(),
+    name: z.string().trim().min(1).max(40),
+    days: z.number().int().min(3).max(365),
+    graceDays: z.number().int().min(0).max(30),
+    /** game date of day 1: today or up to a week ahead */
+    startDate: isoDay,
+    tasks: z.array(ChallengeTaskDto).min(1).max(8),
+  })
+  .refine((c) => c.graceDays < c.days, 'grace days must be fewer than the length')
+  .refine((c) => new Set(c.tasks.map((t) => t.id)).size === c.tasks.length, 'duplicate task id');
+export type CreateChallengeInput = z.infer<typeof CreateChallengeInput>;
+
+export const ChallengeDto = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  days: z.number().int(),
+  graceDays: z.number().int(),
+  startDate: isoDay,
+  tasks: z.array(ChallengeTaskDto),
+  status: z.enum(['ACTIVE', 'COMPLETED', 'ENDED']),
+  /** game date → task ids done that day */
+  checkins: z.record(isoDay, z.array(z.string())),
+  completedAt: z.string().nullable(),
+});
+export type ChallengeDto = z.infer<typeof ChallengeDto>;
+
+export const ChallengesResponse = z.object({ challenges: z.array(ChallengeDto) });
+export type ChallengesResponse = z.infer<typeof ChallengesResponse>;
+
+/** the full list of task ids done on that date (absolute, so replays are safe) */
+export const ChallengeCheckinInput = z.object({ date: isoDay, done: z.array(z.string().max(20)).max(8) });
+export type ChallengeCheckinInput = z.infer<typeof ChallengeCheckinInput>;
+
+export const ChallengeCheckinResponse = z.object({ challenge: ChallengeDto, rewards: z.array(z.unknown()) });
+export type ChallengeCheckinResponse = z.infer<typeof ChallengeCheckinResponse>;

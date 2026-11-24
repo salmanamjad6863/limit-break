@@ -9,3 +9,4 @@ export { SectionHeader } from './SectionHeader';
 export { Text } from './Text';
 export * from './hud';
 export * from './motion';
+export { Difficulty, SceneCard } from './SceneCard';

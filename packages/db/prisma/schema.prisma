@@ -88,6 +88,8 @@ model Profile {
   notificationsOptIn Boolean           @default(false)
   /// chosen program + when it was picked (rotation restarts on change) — restored on a new phone
   activeProgramId    String?
+  /// equipped achievement title ("Iron Devotee"), shown under the hunter's name
+  title              String?
   programStartedAt   DateTime?
   /// exercises flagged "this hurts" in the player; the generator swaps them out
   avoidExercises     String[]          @default([])
@@ -142,6 +144,9 @@ model Profile {
   essenceLedger     EssenceLedger[]
   cosmeticsOwned    CosmeticOwned[]
   avatarLoadout     AvatarLoadout?
+  routines          CustomRoutine[]
+  challenges        Challenge[]
+  achievements      AchievementUnlock[]
 }
 
 model HunterState {
@@ -899,4 +904,69 @@ model AvatarLoadout {
   frame     String?
   updatedAt DateTime @updatedAt
   profile   Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// The hunter's own weekly routine (days, exact exercises, sets/reps, weekday schedule).
+/// Active when Profile.activeProgramId = "custom-<id>". id is client-generated (offline create).
+model CustomRoutine {
+  id        String   @id @db.Uuid
+  userId    String   @db.Uuid
+  name      String
+  /// RoutineDayDto[] (packages/contracts)
+  days      Json
+  /// weekday "0"–"6" → day id
+  schedule  Json
+  createdAt DateTime @default(now())
+  /// client edit time; the newest edit wins across phones
+  updatedAt DateTime
+  profile   Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Own habit challenge ("60-day push-up challenge"). Always flexible: misses use grace days, never restart.
+model Challenge {
+  /// client-generated (created offline)
+  id          String             @id @db.Uuid
+  userId      String             @db.Uuid
+  name        String
+  days        Int
+  graceDays   Int
+  /// game date of day 1
+  startDate   String
+  /// ChallengeTaskDto[] (packages/contracts)
+  tasks       Json
+  /// ACTIVE | COMPLETED | ENDED
+  status      String             @default("ACTIVE")
+  createdAt   DateTime           @default(now())
+  completedAt DateTime?
+  endedAt     DateTime?
+  profile     Profile            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkins    ChallengeCheckin[]
+
+  @@index([userId, status])
+}
+
+/// Task ids done on one game date. XP for a full day is paid once (rewarded), never clawed back.
+model ChallengeCheckin {
+  challengeId String    @db.Uuid
+  localDate   String
+  done        String[]
+  rewarded    Boolean   @default(false)
+  updatedAt   DateTime  @updatedAt
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@id([challengeId, localDate])
+}
+
+/// One earned achievement tier (0 = bronze … 3 = platinum; hidden ones have only tier 0). Permanent.
+model AchievementUnlock {
+  userId        String   @db.Uuid
+  achievementId String
+  tier          Int
+  unlockedAt    DateTime @default(now())
+  profile       Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, achievementId, tier])
+  @@index([userId, unlockedAt])
 }

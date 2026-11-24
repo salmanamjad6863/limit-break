@@ -10,3 +10,5 @@ export { EDIT_WINDOW_DAYS, historyKeys, useEditable, useHistoryActions, useWorko
 export { useChangeLevel, useTrainingPatch } from './level';
 export { StaleSessionCard, useStaleSession } from './StaleSession';
 export { buildFocused, focusedDay, useWorkoutPlan, type WorkoutPlan } from './plan';
+export { blankDay, dayIdFor, defaultSlot, newId, routineAsProgram, routineFromProgram, useRoutine, useRoutineActions, useRoutines } from './routines';
+export { useRoutineDraft } from './routineDraft';

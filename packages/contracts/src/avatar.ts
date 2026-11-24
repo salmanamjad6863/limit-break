@@ -22,6 +22,10 @@ export const CosmeticDto = z.object({
   owned: z.boolean(),
   equipped: z.boolean(),
   lockedReason: z.string().nullable(),
+  /** earned from an achievement tier, never sold */
+  unlock: z.object({ achievement: z.string(), tier: z.number().int() }).nullable().default(null),
+  style: z.string().nullable().default(null),
+  colors: z.tuple([z.string(), z.string()]).nullable().default(null),
 });
 export type CosmeticDto = z.infer<typeof CosmeticDto>;
 

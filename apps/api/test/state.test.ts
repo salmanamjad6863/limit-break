@@ -24,6 +24,7 @@ function fake() {
       groupBy: async () => [{ exerciseId: 'push-up', _max: { e1rmKg: 41.26 } }, { exerciseId: 'squat', _max: { e1rmKg: null } }],
     },
     exerciseNote: { findMany: async () => [{ exerciseId: 'push-up', note: 'elbows in' }] },
+    customRoutine: { findMany: async () => [], count: async () => 0 },
     $queryRaw: async (...args: unknown[]) => (calls.raw.push(args), [{ exerciseId: 'push-up', reps: 12, weightKg: null }]),
     entitlement: { findFirst: async () => null },
   } as unknown as PrismaClient;

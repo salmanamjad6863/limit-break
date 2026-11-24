@@ -47,7 +47,7 @@ export default function PostScreen() {
   // my own card, so a comment I send shows with my avatar and rank right away
   const mine = useHunter(me.data?.handle ?? '');
   const myCard: HunterCardDto | null = me.data?.handle
-    ? mine.data?.hunter ?? { userId: 'me', handle: me.data.handle, heroId: null, heroClass: null, rank: 'E', level: 1, powerLevel: 0 }
+    ? mine.data?.hunter ?? { userId: 'me', handle: me.data.handle, heroId: null, heroClass: null, rank: 'E', level: 1, powerLevel: 0, title: null, frame: null, aura: null }
     : null;
 
   const all = comments.data ?? [];
@@ -108,7 +108,7 @@ export default function PostScreen() {
     return (
       <View key={cm.id} style={{ flexDirection: 'row', gap: spacing[3], opacity: sending ? 0.6 : 1 }}>
         <PressableScale haptic="tap" onPress={() => router.push(`/community/hunter/${cm.author.handle}`)} accessibilityRole="link" accessibilityLabel={`Open @${cm.author.handle}`}>
-          <Avatar handle={cm.author.handle} color={heroColor(cm.author)} rank={cm.author.rank} size={nested ? 28 : 34} />
+          <Avatar handle={cm.author.handle} color={heroColor(cm.author)} rank={cm.author.rank} size={nested ? 28 : 34} frame={cm.author.frame} aura={cm.author.aura} />
         </PressableScale>
         <View style={{ flex: 1, gap: 4 }}>
           <View style={{ backgroundColor: c.surfaceRaised, borderRadius: radius.lg, borderTopLeftRadius: 6, paddingHorizontal: spacing[3], paddingVertical: spacing[2], gap: 2, alignSelf: 'flex-start', maxWidth: '100%' }}>

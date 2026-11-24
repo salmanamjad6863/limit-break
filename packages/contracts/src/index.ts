@@ -10,3 +10,4 @@ export * from './community';
 export * from './social';
 export * from './depth';
 export * from './avatar';
+export * from './achievements';

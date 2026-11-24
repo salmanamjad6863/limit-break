@@ -164,7 +164,7 @@ export function usePostGuildMessage(guildId: string | undefined) {
       const prev = qc.getQueryData<{ messages: GuildMessageDto[] }>(key);
       const optimistic = {
         id: `sending:${json.id}`, body: json.body, status: 'visible', mine: true, createdAt: new Date().toISOString(),
-        author: { userId: 'me', handle: 'you', heroId: null, heroClass: null, rank: 'E', level: 1, powerLevel: 0 },
+        author: { userId: 'me', handle: 'you', heroId: null, heroClass: null, rank: 'E', level: 1, powerLevel: 0, title: null, frame: null, aura: null },
       } as GuildMessageDto;
       qc.setQueryData<{ messages: GuildMessageDto[] }>(key, { ...(prev ?? {}), messages: [optimistic, ...(prev?.messages ?? [])] });
       return () => qc.setQueryData(key, prev);

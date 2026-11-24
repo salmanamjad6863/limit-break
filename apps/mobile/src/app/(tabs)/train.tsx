@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import { View } from 'react-native';
 import {
-  buildFocused, programs, quickSessions, StaleSessionCard, usePersonalContext, useStaleSession, useToday, useTraining, useTrainingProfile, useWorkoutSession, workoutTypes,
+  buildFocused, programs, quickSessions, StaleSessionCard, usePersonalContext, useRoutines, useStaleSession, useToday, useTraining, useTrainingProfile, useWorkoutSession, workoutTypes,
 } from '@/features/training';
 import {
   CATEGORY_LABEL, estimateKcal, ExerciseRow, FilterChips, FocusedPoster, ModeBar, ProgramHero, ProgramPoster, SessionPoster, Shelf, targetMuscles, WeekStrip,
@@ -33,6 +33,7 @@ export default function TrainScreen() {
   const currentId = activeProgramId ?? today.program.id;
   const [category, setCategory] = useState<'all' | FocusedWorkout['category']>('all');
   const ctx = usePersonalContext();
+  const routines = useRoutines();
   // posters show the session this hunter will actually get (level, kit, age)
   const focusedPlans = useMemo(() => new Map(focusedWorkouts.map((f) => [f.id, buildFocused(f, ctx)])), [ctx]);
   // your level and setting first; everything stays available
@@ -138,6 +139,17 @@ export default function TrainScreen() {
       {/* Programs */}
       <Appear index={5} style={{ gap: spacing[3] }}>
         <SectionHeader title="Programs" action="See all" onAction={() => router.push('/programs')} />
+        <PressableScale haptic="tap" onPress={() => router.push('/routines')} accessibilityRole="button" accessibilityLabel="My routines: build your own weekly workouts"
+          style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[4], borderRadius: 16, borderWidth: 1, borderColor: `${c.accent}55`, backgroundColor: `${c.accent}14` }}>
+          <Icon name="construct-outline" size={22} color={c.accentGlow} />
+          <View style={{ flex: 1 }}>
+            <Text variant="callout" style={{ fontFamily: 'Inter_600SemiBold' }}>My routines</Text>
+            <Text variant="caption" muted>
+              {routines.length ? `${routines.length} routine${routines.length === 1 ? '' : 's'} · your exercises, sets and days` : 'Build your own week: exercises, sets, reps and days'}
+            </Text>
+          </View>
+          <Icon name="chevron-forward" size={16} color={c.textMuted} />
+        </PressableScale>
         <Shelf>
           {[...programs].sort((a, b) => Number(b.id === currentId) - Number(a.id === currentId)).map((p) => (
             <ProgramPoster key={p.id} p={p} active={p.id === currentId} />

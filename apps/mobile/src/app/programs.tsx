@@ -23,6 +23,18 @@ export default function ProgramsScreen() {
 
   return (
     <Page header={<ScreenHeader title="Programs" />}>
+      <PressableScale haptic="press" accessibilityRole="button" accessibilityLabel="My routines: build your own weekly workouts" onPress={() => router.push('/routines')}>
+        <Card tint={c.accent}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
+            <Icon name="construct-outline" size={22} color={c.accentGlow} />
+            <View style={{ flex: 1 }}>
+              <Text variant="headline">Build your own routine</Text>
+              <Text variant="callout" dim>Choose every exercise, the sets and reps, and which days you train.</Text>
+            </View>
+            <Icon name="chevron-forward" size={16} />
+          </View>
+        </Card>
+      </PressableScale>
       <Text variant="callout" dim>
         Best fit first for your setting ({LOC[profile.location]}), level and schedule. Open one to see every day at your level.
       </Text>

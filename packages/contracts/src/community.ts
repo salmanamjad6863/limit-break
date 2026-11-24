@@ -30,6 +30,11 @@ export const HunterCardDto = z.object({
   rank: Rank,
   level: z.number().int(),
   powerLevel: z.number().int(),
+  /** equipped achievement title */
+  title: z.string().nullable().default(null),
+  /** equipped frame / aura cosmetic ids */
+  frame: z.string().nullable().default(null),
+  aura: z.string().nullable().default(null),
 });
 export type HunterCardDto = z.infer<typeof HunterCardDto>;
 

@@ -31,9 +31,10 @@ export default function HunterScreen() {
         <>
           <Card tint={heroColor(h)}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
-              <Avatar handle={h.handle} color={heroColor(h)} rank={h.rank} size={64} />
+              <Avatar handle={h.handle} color={heroColor(h)} rank={h.rank} size={64} frame={h.frame} aura={h.aura} />
               <View style={{ flex: 1, gap: 2 }}>
                 <Text variant="title">{`@${h.handle}`}</Text>
+                {h.title ? <Text variant="caption" color={c.accentGlow} style={{ letterSpacing: 0.5, fontFamily: 'Inter_600SemiBold' }}>{h.title.toUpperCase()}</Text> : null}
                 <Text variant="caption" dim>{hero ? `${hero.name} · ${hero.epithet}` : h.heroClass ?? ''}</Text>
               </View>
             </View>

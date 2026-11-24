@@ -2,6 +2,7 @@ import { useCommunityMe } from '@/features/community/api';
 /**
  * Live Guild / Friends / League panel for the Community tab (SYSTEMS.md §5.6).
  */
+import { useAchievements } from '@/features/achievements';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Share, View } from 'react-native';
@@ -218,6 +219,7 @@ function LeagueBlock() {
 function LicenseBlock() {
   const { c, spacing, radius } = useTheme();
   const license = useHunterLicense();
+  const title = useAchievements().data?.equippedTitle ?? null;
   const L = license.data;
   if (!L) return null;
   return (
@@ -225,6 +227,7 @@ function LicenseBlock() {
       <SectionHeader title="Hunter License" />
       <Card tint={c.accent}>
         <Text variant="headline">@{L.handle}</Text>
+        {title ? <Text variant="caption" color={c.accentGlow} style={{ letterSpacing: 0.5, fontFamily: 'Inter_600SemiBold' }}>{title.toUpperCase()}</Text> : null}
         <Text variant="caption" color={c.accent}>{`${L.rank}-Rank · Lv ${L.level} · PL ${L.powerLevel}`}</Text>
         <Text variant="caption" dim>{`Streak ${L.streak} · ${L.heroClass ?? 'hunter'}`}</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3], marginTop: spacing[2] }}>
@@ -236,7 +239,7 @@ function LicenseBlock() {
           ))}
         </View>
         <Button size="md" icon="share-outline" label="Share license"
-          onPress={() => Share.share({ message: `LIMITBREAK Hunter License\n@${L.handle} · ${L.rank}-Rank · Lv ${L.level} · Power ${L.powerLevel}` })} />
+          onPress={() => Share.share({ message: `LIMITBREAK Hunter License\n@${L.handle}${title ? ` · ${title}` : ''} · ${L.rank}-Rank · Lv ${L.level} · Power ${L.powerLevel}` })} />
       </Card>
     </Appear>
   );

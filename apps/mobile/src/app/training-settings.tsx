@@ -1,5 +1,5 @@
 import type { TrainingSettingsInput } from '@lb/contracts';
-import { validateWeekdays } from '@lb/engine';
+import { defaultWeekdays, routineIdOf, validateWeekdays } from '@lb/engine';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -27,12 +27,15 @@ export default function TrainingSettings() {
   const profile = useTrainingProfile();
   const today = useToday();
   const save = useUpdateTraining();
+  // an own routine sets its own weekdays; the account keeps its 2–6 training days for everything else
+  const routineId = routineIdOf(today.program.id);
   const gymMode = useGymMode((x) => x.enabled);
   const setGymMode = useGymMode((x) => x.setEnabled);
   const [s, setS] = useState<TrainingSettingsInput>(() => ({
     experience: profile.experience, location: profile.location, equipment: profile.equipment, injuries: profile.injuries,
     sessionMinutes: ([15, 30, 45, 60, 75, 90].includes(profile.sessionMinutes) ? profile.sessionMinutes : 45) as TrainingSettingsInput['sessionMinutes'],
-    weekdays: today.weekdays, workoutTime: profile.workoutTime ?? null,
+    weekdays: routineId ? (profile.weekdays?.length ? profile.weekdays : defaultWeekdays(profile.daysPerWeek)) : today.weekdays,
+    workoutTime: profile.workoutTime ?? null,
   }));
   const set = (p: Partial<TrainingSettingsInput>) => setS((x) => ({ ...x, ...p }));
   const toggleDay = (d: number) => set({ weekdays: s.weekdays.includes(d) ? s.weekdays.filter((x) => x !== d) : [...s.weekdays, d] });
@@ -57,6 +60,13 @@ export default function TrainingSettings() {
           router.back();
         }} />}>
       <SectionHeader title="Training days" />
+      {routineId ? (
+        <Card>
+          <Text variant="callout">{`${today.program.name} decides your training days. Change them in the routine.`}</Text>
+          <Button variant="secondary" size="md" icon="construct-outline" label="Edit routine" onPress={() => router.push(`/routine/${routineId}`)} />
+        </Card>
+      ) : null}
+      {routineId ? null : <>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
         {DAYS.map(({ d, label }) => chip(label, s.weekdays.includes(d), () => toggleDay(d), `Train on ${label}`))}
       </View>
@@ -67,6 +77,7 @@ export default function TrainingSettings() {
           {warnings.map((w) => <Text key={w} variant="callout">{WARN[w]}</Text>)}
         </Card>
       ) : null}
+      </>}
 
       <SectionHeader title="Usual training time" />
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>

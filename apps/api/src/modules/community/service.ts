@@ -110,7 +110,7 @@ export async function hunterCards(prisma: PrismaClient, ids: string[]): Promise<
     where: { userId: { in: unique } },
     select: {
       userId: true, handle: true,
-      profile: { select: { heroId: true, heroClass: true, state: { select: { level: true, rank: true, str: true, agi: true, end: true, vit: true, spi: true } } } },
+      profile: { select: { heroId: true, heroClass: true, title: true, avatarLoadout: { select: { frame: true, aura: true } }, state: { select: { level: true, rank: true, str: true, agi: true, end: true, vit: true, spi: true } } } },
     },
   });
   const out = new Map<string, HunterCardDto>();
@@ -123,6 +123,9 @@ export async function hunterCards(prisma: PrismaClient, ids: string[]): Promise<
       rank: RANK(s?.rank), level,
       // same Power Level as the Home screen (display stats, scaled by level)
       powerLevel: powerLevel(stats, level),
+      title: r.profile.title ?? null,
+      frame: r.profile.avatarLoadout?.frame ?? null,
+      aura: r.profile.avatarLoadout?.aura ?? null,
     });
   }
   return out;

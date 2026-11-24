@@ -1,7 +1,7 @@
 import type { Reward } from '@lb/contracts';
 import { create } from 'zustand';
 
-export type Celebration = Extract<Reward, { type: 'levelUp' | 'rankUp' | 'pr' | 'title' }>;
+export type Celebration = Extract<Reward, { type: 'levelUp' | 'rankUp' | 'pr' | 'title' | 'challengeComplete' | 'achievement' }>;
 
 interface CelebrationState {
   queue: Celebration[];
@@ -9,7 +9,7 @@ interface CelebrationState {
   dismiss: () => void;
 }
 
-const CINEMATIC: ReadonlySet<Reward['type']> = new Set(['levelUp', 'rankUp', 'pr', 'title']);
+const CINEMATIC: ReadonlySet<Reward['type']> = new Set(['levelUp', 'rankUp', 'pr', 'title', 'challengeComplete', 'achievement']);
 
 /**
  * Rewards from the server land here; <CinematicOverlay> plays them ONE at a time,

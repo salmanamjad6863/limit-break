@@ -33,6 +33,12 @@ export interface TemplateSlot {
   rir: number;
   prefer?: string[];
   optional?: boolean;
+  /** the hunter's own routine: this exact exercise (replaced only by a swap, an injury or a pain flag) */
+  exerciseId?: string;
+  /** rest between sets, overriding the exercise default (own routines) */
+  restSeconds?: number;
+  /** superset letter: slots sharing it alternate sets (own routines) */
+  superset?: string;
 }
 
 export interface TemplateDay {
@@ -40,6 +46,8 @@ export interface TemplateDay {
   name: string;
   focus: 'upper' | 'lower' | 'full';
   slots: TemplateSlot[];
+  /** the hunter's own routine: sets/reps/effort are theirs, not reshaped by level */
+  custom?: boolean;
 }
 
 export interface TrainingContext {
@@ -162,7 +170,10 @@ function plan(slot: TemplateSlot, slotIndex: number, e: CatalogExercise, alterna
     slot.role === 'main' && load != null
       ? warmupSets(load, LOAD_STEP[e.loadType] ?? 2.5).map((w) => ({ kind: 'warmup' as const, reps: [w.reps, w.reps] as [number, number], rir: 5, loadKg: w.kg }))
       : [];
-  return { slotIndex, exerciseId: e.id, role: slot.role, restSeconds: restFor(e, slot), sets: [...warm, ...working], alternatives };
+  return {
+    slotIndex, exerciseId: e.id, role: slot.role, restSeconds: slot.restSeconds ?? restFor(e, slot), sets: [...warm, ...working], alternatives,
+    ...(slot.superset ? { supersetGroup: slot.superset } : {}),
+  };
 }
 
 /** Warm-up + cool-down overhead: 8 min normally, 4 min for short (≤ 20 min) sessions. */
@@ -236,7 +247,11 @@ export function generateWorkout(day: TemplateDay, catalog: readonly CatalogExerc
   day.slots.forEach((slot, i) => {
     const ranked = candidatesFor(slot, catalog, ctx, used);
     const forced = ctx.swaps?.[i] ? byId.get(ctx.swaps[i]!) : undefined;
-    const pick = forced && canPerform(forced, ctx) ? forced : ranked[0];
+    // an own-routine pick needs no equipment check (the hunter chose it), but an injury or pain flag
+    // still swaps it for a safe alternative from the same movement pattern
+    const pinned = slot.exerciseId ? byId.get(slot.exerciseId) : undefined;
+    const pinnedOk = pinned && !ctx.avoidExercises?.includes(pinned.id) && !pinned.avoid?.some((t) => ctx.injuries.includes(t));
+    const pick = forced && canPerform(forced, ctx) ? forced : pinnedOk ? pinned : ranked[0];
     if (!pick) {
       if (!slot.optional) unfilled.push(slot.pattern);
       return;

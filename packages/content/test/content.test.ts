@@ -137,3 +137,45 @@ describe('Open Food Facts mapping', () => {
     expect(normalizeOffProduct({ status: 0 })).toBeNull();
   });
 });
+
+import { achievements } from '../src';
+
+describe('achievements', () => {
+  it('have unique ids and titles, ascending tiers, and single-tier hidden ones', () => {
+    expect(new Set(achievements.map((a) => a.id)).size).toBe(achievements.length);
+    const titles = achievements.flatMap((a) => a.tiers.flatMap((t) => (t.title ? [t.title] : [])));
+    expect(new Set(titles).size).toBe(titles.length);
+    for (const a of achievements) {
+      for (let i = 1; i < a.tiers.length; i++) expect(a.tiers[i]!.at, a.id).toBeGreaterThan(a.tiers[i - 1]!.at);
+      if (a.hidden) expect(a.tiers, a.id).toHaveLength(1);
+      else expect(a.tiers, a.id).toHaveLength(4);
+      expect(a.describe.includes('{n}') || a.describe.includes('{label}'), a.id).toBe(true);
+    }
+  });
+});
+
+import { describeTier } from '@lb/engine';
+
+describe('achievement wording', () => {
+  it('never says "1 workouts": every tier at 1 has its own sentence', () => {
+    for (const a of achievements) a.tiers.forEach((t, i) => { if (t.at === 1 && !t.label) expect(t.text, `${a.id} tier ${i}`).toBeTruthy(); });
+    expect(describeTier(achievements.find((a) => a.id === 'iron-will')!, 0)).toBe('Finish your first workout');
+  });
+});
+
+
+describe('frames and auras', () => {
+  it('have unique ids; achievement unlocks point at real tiers and are never sold', () => {
+    expect(new Set(cosmetics.map((c) => c.id)).size).toBe(cosmetics.length);
+    for (const c of cosmetics.filter((x) => x.slot === 'frame' || x.slot === 'aura')) {
+      expect(c.style, c.id).toBeTruthy();
+      if (c.unlock) {
+        const a = achievements.find((x) => x.id === c.unlock!.achievement);
+        expect(a, c.id).toBeTruthy();
+        expect(c.unlock.tier, c.id).toBeLessThan(a!.tiers.length);
+        expect(c.price, c.id).toBe(0);
+        expect(c.free, c.id).toBe(false);
+      } else expect(c.free || c.price > 0, c.id).toBe(true);
+    }
+  });
+});

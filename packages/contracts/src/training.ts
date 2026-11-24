@@ -132,6 +132,42 @@ export type ExerciseNotesResponse = z.infer<typeof ExerciseNotesResponse>;
  * Everything the on-device training state needs, restored after signing in on a new phone
  * (the player's defaults, the program rotation, notes and pain flags).
  */
+/* ---------------- own weekly routines ---------------- */
+
+const range = z.tuple([z.number().int().min(1).max(600), z.number().int().min(1).max(600)]).refine(([lo, hi]) => lo <= hi, 'low > high');
+export const RoutineSlotDto = z
+  .object({
+    exerciseId: z.string().min(1).max(80),
+    sets: z.number().int().min(1).max(10),
+    reps: range.optional(),
+    seconds: range.optional(),
+    rir: z.number().int().min(0).max(5),
+    restSeconds: z.number().int().min(10).max(600).optional(),
+    superset: z.string().regex(/^[A-Z]$/).nullable().optional(),
+  })
+  .refine((s) => !!s.reps !== !!s.seconds, 'a slot needs exactly one of reps or seconds');
+export const RoutineDayDto = z.object({
+  id: z.string().regex(/^[a-z0-9-]{1,40}$/),
+  name: z.string().trim().min(1).max(40),
+  slots: z.array(RoutineSlotDto).min(1).max(20),
+});
+export const RoutineDto = z
+  .object({
+    id: z.uuid(),
+    name: z.string().trim().min(1).max(40),
+    days: z.array(RoutineDayDto).min(1).max(7),
+    /** weekday "0" (Sunday) … "6" → day id */
+    schedule: z.record(z.string().regex(/^[0-6]$/), z.string()),
+    updatedAt: z.iso.datetime(),
+  })
+  .refine((r) => new Set(r.days.map((d) => d.id)).size === r.days.length, 'duplicate day id')
+  .refine((r) => Object.values(r.schedule).every((id) => r.days.some((d) => d.id === id)), 'schedule names an unknown day')
+  .refine((r) => Object.keys(r.schedule).length > 0, 'put at least one day on the week');
+export type RoutineDto = z.infer<typeof RoutineDto>;
+/** PUT /workouts/routines/:id — the id comes from the path */
+export const RoutineInput = RoutineDto;
+export type RoutineInput = z.infer<typeof RoutineInput>;
+
 export const TrainingStateResponse = z.object({
   activeProgramId: z.string().nullable(),
   /** program sessions finished since the program was picked → which day is next */
@@ -144,6 +180,8 @@ export const TrainingStateResponse = z.object({
   lastSet: z.record(z.string(), z.object({ reps: z.number().nullable(), loadKg: z.number().nullable() })),
   avoid: z.array(z.string()),
   notes: z.record(z.string(), z.string()),
+  /** the hunter's own weekly routines */
+  routines: z.array(RoutineDto),
 });
 export type TrainingStateResponse = z.infer<typeof TrainingStateResponse>;
 

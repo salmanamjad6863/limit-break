@@ -1,44 +1,914 @@
 [
-  { "id": "body-standard", "slot": "body", "name": "Standard form", "rarity": "common", "price": 0, "free": true, "tint": "#C4A484", "shape": "body", "rankLock": null, "classLock": null },
-
-  { "id": "hair-shadow", "slot": "hair", "name": "Shadow cut", "rarity": "common", "price": 0, "free": true, "tint": "#1A1A22", "shape": "hair", "rankLock": null, "classLock": null },
-  { "id": "hair-wind", "slot": "hair", "name": "Wind sweep", "rarity": "common", "price": 40, "free": false, "tint": "#38BDF8", "shape": "hair", "rankLock": null, "classLock": null },
-  { "id": "hair-ember", "slot": "hair", "name": "Ember tips", "rarity": "rare", "price": 70, "free": false, "tint": "#F97316", "shape": "hair", "rankLock": "D", "classLock": null },
-  { "id": "hair-silver", "slot": "hair", "name": "Silver crest", "rarity": "rare", "price": 90, "free": false, "tint": "#E2E8F0", "shape": "hair", "rankLock": "C", "classLock": null },
-  { "id": "hair-void", "slot": "hair", "name": "Void fringe", "rarity": "epic", "price": 140, "free": false, "tint": "#7C3AED", "shape": "hair", "rankLock": "B", "classLock": null },
-
-  { "id": "outfit-training", "slot": "outfit", "name": "Training gear", "rarity": "common", "price": 0, "free": true, "tint": "#3B82F6", "shape": "outfit", "rankLock": null, "classLock": null },
-  { "id": "outfit-street", "slot": "outfit", "name": "Street runner", "rarity": "common", "price": 50, "free": false, "tint": "#64748B", "shape": "outfit", "rankLock": null, "classLock": null },
-  { "id": "outfit-techwear", "slot": "outfit", "name": "Techwear hoodie", "rarity": "rare", "price": 100, "free": false, "tint": "#22D3EE", "shape": "outfit", "rankLock": "D", "classLock": null },
-  { "id": "outfit-shadow-coat", "slot": "outfit", "name": "Shadow coat", "rarity": "rare", "price": 120, "free": false, "tint": "#6D28D9", "shape": "outfit", "rankLock": "D", "classLock": null },
-  { "id": "outfit-crimson", "slot": "outfit", "name": "Crimson cloak", "rarity": "rare", "price": 130, "free": false, "tint": "#DC2626", "shape": "outfit", "rankLock": "C", "classLock": null },
-  { "id": "outfit-ascendant", "slot": "outfit", "name": "Ascendant coat", "rarity": "epic", "price": 180, "free": false, "tint": "#F8FAFC", "shape": "outfit", "rankLock": "C", "classLock": null },
-  { "id": "outfit-iron", "slot": "outfit", "name": "Iron plating", "rarity": "rare", "price": 120, "free": false, "tint": "#FB923C", "shape": "outfit", "rankLock": "D", "classLock": "JUGGERNAUT" },
-  { "id": "outfit-storm", "slot": "outfit", "name": "Storm wrap", "rarity": "epic", "price": 200, "free": false, "tint": "#34D399", "shape": "outfit", "rankLock": "B", "classLock": null },
-  { "id": "outfit-mythic", "slot": "outfit", "name": "Mythic mantle", "rarity": "legendary", "price": 320, "free": false, "tint": "#FBBF24", "shape": "outfit", "rankLock": "A", "classLock": null },
-  { "id": "outfit-sovereign", "slot": "outfit", "name": "Sovereign plate", "rarity": "legendary", "price": 400, "free": false, "tint": "#F5D0A9", "shape": "outfit", "rankLock": "S", "classLock": null },
-
-  { "id": "accessory-headband", "slot": "accessory", "name": "Focus band", "rarity": "common", "price": 30, "free": false, "tint": "#F43F5E", "shape": "accessory", "rankLock": null, "classLock": null },
-  { "id": "accessory-scar", "slot": "accessory", "name": "Hunter scarf", "rarity": "common", "price": 35, "free": false, "tint": "#94A3B8", "shape": "accessory", "rankLock": null, "classLock": null },
-  { "id": "accessory-earrings", "slot": "accessory", "name": "Signal studs", "rarity": "rare", "price": 60, "free": false, "tint": "#A78BFA", "shape": "accessory", "rankLock": "D", "classLock": null },
-  { "id": "accessory-gauntlet", "slot": "accessory", "name": "Grip wraps", "rarity": "rare", "price": 80, "free": false, "tint": "#F59E0B", "shape": "accessory", "rankLock": "C", "classLock": null },
-  { "id": "accessory-crown", "slot": "accessory", "name": "Rank circlet", "rarity": "epic", "price": 160, "free": false, "tint": "#FDE68A", "shape": "accessory", "rankLock": "B", "classLock": null },
-
-  { "id": "aura-spirit", "slot": "aura", "name": "Spirit haze", "rarity": "common", "price": 0, "free": true, "tint": "#60A5FA", "shape": "aura", "rankLock": null, "classLock": null },
-  { "id": "aura-mint", "slot": "aura", "name": "Mint drift", "rarity": "common", "price": 45, "free": false, "tint": "#6EE7B7", "shape": "aura", "rankLock": null, "classLock": null },
-  { "id": "aura-ember", "slot": "aura", "name": "Ember flare", "rarity": "rare", "price": 110, "free": false, "tint": "#F97316", "shape": "aura", "rankLock": "D", "classLock": null },
-  { "id": "aura-void", "slot": "aura", "name": "Void bloom", "rarity": "epic", "price": 160, "free": false, "tint": "#8B5CF6", "shape": "aura", "rankLock": "C", "classLock": null },
-  { "id": "aura-gold", "slot": "aura", "name": "Gold corona", "rarity": "legendary", "price": 280, "free": false, "tint": "#FBBF24", "shape": "aura", "rankLock": "A", "classLock": null },
-  { "id": "aura-sovereign", "slot": "aura", "name": "Sovereign storm", "rarity": "legendary", "price": 350, "free": false, "tint": "#F472B6", "shape": "aura", "rankLock": "S", "classLock": null },
-
-  { "id": "prop-bokken", "slot": "prop", "name": "Practice bokken", "rarity": "rare", "price": 80, "free": false, "tint": "#A16207", "shape": "prop", "rankLock": "D", "classLock": "FIGHTER" },
-  { "id": "prop-staff", "slot": "prop", "name": "Training staff", "rarity": "rare", "price": 80, "free": false, "tint": "#78716C", "shape": "prop", "rankLock": "D", "classLock": "MONK" },
-  { "id": "prop-band", "slot": "prop", "name": "Calisthenics bands", "rarity": "rare", "price": 70, "free": false, "tint": "#4ADE80", "shape": "prop", "rankLock": "D", "classLock": "ASSASSIN" },
-
-  { "id": "frame-hunter", "slot": "frame", "name": "Hunter ring", "rarity": "common", "price": 0, "free": true, "tint": "#8B5CF6", "shape": "frame", "rankLock": null, "classLock": null },
-  { "id": "frame-streak-7", "slot": "frame", "name": "7-day seal", "rarity": "common", "price": 40, "free": false, "tint": "#38BDF8", "shape": "frame", "rankLock": null, "classLock": null },
-  { "id": "frame-streak-30", "slot": "frame", "name": "30-day seal", "rarity": "rare", "price": 120, "free": false, "tint": "#FBBF24", "shape": "frame", "rankLock": "D", "classLock": null },
-  { "id": "frame-rank-c", "slot": "frame", "name": "C-Rank brand", "rarity": "rare", "price": 100, "free": false, "tint": "#22C55E", "shape": "frame", "rankLock": "C", "classLock": null },
-  { "id": "frame-rank-a", "slot": "frame", "name": "A-Rank brand", "rarity": "epic", "price": 200, "free": false, "tint": "#F59E0B", "shape": "frame", "rankLock": "A", "classLock": null },
-  { "id": "frame-s", "slot": "frame", "name": "S-Rank halo", "rarity": "legendary", "price": 300, "free": false, "tint": "#EF4444", "shape": "frame", "rankLock": "S", "classLock": null }
+  {
+    "id": "body-standard",
+    "slot": "body",
+    "name": "Standard form",
+    "rarity": "common",
+    "price": 0,
+    "free": true,
+    "tint": "#C4A484",
+    "shape": "body",
+    "rankLock": null,
+    "classLock": null
+  },
+  {
+    "id": "hair-shadow",
+    "slot": "hair",
+    "name": "Shadow cut",
+    "rarity": "common",
+    "price": 0,
+    "free": true,
+    "tint": "#1A1A22",
+    "shape": "hair",
+    "rankLock": null,
+    "classLock": null
+  },
+  {
+    "id": "hair-wind",
+    "slot": "hair",
+    "name": "Wind sweep",
+    "rarity": "common",
+    "price": 40,
+    "free": false,
+    "tint": "#38BDF8",
+    "shape": "hair",
+    "rankLock": null,
+    "classLock": null
+  },
+  {
+    "id": "hair-ember",
+    "slot": "hair",
+    "name": "Ember tips",
+    "rarity": "rare",
+    "price": 70,
+    "free": false,
+    "tint": "#F97316",
+    "shape": "hair",
+    "rankLock": "D",
+    "classLock": null
+  },
+  {
+    "id": "hair-silver",
+    "slot": "hair",
+    "name": "Silver crest",
+    "rarity": "rare",
+    "price": 90,
+    "free": false,
+    "tint": "#E2E8F0",
+    "shape": "hair",
+    "rankLock": "C",
+    "classLock": null
+  },
+  {
+    "id": "hair-void",
+    "slot": "hair",
+    "name": "Void fringe",
+    "rarity": "epic",
+    "price": 140,
+    "free": false,
+    "tint": "#7C3AED",
+    "shape": "hair",
+    "rankLock": "B",
+    "classLock": null
+  },
+  {
+    "id": "outfit-training",
+    "slot": "outfit",
+    "name": "Training gear",
+    "rarity": "common",
+    "price": 0,
+    "free": true,
+    "tint": "#3B82F6",
+    "shape": "outfit",
+    "rankLock": null,
+    "classLock": null
+  },
+  {
+    "id": "outfit-street",
+    "slot": "outfit",
+    "name": "Street runner",
+    "rarity": "common",
+    "price": 50,
+    "free": false,
+    "tint": "#64748B",
+    "shape": "outfit",
+    "rankLock": null,
+    "classLock": null
+  },
+  {
+    "id": "outfit-techwear",
+    "slot": "outfit",
+    "name": "Techwear hoodie",
+    "rarity": "rare",
+    "price": 100,
+    "free": false,
+    "tint": "#22D3EE",
+    "shape": "outfit",
+    "rankLock": "D",
+    "classLock": null
+  },
+  {
+    "id": "outfit-shadow-coat",
+    "slot": "outfit",
+    "name": "Shadow coat",
+    "rarity": "rare",
+    "price": 120,
+    "free": false,
+    "tint": "#6D28D9",
+    "shape": "outfit",
+    "rankLock": "D",
+    "classLock": null
+  },
+  {
+    "id": "outfit-crimson",
+    "slot": "outfit",
+    "name": "Crimson cloak",
+    "rarity": "rare",
+    "price": 130,
+    "free": false,
+    "tint": "#DC2626",
+    "shape": "outfit",
+    "rankLock": "C",
+    "classLock": null
+  },
+  {
+    "id": "outfit-ascendant",
+    "slot": "outfit",
+    "name": "Ascendant coat",
+    "rarity": "epic",
+    "price": 180,
+    "free": false,
+    "tint": "#F8FAFC",
+    "shape": "outfit",
+    "rankLock": "C",
+    "classLock": null
+  },
+  {
+    "id": "outfit-iron",
+    "slot": "outfit",
+    "name": "Iron plating",
+    "rarity": "rare",
+    "price": 120,
+    "free": false,
+    "tint": "#FB923C",
+    "shape": "outfit",
+    "rankLock": "D",
+    "classLock": "JUGGERNAUT"
+  },
+  {
+    "id": "outfit-storm",
+    "slot": "outfit",
+    "name": "Storm wrap",
+    "rarity": "epic",
+    "price": 200,
+    "free": false,
+    "tint": "#34D399",
+    "shape": "outfit",
+    "rankLock": "B",
+    "classLock": null
+  },
+  {
+    "id": "outfit-mythic",
+    "slot": "outfit",
+    "name": "Mythic mantle",
+    "rarity": "legendary",
+    "price": 320,
+    "free": false,
+    "tint": "#FBBF24",
+    "shape": "outfit",
+    "rankLock": "A",
+    "classLock": null
+  },
+  {
+    "id": "outfit-sovereign",
+    "slot": "outfit",
+    "name": "Sovereign plate",
+    "rarity": "legendary",
+    "price": 400,
+    "free": false,
+    "tint": "#F5D0A9",
+    "shape": "outfit",
+    "rankLock": "S",
+    "classLock": null
+  },
+  {
+    "id": "accessory-headband",
+    "slot": "accessory",
+    "name": "Focus band",
+    "rarity": "common",
+    "price": 30,
+    "free": false,
+    "tint": "#F43F5E",
+    "shape": "accessory",
+    "rankLock": null,
+    "classLock": null
+  },
+  {
+    "id": "accessory-scar",
+    "slot": "accessory",
+    "name": "Hunter scarf",
+    "rarity": "common",
+    "price": 35,
+    "free": false,
+    "tint": "#94A3B8",
+    "shape": "accessory",
+    "rankLock": null,
+    "classLock": null
+  },
+  {
+    "id": "accessory-earrings",
+    "slot": "accessory",
+    "name": "Signal studs",
+    "rarity": "rare",
+    "price": 60,
+    "free": false,
+    "tint": "#A78BFA",
+    "shape": "accessory",
+    "rankLock": "D",
+    "classLock": null
+  },
+  {
+    "id": "accessory-gauntlet",
+    "slot": "accessory",
+    "name": "Grip wraps",
+    "rarity": "rare",
+    "price": 80,
+    "free": false,
+    "tint": "#F59E0B",
+    "shape": "accessory",
+    "rankLock": "C",
+    "classLock": null
+  },
+  {
+    "id": "accessory-crown",
+    "slot": "accessory",
+    "name": "Rank circlet",
+    "rarity": "epic",
+    "price": 160,
+    "free": false,
+    "tint": "#FDE68A",
+    "shape": "accessory",
+    "rankLock": "B",
+    "classLock": null
+  },
+  {
+    "id": "prop-bokken",
+    "slot": "prop",
+    "name": "Practice bokken",
+    "rarity": "rare",
+    "price": 80,
+    "free": false,
+    "tint": "#A16207",
+    "shape": "prop",
+    "rankLock": "D",
+    "classLock": "FIGHTER"
+  },
+  {
+    "id": "prop-staff",
+    "slot": "prop",
+    "name": "Training staff",
+    "rarity": "rare",
+    "price": 80,
+    "free": false,
+    "tint": "#78716C",
+    "shape": "prop",
+    "rankLock": "D",
+    "classLock": "MONK"
+  },
+  {
+    "id": "prop-band",
+    "slot": "prop",
+    "name": "Calisthenics bands",
+    "rarity": "rare",
+    "price": 70,
+    "free": false,
+    "tint": "#4ADE80",
+    "shape": "prop",
+    "rankLock": "D",
+    "classLock": "ASSASSIN"
+  },
+  {
+    "id": "frame-hunter",
+    "slot": "frame",
+    "name": "Hunter Ring",
+    "rarity": "common",
+    "price": 0,
+    "free": true,
+    "tint": "#8B5CF6",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "style": "ring",
+    "colors": [
+      "#8B5CF6",
+      "#C4B5FD"
+    ]
+  },
+  {
+    "id": "frame-jade",
+    "slot": "frame",
+    "name": "Jade Ring",
+    "rarity": "common",
+    "price": 40,
+    "free": false,
+    "tint": "#10B981",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "style": "ring",
+    "colors": [
+      "#10B981",
+      "#6EE7B7"
+    ]
+  },
+  {
+    "id": "frame-violet-bloom",
+    "slot": "frame",
+    "name": "Violet Bloom",
+    "rarity": "rare",
+    "price": 80,
+    "free": false,
+    "tint": "#C084FC",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "style": "laurel",
+    "colors": [
+      "#C084FC",
+      "#F5D0FE"
+    ]
+  },
+  {
+    "id": "frame-circuit",
+    "slot": "frame",
+    "name": "Circuit",
+    "rarity": "rare",
+    "price": 120,
+    "free": false,
+    "tint": "#22D3EE",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "style": "circuit",
+    "colors": [
+      "#22D3EE",
+      "#0EA5E9"
+    ]
+  },
+  {
+    "id": "frame-streak-7",
+    "slot": "frame",
+    "name": "Spark Ring",
+    "rarity": "common",
+    "price": 0,
+    "free": false,
+    "tint": "#38BDF8",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "unbroken",
+      "tier": 0
+    },
+    "style": "flame",
+    "colors": [
+      "#38BDF8",
+      "#BAE6FD"
+    ]
+  },
+  {
+    "id": "frame-streak-30",
+    "slot": "frame",
+    "name": "Ember Ring",
+    "rarity": "rare",
+    "price": 0,
+    "free": false,
+    "tint": "#F97316",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "unbroken",
+      "tier": 1
+    },
+    "style": "flame",
+    "colors": [
+      "#F97316",
+      "#FBBF24"
+    ]
+  },
+  {
+    "id": "frame-eternal",
+    "slot": "frame",
+    "name": "Eternal Flame",
+    "rarity": "legendary",
+    "price": 0,
+    "free": false,
+    "tint": "#EF4444",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "unbroken",
+      "tier": 3
+    },
+    "style": "flame",
+    "colors": [
+      "#EF4444",
+      "#FDE68A"
+    ]
+  },
+  {
+    "id": "frame-iron",
+    "slot": "frame",
+    "name": "Iron Band",
+    "rarity": "rare",
+    "price": 0,
+    "free": false,
+    "tint": "#94A3B8",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "iron-will",
+      "tier": 1
+    },
+    "style": "rivets",
+    "colors": [
+      "#94A3B8",
+      "#E2E8F0"
+    ]
+  },
+  {
+    "id": "frame-laurel-gold",
+    "slot": "frame",
+    "name": "Golden Laurel",
+    "rarity": "epic",
+    "price": 0,
+    "free": false,
+    "tint": "#F5C542",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "iron-will",
+      "tier": 2
+    },
+    "style": "laurel",
+    "colors": [
+      "#F5C542",
+      "#FFF1A8"
+    ]
+  },
+  {
+    "id": "frame-halo-platinum",
+    "slot": "frame",
+    "name": "Platinum Halo",
+    "rarity": "legendary",
+    "price": 0,
+    "free": false,
+    "tint": "#A9D8FF",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "iron-will",
+      "tier": 3
+    },
+    "style": "halo",
+    "colors": [
+      "#A9D8FF",
+      "#C7B8FF"
+    ]
+  },
+  {
+    "id": "frame-titan",
+    "slot": "frame",
+    "name": "Titan Band",
+    "rarity": "epic",
+    "price": 0,
+    "free": false,
+    "tint": "#F59E0B",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "tonnage",
+      "tier": 2
+    },
+    "style": "rivets",
+    "colors": [
+      "#F59E0B",
+      "#FDE68A"
+    ]
+  },
+  {
+    "id": "frame-architect",
+    "slot": "frame",
+    "name": "Blueprint",
+    "rarity": "rare",
+    "price": 0,
+    "free": false,
+    "tint": "#60A5FA",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "architect",
+      "tier": 1
+    },
+    "style": "circuit",
+    "colors": [
+      "#60A5FA",
+      "#BFDBFE"
+    ]
+  },
+  {
+    "id": "frame-oath",
+    "slot": "frame",
+    "name": "Oathkeeper",
+    "rarity": "epic",
+    "price": 0,
+    "free": false,
+    "tint": "#34D399",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "challenger",
+      "tier": 2
+    },
+    "style": "laurel",
+    "colors": [
+      "#34D399",
+      "#A7F3D0"
+    ]
+  },
+  {
+    "id": "frame-crystal",
+    "slot": "frame",
+    "name": "Crystal Facets",
+    "rarity": "epic",
+    "price": 0,
+    "free": false,
+    "tint": "#67E8F9",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "flawless",
+      "tier": 2
+    },
+    "style": "crystal",
+    "colors": [
+      "#67E8F9",
+      "#E0F2FE"
+    ]
+  },
+  {
+    "id": "frame-shadow",
+    "slot": "frame",
+    "name": "Shadow Thorns",
+    "rarity": "rare",
+    "price": 0,
+    "free": false,
+    "tint": "#7C3AED",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "shadow-slayer",
+      "tier": 1
+    },
+    "style": "thorns",
+    "colors": [
+      "#7C3AED",
+      "#C4B5FD"
+    ]
+  },
+  {
+    "id": "frame-dawn",
+    "slot": "frame",
+    "name": "Dawnbreak",
+    "rarity": "epic",
+    "price": 0,
+    "free": false,
+    "tint": "#FDBA74",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "dawn-hunter",
+      "tier": 0
+    },
+    "style": "halo",
+    "colors": [
+      "#FDBA74",
+      "#FDE68A"
+    ]
+  },
+  {
+    "id": "frame-moon",
+    "slot": "frame",
+    "name": "Moonlit",
+    "rarity": "epic",
+    "price": 0,
+    "free": false,
+    "tint": "#818CF8",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "night-owl",
+      "tier": 0
+    },
+    "style": "crystal",
+    "colors": [
+      "#818CF8",
+      "#E0E7FF"
+    ]
+  },
+  {
+    "id": "frame-rank-c",
+    "slot": "frame",
+    "name": "C-Rank Seal",
+    "rarity": "rare",
+    "price": 0,
+    "free": false,
+    "tint": "#22C55E",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "rank-up",
+      "tier": 1
+    },
+    "style": "ring",
+    "colors": [
+      "#22C55E",
+      "#86EFAC"
+    ]
+  },
+  {
+    "id": "frame-rank-a",
+    "slot": "frame",
+    "name": "A-Rank Crown",
+    "rarity": "epic",
+    "price": 0,
+    "free": false,
+    "tint": "#F59E0B",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "rank-up",
+      "tier": 2
+    },
+    "style": "crown",
+    "colors": [
+      "#F59E0B",
+      "#FDE68A"
+    ]
+  },
+  {
+    "id": "frame-s",
+    "slot": "frame",
+    "name": "Sovereign Crown",
+    "rarity": "legendary",
+    "price": 0,
+    "free": false,
+    "tint": "#EF4444",
+    "shape": "frame",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "rank-up",
+      "tier": 3
+    },
+    "style": "crown",
+    "colors": [
+      "#EF4444",
+      "#FCA5A5"
+    ]
+  },
+  {
+    "id": "aura-spirit",
+    "slot": "aura",
+    "name": "Spirit",
+    "rarity": "common",
+    "price": 0,
+    "free": true,
+    "tint": "#8B5CF6",
+    "shape": "aura",
+    "rankLock": null,
+    "classLock": null,
+    "style": "pulse"
+  },
+  {
+    "id": "aura-mint",
+    "slot": "aura",
+    "name": "Mint Breeze",
+    "rarity": "common",
+    "price": 45,
+    "free": false,
+    "tint": "#6EE7B7",
+    "shape": "aura",
+    "rankLock": null,
+    "classLock": null,
+    "style": "pulse",
+    "colors": [
+      "#6EE7B7",
+      "#10B981"
+    ]
+  },
+  {
+    "id": "aura-blossom",
+    "slot": "aura",
+    "name": "Sakura",
+    "rarity": "rare",
+    "price": 90,
+    "free": false,
+    "tint": "#F9A8D4",
+    "shape": "aura",
+    "rankLock": null,
+    "classLock": null,
+    "style": "orbit",
+    "colors": [
+      "#F9A8D4",
+      "#EC4899"
+    ]
+  },
+  {
+    "id": "aura-ember",
+    "slot": "aura",
+    "name": "Ember",
+    "rarity": "rare",
+    "price": 110,
+    "free": false,
+    "tint": "#FB923C",
+    "shape": "aura",
+    "rankLock": "D",
+    "classLock": null,
+    "style": "flare",
+    "colors": [
+      "#FB923C",
+      "#DC2626"
+    ]
+  },
+  {
+    "id": "aura-void",
+    "slot": "aura",
+    "name": "Void",
+    "rarity": "epic",
+    "price": 160,
+    "free": false,
+    "tint": "#A78BFA",
+    "shape": "aura",
+    "rankLock": "C",
+    "classLock": null,
+    "style": "orbit",
+    "colors": [
+      "#A78BFA",
+      "#4C1D95"
+    ]
+  },
+  {
+    "id": "aura-gold",
+    "slot": "aura",
+    "name": "Gilded",
+    "rarity": "legendary",
+    "price": 280,
+    "free": false,
+    "tint": "#FCD34D",
+    "shape": "aura",
+    "rankLock": "A",
+    "classLock": null,
+    "style": "flare",
+    "colors": [
+      "#FCD34D",
+      "#B45309"
+    ]
+  },
+  {
+    "id": "aura-sovereign",
+    "slot": "aura",
+    "name": "Sovereign",
+    "rarity": "legendary",
+    "price": 350,
+    "free": false,
+    "tint": "#F472B6",
+    "shape": "aura",
+    "rankLock": "S",
+    "classLock": null,
+    "style": "storm",
+    "colors": [
+      "#F472B6",
+      "#7E22CE"
+    ]
+  },
+  {
+    "id": "aura-frost",
+    "slot": "aura",
+    "name": "Frostbound",
+    "rarity": "rare",
+    "price": 0,
+    "free": false,
+    "tint": "#BAE6FD",
+    "shape": "aura",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "flawless",
+      "tier": 0
+    },
+    "style": "orbit",
+    "colors": [
+      "#BAE6FD",
+      "#0284C7"
+    ]
+  },
+  {
+    "id": "aura-record",
+    "slot": "aura",
+    "name": "Record Breaker",
+    "rarity": "epic",
+    "price": 0,
+    "free": false,
+    "tint": "#FDE047",
+    "shape": "aura",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "limit-breaker",
+      "tier": 2
+    },
+    "style": "orbit",
+    "colors": [
+      "#FDE047",
+      "#CA8A04"
+    ]
+  },
+  {
+    "id": "aura-storm",
+    "slot": "aura",
+    "name": "Stormcaller",
+    "rarity": "epic",
+    "price": 0,
+    "free": false,
+    "tint": "#38BDF8",
+    "shape": "aura",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "engine-room",
+      "tier": 2
+    },
+    "style": "storm",
+    "colors": [
+      "#38BDF8",
+      "#4338CA"
+    ]
+  },
+  {
+    "id": "aura-titan",
+    "slot": "aura",
+    "name": "Titan's Might",
+    "rarity": "epic",
+    "price": 0,
+    "free": false,
+    "tint": "#F97316",
+    "shape": "aura",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "tonnage",
+      "tier": 2
+    },
+    "style": "flare",
+    "colors": [
+      "#F97316",
+      "#991B1B"
+    ]
+  },
+  {
+    "id": "aura-dawn",
+    "slot": "aura",
+    "name": "First Light",
+    "rarity": "epic",
+    "price": 0,
+    "free": false,
+    "tint": "#FEF3C7",
+    "shape": "aura",
+    "rankLock": null,
+    "classLock": null,
+    "unlock": {
+      "achievement": "dawn-hunter",
+      "tier": 0
+    },
+    "style": "flare",
+    "colors": [
+      "#FEF3C7",
+      "#F59E0B"
+    ]
+  }
 ]

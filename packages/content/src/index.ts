@@ -2,6 +2,7 @@ import { z } from 'zod';
 import exercisesJson from './data/exercises.json';
 import featuresJson from './data/features.json';
 import heroesJson from './data/heroes.json';
+import achievementsJson from './data/achievements.json';
 import cosmeticsJson from './data/cosmetics.json';
 import normsJson from './data/norms.json';
 import notificationsJson from './data/notifications.json';
@@ -33,7 +34,7 @@ import trialsJson from './data/trials.json';
 import exerciseMediaJson from './data/exercise-media.json';
 import flowsJson from './data/flows.json';
 import foodsJson from './data/foods.json';
-import { AssessmentNorms, Cosmetic, Exercise, ExerciseMediaEntry, FeatureMatrix, Flows, FocusedWorkout, FoodsFile, Hero, type FoodItem, type Per100, Notifications, ProgramTemplate, QuickSession, SideQuest, TrialsConfig, WorkoutType } from './schemas';
+import { AchievementDef, AssessmentNorms, Cosmetic, Exercise, ExerciseMediaEntry, FeatureMatrix, Flows, FocusedWorkout, FoodsFile, Hero, type FoodItem, type Per100, Notifications, ProgramTemplate, QuickSession, SideQuest, TrialsConfig, WorkoutType } from './schemas';
 
 
 export * from './schemas';
@@ -41,6 +42,8 @@ export * from './schemas';
 /** Parsed at import time — invalid content fails fast in dev and in CI. */
 export const exercises = z.array(Exercise).parse(exercisesJson);
 export const heroes = z.array(Hero).parse(heroesJson);
+export const achievements = z.array(AchievementDef).parse(achievementsJson);
+export const achievementById = new Map(achievements.map((a) => [a.id, a]));
 export const cosmetics = z.array(Cosmetic).parse(cosmeticsJson);
 export const cosmeticById = new Map(cosmetics.map((c) => [c.id, c]));
 export const features = FeatureMatrix.parse(featuresJson);

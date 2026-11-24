@@ -1,4 +1,5 @@
 import { isQuestComplete, type BossResponse, type QuestDto, type QuestProgressResponse, type Reward, type TodayQuestsResponse } from '@lb/contracts';
+import { refreshAchievements } from '@/features/achievements/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { useCelebrations } from '@/features/celebrations';
@@ -103,6 +104,7 @@ export function useQuestActions() {
     onError: (_e, _v, undo) => undo?.(),
     onSuccess: (r) => {
       enqueue(r.rewards as Reward[]);
+      if (r.quest.status === 'COMPLETED') refreshAchievements();
       if (r.quest.status === 'COMPLETED') track({ event: 'quest_completed', kind: r.quest.kind });
     },
     onSettled: () => {
@@ -143,6 +145,7 @@ export function useQuestActions() {
     onSuccess: (rewards) => {
       after(rewards);
       qc.invalidateQueries({ queryKey: questKeys.boss });
+      refreshAchievements();
     },
   });
   return { progress, chooseSides, setSick, claimBoss };

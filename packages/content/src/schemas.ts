@@ -57,6 +57,12 @@ export const Cosmetic = z.object({
   shape: z.enum(['body', 'hair', 'outfit', 'accessory', 'aura', 'prop', 'frame']),
   rankLock: z.enum(['E', 'D', 'C', 'B', 'A', 'S']).nullable(),
   classLock: HeroClass.nullable(),
+  /** earned from an achievement tier (never sold); granted automatically once that tier is earned */
+  unlock: z.object({ achievement: z.string(), tier: z.number().int().min(0).max(3) }).optional(),
+  /** how frames / auras are drawn (procedural Skia) */
+  style: z.enum(['ring', 'laurel', 'crown', 'flame', 'crystal', 'circuit', 'halo', 'thorns', 'rivets', 'pulse', 'orbit', 'flare', 'storm']).nullable().optional(),
+  /** primary, secondary; auras without colors take the hero's own colour */
+  colors: z.tuple([z.string().regex(/^#[0-9A-F]{6}$/i), z.string().regex(/^#[0-9A-F]{6}$/i)]).optional(),
 });
 export type Cosmetic = z.infer<typeof Cosmetic>;
 
@@ -275,3 +281,26 @@ export interface FoodItem {
   /** 0–1 search prior: staples above mixed dishes (SYSTEMS.md §2.7 globalPopularity) */
   popularity?: number;
 }
+
+/* ---------------- Achievements (docs/plans/ROUTINES_CHALLENGES_REWARDS.md §4) ---------------- */
+
+export const ACHIEVEMENT_METRICS = [
+  'workouts', 'tonnes', 'prs', 'routineWorkouts', 'cardioMinutes', 'streak', 'dailyQuests', 'challenges', 'flawlessChallenges',
+  'level', 'rank', 'trials', 'bosses', 'nutritionDays', 'dawnWorkouts', 'nightWorkouts', 'fullWeekends', 'longSessions', 'comebacks',
+] as const;
+export const AchievementDef = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  name: z.string(),
+  category: z.enum(['training', 'consistency', 'progression', 'nutrition', 'hidden']),
+  /** Ionicons name, drawn inside the badge */
+  icon: z.string(),
+  metric: z.enum(ACHIEVEMENT_METRICS),
+  /** "Finish {n} workouts"; {label} uses the tier's label */
+  describe: z.string(),
+  /** shown as ??? until the first tier is earned */
+  hidden: z.boolean().default(false),
+  /** ascending thresholds: bronze, silver, gold, platinum (hidden ones have a single tier) */
+  /** `text` replaces the sentence for that tier ("Finish your first workout" instead of "Finish 1 workouts") */
+  tiers: z.array(z.object({ at: z.number().positive(), label: z.string().optional(), title: z.string().optional(), text: z.string().optional() })).min(1).max(4),
+});
+export type AchievementDef = z.infer<typeof AchievementDef>;

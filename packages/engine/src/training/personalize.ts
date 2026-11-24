@@ -58,6 +58,13 @@ const roleKey = (r: TemplateSlot['role']) => (r === 'main' ? 'main' : r === 'sec
 export function adaptDay(day: TemplateDay, level: Experience, intensity: Intensity, band: AgeBand): TemplateDay {
   const L = LEVEL[level];
   const I = INTENSITY[intensity];
+  // an own routine keeps the hunter's sets, reps and effort; only today's Light / Intense choice applies
+  if (day.custom) {
+    return {
+      ...day,
+      slots: day.slots.map((s) => ({ ...s, sets: Math.min(10, Math.max(1, s.sets + I.setsDelta)), rir: Math.min(5, Math.max(0, s.rir + I.rirDelta)) })),
+    };
+  }
   // older hunters keep a rep in reserve on heavy compounds (recovery, joints)
   const ageRir = band === '50+' ? 1 : band === '40-49' ? 1 : band === 'teen' ? 1 : 0;
   const slots = day.slots
@@ -177,7 +184,7 @@ export function personalizeWorkout(
     const id = edits.swap?.[tOf(i)];
     if (id) swaps[i] = id;
   });
-  const lowImpact = band === '50+' && (level === 'beginner' || level === 'novice');
+  const lowImpact = !day.custom && band === '50+' && (level === 'beginner' || level === 'novice');
 
   // starting loads from strength standards for lifts with no history
   const bestE1rm = { ...(ctx.bestE1rm ?? {}) };
@@ -187,7 +194,8 @@ export function personalizeWorkout(
     if (est) bestE1rm[e.id] = est;
   }
 
-  const minutes = mode.minutes ?? ctx.sessionMinutes;
+  // own routines run in full unless the hunter picks a time today
+  const minutes = mode.minutes ?? (day.custom ? 240 : ctx.sessionMinutes);
   const workout = generateWorkout(adapted, catalog, {
     ...ctx,
     equipment: equipmentFor(mode.where, ctx.equipment),

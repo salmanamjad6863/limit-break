@@ -6,6 +6,7 @@ function avatarDb() {
   const owned: { userId: string; cosmeticId: string; acquiredAt: Date }[] = [];
   let loadout: any = null;
   const ledger: any[] = [];
+  const earned: { achievementId: string; tier: number }[] = [];
   const state = { userId: USER, rank: 'E', essence: 100, streak: 0 };
   const prisma: any = {
     profile: { findUnique: async () => ({ id: USER, timezone: 'UTC', heroClass: 'HYBRID' }) },
@@ -17,6 +18,7 @@ function avatarDb() {
         return { ...state };
       },
     },
+    achievementUnlock: { findMany: async () => earned },
     cosmeticOwned: {
       findMany: async ({ where }: any) => owned.filter((o) => o.userId === where.userId),
       findUnique: async ({ where }: any) =>
@@ -66,7 +68,7 @@ function avatarDb() {
     },
     $transaction: async (fn: any) => fn(prisma),
   };
-  return { prisma, owned, state, get loadout() { return loadout; } };
+  return { prisma, owned, state, earned, get loadout() { return loadout; } };
 }
 
 const auth = { Authorization: 'Bearer test' };
@@ -124,5 +126,21 @@ describe('avatar forge', () => {
     });
     expect(res.status).toBe(403);
   });
-});
 
+  it('frames and auras from achievements: never sold, granted once the tier is earned, then equippable', async () => {
+    const { prisma, earned } = avatarDb();
+    const app = appOf(prisma);
+    const json = { ...auth, 'Content-Type': 'application/json' };
+    const me = async () => (await (await app.request('/avatar', { headers: auth })).json()) as any;
+    const laurel = (await me()).catalog.find((c: any) => c.id === 'frame-laurel-gold');
+    expect(laurel).toMatchObject({ owned: false, lockedReason: 'Earn Iron Will Gold', style: 'laurel', unlock: { achievement: 'iron-will', tier: 2 } });
+    expect((await app.request('/avatar/buy', { method: 'POST', headers: json, body: JSON.stringify({ cosmeticId: 'frame-laurel-gold', spendId: uuid(44) }) })).status).toBe(403);
+    earned.push({ achievementId: 'iron-will', tier: 2 });
+    expect((await me()).catalog.find((c: any) => c.id === 'frame-laurel-gold')).toMatchObject({ owned: true, lockedReason: null });
+    const eq = await app.request('/avatar/equip', { method: 'PUT', headers: json, body: JSON.stringify({ slot: 'frame', cosmeticId: 'frame-laurel-gold' }) });
+    expect(((await eq.json()) as any).loadout.frame).toBe('frame-laurel-gold');
+    // "None": no frame at all
+    const none = await app.request('/avatar/equip', { method: 'PUT', headers: json, body: JSON.stringify({ slot: 'frame', cosmeticId: null }) });
+    expect(((await none.json()) as any).loadout.frame).toBeNull();
+  });
+});

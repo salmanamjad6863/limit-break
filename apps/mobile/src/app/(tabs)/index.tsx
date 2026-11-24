@@ -5,6 +5,8 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { activeSlots, questRatio as questRatioOf } from '@lb/contracts';
+import { NextAchievementCard, useAchievements } from '@/features/achievements';
+import { useMyLook } from '@/features/avatar';
 import { restDayContent } from '@/features/depth';
 import { BossTeaser, HunterCard, StatsChart, TodayList, UpNextCard, type TodayItem } from '@/features/home/HomeCards';
 import { useGameDate, useNutritionDay } from '@/features/nutrition';
@@ -26,6 +28,8 @@ import { Appear, Button, Card, Icon, PressableScale, Screen, SectionHeader, Sett
 /** Home is a dashboard (docs/plans/HOME_QUESTS_REDESIGN.md §3): what's next, today at a glance, who you are. */
 export default function HomeScreen() {
   const { c, spacing, radius } = useTheme();
+  const look = useMyLook();
+  const myTitle = useAchievements().data?.equippedTitle ?? null;
   const sessionStatus = useSession((s) => s.status);
   const resetLocal = useLocalHunter((s) => s.reset);
   const { data: me, isLoading, error } = useMe();
@@ -161,11 +165,13 @@ export default function HomeScreen() {
       <Appear index={2} style={{ gap: spacing[3] }}>
         <SectionHeader title="Your hunter" action="Profile" onAction={() => router.push('/profile')} />
         <HunterCard name={me.hunterName ?? hero.name} epithet={hero.epithet} accent={hero.accent} level={lp.level} power={power} rank={rank}
-          xpInto={lp.intoLevel} xpNeeded={lp.needed} ratio={lp.ratio} trialHint={trialHint} onPress={() => router.push('/profile')} />
+          xpInto={lp.intoLevel} xpNeeded={lp.needed} ratio={lp.ratio} trialHint={trialHint} onPress={() => router.push('/profile')}
+          aura={look.aura} title={myTitle} />
       </Appear>
 
-      <Appear index={3}>
+      <Appear index={3} style={{ gap: spacing[3] }}>
         <TodayList items={items} />
+        <NextAchievementCard />
       </Appear>
 
       <Appear index={4} style={{ gap: spacing[3] }}>

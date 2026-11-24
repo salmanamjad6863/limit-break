@@ -5,7 +5,8 @@
  * - program picks and pain flags are saved to the server as they happen
  * Demo mode stays on-device only.
  */
-import type { TrainingStateResponse, WorkoutSummaryDto } from '@lb/contracts';
+import type { RoutineDto, TrainingStateResponse, WorkoutSummaryDto } from '@lb/contracts';
+import type { Routine } from '@lb/engine';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useSession } from '@/features/session/store';
@@ -18,9 +19,22 @@ export const trainingStateKey = ['training', 'state'] as const;
 /** Keyed so they can be replayed after an app restart (setMutationDefaults below) and detected while pending. */
 const programKey = ['training', 'program'] as const;
 const avoidKey = ['training', 'avoid'] as const;
+export const routineSaveKey = ['training', 'routine', 'save'] as const;
+export const routineDeleteKey = ['training', 'routine', 'delete'] as const;
 
+/** routine saves/deletes and program picks run one at a time, in order: an offline "create + activate" lands as created, then activated */
+const programScope = { id: 'training-program' };
 queryClient.setMutationDefaults(programKey, {
+  scope: programScope,
   mutationFn: async (programId: string) => unwrap(await api.workouts.program.$put({ json: { programId } })),
+});
+queryClient.setMutationDefaults(routineSaveKey, {
+  scope: programScope,
+  mutationFn: async (r: Routine) => unwrap(await api.workouts.routines[':id'].$put({ param: { id: r.id }, json: r as RoutineDto })),
+});
+queryClient.setMutationDefaults(routineDeleteKey, {
+  scope: programScope,
+  mutationFn: async (id: string) => unwrap(await api.workouts.routines[':id'].$delete({ param: { id } })),
 });
 queryClient.setMutationDefaults(avoidKey, {
   mutationFn: async (v: { exerciseId: string; avoid: boolean }) => unwrap(await api.workouts.avoid.$put({ json: v })),
@@ -31,6 +45,32 @@ const toCompleted = (w: WorkoutSummaryDto): CompletedWorkout => ({
   programId: w.programId ?? null, dayId: w.dayId ?? null,
   minutes: w.minutes, workingSets: w.workingSets, volumeKg: w.volumeKg, xp: w.xp, prs: w.prs,
 });
+
+/** Ids with a save / delete still waiting to reach the server (offline or in flight). */
+function pendingIds(key: readonly unknown[], pick: (v: unknown) => string | undefined): Set<string> {
+  return new Set(
+    queryClient.getMutationCache().findAll({ mutationKey: key }).filter((m) => m.state.status === 'pending')
+      .map((m) => pick(m.state.variables)).filter((x): x is string => !!x),
+  );
+}
+
+/**
+ * Routines: per routine the newest edit wins. A routine only on this phone survives while its save is
+ * pending; one deleted here stays deleted while the delete is pending. Anything else missing on the
+ * server was deleted on another phone.
+ */
+export function mergeRoutines(server: readonly RoutineDto[], local: readonly Routine[]): Routine[] {
+  const saving = pendingIds(routineSaveKey, (v) => (v as Routine | undefined)?.id);
+  const deleting = pendingIds(routineDeleteKey, (v) => v as string | undefined);
+  const byId = new Map<string, Routine>();
+  for (const r of server) if (!deleting.has(r.id)) byId.set(r.id, r as Routine);
+  for (const r of local) {
+    const s = byId.get(r.id);
+    if (s ? r.updatedAt > s.updatedAt : saving.has(r.id)) byId.set(r.id, r);
+  }
+  const order = new Map(local.map((r, i) => [r.id, i]));
+  return [...byId.values()].sort((a, b) => (order.get(a.id) ?? 1e9) - (order.get(b.id) ?? 1e9));
+}
 
 /**
  * Server wins for everything it stores; local-only extras are kept only where they can't be stale:
@@ -68,6 +108,7 @@ export function mergeTrainingState(s: TrainingStateResponse) {
       lastSet: { ...s.lastSet, ...cur.lastSet },
       avoid: avoidPending ? cur.avoid : s.avoid,
       notes: { ...cur.notes, ...s.notes },
+      routines: mergeRoutines(s.routines ?? [], cur.routines),
     };
   });
 }

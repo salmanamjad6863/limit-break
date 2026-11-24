@@ -1,5 +1,5 @@
 import { zValidator } from '@hono/zod-validator';
-import { ActiveProgramInput, AvoidExerciseInput, EditWorkoutInput, ExerciseNoteInput, FinishWorkoutInput, ManualWorkoutInput } from '@lb/contracts';
+import { ActiveProgramInput, AvoidExerciseInput, RoutineInput, EditWorkoutInput, ExerciseNoteInput, FinishWorkoutInput, ManualWorkoutInput } from '@lb/contracts';
 import { Hono, type Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
@@ -8,6 +8,7 @@ import { requireAuth } from '../../middleware/auth';
 import * as s from './service';
 import { postMilestones } from '../community/milestones';
 import { getTrainingState, setActiveProgram, setAvoid, TrainingStateError } from './state';
+import { deleteRoutine, listRoutines, saveRoutine } from './routines';
 
 const guard = async <T>(fn: () => Promise<T>): Promise<T> => {
   try {
@@ -36,6 +37,14 @@ export const workoutRoutes = new Hono<AppEnv>()
   .get('/state', async (c) => c.json(await getTrainingState(db(c), me(c))))
   .put('/program', zValidator('json', ActiveProgramInput), async (c) =>
     c.json(await guard(() => setActiveProgram(db(c), me(c), c.req.valid('json').programId))),
+  )
+  /** own weekly routines: list, save (newest edit wins), delete */
+  .get('/routines', async (c) => c.json({ routines: await listRoutines(db(c), me(c)) }))
+  .put('/routines/:id', zValidator('param', z.object({ id: z.uuid() })), zValidator('json', RoutineInput), async (c) =>
+    c.json(await guard(() => saveRoutine(db(c), me(c), c.req.valid('param').id, c.req.valid('json')))),
+  )
+  .delete('/routines/:id', zValidator('param', z.object({ id: z.uuid() })), async (c) =>
+    c.json(await guard(() => deleteRoutine(db(c), me(c), c.req.valid('param').id))),
   )
   .put('/avoid', zValidator('json', AvoidExerciseInput), async (c) =>
     c.json(await guard(() => setAvoid(db(c), me(c), c.req.valid('json').exerciseId, c.req.valid('json').avoid))),

@@ -2,14 +2,17 @@
  * Home dashboard blocks (docs/plans/HOME_QUESTS_REDESIGN.md §3): one "Up next" hero, a Today checklist,
  * a compact hunter card, a stats chart and a boss teaser. Details live in Train and Quests.
  */
-type Rank = 'E' | 'D' | 'C' | 'B' | 'A' | 'S';
+import type { Cosmetic } from '@lb/content';
 import { rankColor, statColors } from '@lb/tokens';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import { useTheme } from '@/theme';
 import { Bar, Button, CountUp, Icon, type IconName, PressableScale, Text } from '@/ui';
-import { HeroEmblem, RankBadge, Ring } from '@/ui/fx';
+import { HunterSigil } from '@/features/avatar/HunterSigil';
+import { RankBadge, Ring } from '@/ui/fx';
+
+type Rank = 'E' | 'D' | 'C' | 'B' | 'A' | 'S';
 
 /* ---------------- Up next ---------------- */
 
@@ -104,8 +107,9 @@ export function TodayList({ items }: { items: TodayItem[] }) {
 
 /* ---------------- Hunter card ---------------- */
 
-export function HunterCard({ name, epithet, accent, level, power, rank, xpInto, xpNeeded, ratio, trialHint, onPress }: {
+export function HunterCard({ name, epithet, accent, level, power, rank, xpInto, xpNeeded, ratio, trialHint, onPress, aura, title }: {
   name: string; epithet: string; accent: string; level: number; power: number; rank: Rank;
+  aura?: Cosmetic | null; title?: string | null;
   xpInto: number; xpNeeded: number; ratio: number; trialHint: { rank: Rank; text: string } | null; onPress: () => void;
 }) {
   const { c, radius, spacing } = useTheme();
@@ -113,9 +117,9 @@ export function HunterCard({ name, epithet, accent, level, power, rank, xpInto, 
     <PressableScale haptic="tap" scaleTo={0.98} onPress={onPress} accessibilityRole="button" accessibilityLabel={`Hunter profile: level ${level}, ${rank}-Rank`}>
       <View style={{ borderRadius: radius.lg, borderWidth: 1, borderColor: c.border, backgroundColor: c.surface, padding: spacing[4], gap: spacing[3] }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
-          <HeroEmblem size={68} color={accent} initial={name.charAt(0).toUpperCase()} />
+          <HunterSigil size={72} color={accent} initial={name.charAt(0).toUpperCase()} aura={aura} />
           <View style={{ flex: 1, gap: 2 }}>
-            <Text variant="label" color={accent} numberOfLines={1}>{epithet}</Text>
+            <Text variant="label" color={accent} numberOfLines={1}>{title ? title.toUpperCase() : epithet}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: spacing[2] }}>
               <Text variant="heading">Level</Text>
               <CountUp variant="stat" value={level} />

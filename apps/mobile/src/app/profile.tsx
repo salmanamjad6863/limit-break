@@ -1,13 +1,15 @@
-import { heroes } from '@lb/content';
-import { levelProgress, powerLevel, RANK_REQUIREMENTS, RANKS } from '@lb/engine';
+import { achievementById, heroes } from '@lb/content';
+import { levelProgress, powerLevel, tierName } from '@lb/engine';
 import { rankColor, statColors } from '@lb/tokens';
 import { router } from 'expo-router';
-import { View } from 'react-native';
-import { useMe, useProgression, useVerifyTrial } from '@/features/progression';
+import { Alert, View } from 'react-native';
+import { RankCarousel, useMe, useProgression, useVerifyTrial } from '@/features/progression';
 import { exerciseName } from '@/features/training';
 import { useTheme } from '@/theme';
-import { Appear, Bar, Button, Card, CountUp, Icon, Page, Pill, ScreenHeader, SectionHeader, SettingsGear, Text } from '@/ui';
-import { HeroEmblem, RankBadge } from '@/ui/fx';
+import { Appear, Bar, Button, Card, CountUp, Icon, Page, Pill, PressableScale, ScreenHeader, SectionHeader, SettingsGear, Text } from '@/ui';
+import { AchievementBadge, RankBadge } from '@/ui/fx';
+import { badgeIcon, recentUnlocks, tierCounts, useAchievements } from '@/features/achievements';
+import { pickProfilePhoto, ProfilePicture, useMyLook, useProfilePhoto } from '@/features/avatar';
 
 const STAT_INFO: Record<string, { name: string; raise: string }> = {
   STR: { name: 'Strength', raise: 'Log heavier lifts or reach harder calisthenics progressions.' },
@@ -23,6 +25,10 @@ export default function HunterProfile() {
   const { c, spacing, radius } = useTheme();
   const { data: me } = useMe();
   const { data: prog } = useProgression();
+  const { data: ach } = useAchievements();
+  const look = useMyLook();
+  const photo = useProfilePhoto((s) => s.photo);
+  const setPhoto = useProfilePhoto((s) => s.set);
   if (!me?.state || !prog) return <Page header={<ScreenHeader title="Hunter profile" />}><Text dim>Loading…</Text></Page>;
 
   const hero = heroes.find((h) => h.id === me.heroId) ?? heroes[0]!;
@@ -38,9 +44,22 @@ export default function HunterProfile() {
       <Appear index={0}>
         <Card tint={hero.accent}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
-            <HeroEmblem size={96} color={hero.accent} initial={(me.hunterName ?? 'H').charAt(0).toUpperCase()} />
+            <PressableScale haptic="tap" accessibilityRole="button" accessibilityLabel="Profile picture. Change photo or frame"
+              onPress={() => Alert.alert('Profile picture', 'Your photo stays on this phone. In Community, others see your initial in your frame.', [
+                { text: 'Choose photo', onPress: () => void pickProfilePhoto('library') },
+                { text: 'Take photo', onPress: () => void pickProfilePhoto('camera') },
+                ...(photo ? [{ text: 'Remove photo', style: 'destructive' as const, onPress: () => setPhoto(null) }] : []),
+                { text: 'Change frame', onPress: () => router.push('/style?slot=frame') },
+                { text: 'Cancel', style: 'cancel' as const },
+              ])}>
+              <ProfilePicture size={104} photo={photo} color={hero.accent} initial={(me.hunterName ?? 'H').charAt(0).toUpperCase()} frame={look.frame} />
+              <View style={{ position: 'absolute', right: 4, bottom: 4, width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: c.surfaceRaised, borderWidth: 1, borderColor: c.border }}>
+                <Icon name="camera" size={14} color={c.text} />
+              </View>
+            </PressableScale>
             <View style={{ flex: 1, gap: 2 }}>
               <Text variant="headline">{me.hunterName}</Text>
+              {ach?.equippedTitle ? <Text variant="caption" color={c.accentGlow} style={{ fontFamily: 'Inter_600SemiBold', letterSpacing: 0.5 }}>{ach.equippedTitle.toUpperCase()}</Text> : null}
               <Text variant="caption" color={hero.accent}>{`${hero.epithet} · ${me.heroClass?.toLowerCase().replace(/^\w/, (x) => x.toUpperCase()) ?? ''}`}</Text>
               <View style={{ flexDirection: 'row', gap: spacing[4], marginTop: spacing[1] }}>
                 <View><Text variant="caption" muted>Level</Text><CountUp variant="stat" value={lp.level} style={{ fontSize: 26, lineHeight: 30 }} /></View>
@@ -51,33 +70,39 @@ export default function HunterProfile() {
           </View>
           <Bar ratio={lp.ratio} height={6} />
           <Text variant="caption" muted>{`${lp.intoLevel.toLocaleString()} / ${lp.needed.toLocaleString()} XP to level ${lp.level + 1}`}</Text>
-          <Button size="md" variant="ghost" icon="color-palette-outline" label="Change name & sigil" onPress={() => router.push('/settings/identity')} />
+          <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+            <View style={{ flex: 1 }}><Button size="md" variant="secondary" icon="sparkles-outline" label="Style" onPress={() => router.push('/style')} /></View>
+            <View style={{ flex: 1 }}><Button size="md" variant="ghost" icon="color-palette-outline" label="Identity" onPress={() => router.push('/settings/identity')} /></View>
+          </View>
         </Card>
       </Appear>
 
+      {/* Achievements showcase */}
+      {ach ? (
+        <Appear index={1} style={{ gap: spacing[3] }}>
+          <SectionHeader title="Achievements" action="Trophy case" onAction={() => router.push('/achievements')} />
+          <PressableScale haptic="tap" onPress={() => router.push('/achievements')} accessibilityRole="button" accessibilityLabel="Open trophy case">
+            <Card>
+              {recentUnlocks(ach.progress, 5).length ? (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  {recentUnlocks(ach.progress, 5).map((u) => {
+                    const def = achievementById.get(u.id)!;
+                    return <AchievementBadge key={`${u.id}:${u.tier}`} tier={tierName(def, u.tier)} icon={badgeIcon(def)} size={56} />;
+                  })}
+                </View>
+              ) : (
+                <Text variant="callout" dim>Finish your first workout to earn your first badge.</Text>
+              )}
+              <Text variant="caption" muted>{`${tierCounts(ach.progress).earned} of ${tierCounts(ach.progress).total} tiers earned · ${ach.titles.length} title${ach.titles.length === 1 ? '' : 's'}`}</Text>
+            </Card>
+          </PressableScale>
+        </Appear>
+      ) : null}
+
       {/* Rank ladder */}
       <Appear index={1} style={{ gap: spacing[3] }}>
-        <SectionHeader title="Rank" />
-        <Card>
-          {RANKS.map((r, i) => {
-            const isCurrent = r === rank;
-            const reached = RANKS.indexOf(rank) >= i;
-            const isNext = r === t.target;
-            const req = r === 'E' ? null : RANK_REQUIREMENTS[r];
-            return (
-              <View key={r} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], opacity: reached || isNext ? 1 : 0.45 }}>
-                <View style={{ width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: `${rankColor[r]}${reached ? '33' : '14'}`, borderWidth: isCurrent ? 1.5 : 0, borderColor: rankColor[r] }}>
-                  <Text variant="heading" color={rankColor[r]}>{r}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text variant="callout">{`${r}-Rank`}</Text>
-                  <Text variant="caption" muted>{req ? `Level ${req.level} · trial score ${req.composite}+ · no event under ${req.minEvent}` : 'Every hunter starts here'}</Text>
-                </View>
-                {isCurrent ? <Pill label="Current" color={rankColor[r]} /> : reached ? <Icon name="checkmark-circle" size={18} color={c.success} /> : isNext ? <Pill label="Next" color={c.accentGlow} /> : <Icon name="lock-closed" size={16} color={c.textMuted} />}
-              </View>
-            );
-          })}
-        </Card>
+        <SectionHeader title="Rank mastery" />
+        <RankCarousel rank={rank} level={lp.level} next={t.target ?? null} />
         {t.target ? (
           <Card tint={rankColor[t.target]}>
             <Text variant="heading">{`${t.target}-Rank Trial`}</Text>

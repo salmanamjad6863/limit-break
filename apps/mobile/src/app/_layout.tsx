@@ -16,6 +16,8 @@ import { CinematicOverlay } from '@/features/celebrations';
 import { progressionKeys, useMe } from '@/features/progression';
 import { useAuthBootstrap, useSession } from '@/features/session';
 import { useTrainingRestore } from '@/features/training/sync';
+import { useChallengesRestore } from '@/features/challenges/api';
+import { useAchievementWatcher } from '@/features/achievements';
 import { track } from '@/lib/analytics';
 import { reportError, startMonitoring } from '@/lib/monitoring';
 import { queryClient, queryPersister } from '@/lib/query';
@@ -79,6 +81,8 @@ function Blocker({ overlay, error }: { overlay: boolean; error: boolean }) {
 
 function Bootstrap() {
   useTrainingRestore();
+  useChallengesRestore();
+  useAchievementWatcher();
   const isRestoring = useIsRestoring();
   const status = useSession((s) => s.status);
   const isGuest = useSession((s) => s.isGuest);
@@ -133,6 +137,11 @@ function Bootstrap() {
         <Stack.Protected guard={g.app}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="programs" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="routines" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="routine" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="challenge" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="achievements" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="style" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="program/[id]" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="exercises" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="exercise/[id]" options={{ animation: 'slide_from_right' }} />
@@ -152,6 +161,7 @@ function Bootstrap() {
           {/* dev-only labs: inside the guard so a fresh (not-onboarded) user restored onto them still lands on onboarding */}
           <Stack.Screen name="dev/aura" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="dev/trainer" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="dev/frames" options={{ animation: 'slide_from_right' }} />
         </Stack.Protected>
         <Stack.Protected guard={g.consent}>
           <Stack.Screen name="consent" options={{ gestureEnabled: false }} />

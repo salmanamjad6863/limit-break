@@ -1,4 +1,4 @@
-import type { WorkoutEdits, WorkoutMode } from '@lb/engine';
+import { routineIdOf, type Routine, type WorkoutEdits, type WorkoutMode } from '@lb/engine';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { zustandStorage } from '@/lib/storage';
@@ -68,6 +68,11 @@ interface TrainingState {
   /** history edits (demo mode; the server is authoritative when signed in) */
   updateWorkout: (id: string, patch: Partial<CompletedWorkout>) => void;
   removeWorkout: (id: string) => void;
+  /** the hunter's own weekly routines (server copy merged in by sync.ts) */
+  routines: Routine[];
+  upsertRoutine: (r: Routine) => void;
+  /** also clears it as the active program */
+  removeRoutine: (id: string) => void;
 }
 
 export const useTraining = create<TrainingState>()(
@@ -116,6 +121,14 @@ export const useTraining = create<TrainingState>()(
             xpByDate: w ? { ...s.xpByDate, [w.date]: Math.max(0, (s.xpByDate[w.date] ?? 0) - w.xp) } : s.xpByDate,
           };
         }),
+      routines: [],
+      upsertRoutine: (r) =>
+        set((s) => ({ routines: s.routines.some((x) => x.id === r.id) ? s.routines.map((x) => (x.id === r.id ? r : x)) : [...s.routines, r] })),
+      removeRoutine: (id) =>
+        set((s) => ({
+          routines: s.routines.filter((x) => x.id !== id),
+          ...(routineIdOf(s.activeProgramId) === id ? { activeProgramId: null, completedSessions: 0 } : {}),
+        })),
     }),
     { name: 'lb-training', storage: createJSONStorage(() => zustandStorage) },
   ),

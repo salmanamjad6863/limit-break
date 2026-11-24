@@ -15,6 +15,8 @@ import { nutritionRoutes } from './modules/nutrition/routes';
 import { profileRoutes } from './modules/profile/routes';
 import { progressionRoutes } from './modules/progression/routes';
 import { questRoutes } from './modules/quests/routes';
+import { challengeRoutes } from './modules/challenges/routes';
+import { achievementRoutes } from './modules/achievements/routes';
 import { socialRoutes } from './modules/social/routes';
 import { trainingRoutes } from './modules/training/routes';
 import { workoutRoutes } from './modules/workouts/routes';
@@ -44,6 +46,8 @@ export function createApp(deps: Deps) {
     .route('/workouts', workoutRoutes)
     .route('/progression', progressionRoutes)
     .route('/quests', questRoutes)
+    .route('/challenges', challengeRoutes)
+    .route('/achievements', achievementRoutes)
     .route('/nutrition', nutritionRoutes)
     .route('/community', communityRoutes)
     .route('/social', socialRoutes)

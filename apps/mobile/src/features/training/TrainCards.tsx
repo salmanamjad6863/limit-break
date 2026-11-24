@@ -4,7 +4,7 @@
  * licensed clip provider is plugged into ExerciseMedia; layouts already use 1:1 thumbs and posters.
  */
 import type { FocusedWorkout, ProgramTemplate, QuickSession } from '@lb/content';
-import type { Experience, PlannedExercise, WorkoutMode } from '@lb/engine';
+import { routineIdOf, type Experience, type PlannedExercise, type WorkoutMode } from '@lb/engine';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { ScrollView, View } from 'react-native';
@@ -51,9 +51,15 @@ export function ProgramHero({ today, completed, level }: { today: Today; complet
   const perBlock = p.days.length * p.blockWeeks;
   const week = (Math.floor(completed / p.days.length) % p.blockWeeks) + 1;
   const ratio = (completed % perBlock) / perBlock;
+  // own routine: progress is this week's workouts against its scheduled days
+  const routineId = routineIdOf(p.id);
+  const doneThisWeek = today.week.filter((d) => d.doneName).length;
+  const planned = Math.max(1, today.weekdays.length);
   return (
-    <PressableScale haptic="tap" onPress={() => router.push(`/program/${p.id}`)} accessibilityRole="button"
-      accessibilityLabel={`${p.name}, ${LEVEL_LABEL[level]}, week ${week} of ${p.blockWeeks}. Open program`}>
+    <PressableScale haptic="tap" onPress={() => router.push(routineId ? `/routine/${routineId}` : `/program/${p.id}`)} accessibilityRole="button"
+      accessibilityLabel={routineId
+        ? `${p.name}, your routine, ${doneThisWeek} of ${planned} workouts this week. Edit routine`
+        : `${p.name}, ${LEVEL_LABEL[level]}, week ${week} of ${p.blockWeeks}. Open program`}>
       <View style={{ borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: `${color}55` }}>
         <LinearGradient colors={[`${color}55`, `${color}14`, c.surface]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={{ padding: spacing[4], gap: spacing[3] }}>
@@ -63,22 +69,31 @@ export function ProgramHero({ today, completed, level }: { today: Today; complet
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
             <View style={{ flex: 1, gap: 6 }}>
-              <Text variant="label" color={c.textDim}>Current program</Text>
+              <Text variant="label" color={c.textDim}>{routineId ? 'Your routine' : 'Current program'}</Text>
               <Text variant="title" numberOfLines={2}>{p.name}</Text>
               <View style={{ flexDirection: 'row', gap: spacing[2], flexWrap: 'wrap' }}>
                 <LevelChip level={level} />
                 <Chip icon="calendar-outline" label={`${today.weekdays.length} days / week`} />
               </View>
             </View>
-            <Ring ratio={ratio} size={76} stroke={7} color={color}>
-              <Text variant="micro" muted>WEEK</Text>
-              <Text variant="headline">{`${week}/${p.blockWeeks}`}</Text>
-            </Ring>
+            {routineId ? (
+              <Ring ratio={Math.min(1, doneThisWeek / planned)} size={76} stroke={7} color={color}>
+                <Text variant="micro" muted>THIS WEEK</Text>
+                <Text variant="headline">{`${doneThisWeek}/${planned}`}</Text>
+              </Ring>
+            ) : (
+              <Ring ratio={ratio} size={76} stroke={7} color={color}>
+                <Text variant="micro" muted>WEEK</Text>
+                <Text variant="headline">{`${week}/${p.blockWeeks}`}</Text>
+              </Ring>
+            )}
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text variant="caption" dim>{`${completed} ${completed === 1 ? 'session' : 'sessions'} done · Day ${today.dayIndex + 1} of ${p.days.length} next`}</Text>
+            <Text variant="caption" dim>{routineId
+              ? `Next: ${today.workout.name}`
+              : `${completed} ${completed === 1 ? 'session' : 'sessions'} done · Day ${today.dayIndex + 1} of ${p.days.length} next`}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-              <Text variant="callout" color={c.accentGlow}>Details</Text>
+              <Text variant="callout" color={c.accentGlow}>{routineId ? 'Edit' : 'Details'}</Text>
               <Icon name="chevron-forward" size={14} color={c.accentGlow} />
             </View>
           </View>
@@ -120,6 +135,8 @@ export function WeekStrip({ today }: { today: Today }) {
   const { c, radius, spacing } = useTheme();
   // done names can carry a suffix ("Push A · Chest"), so match on the day name prefix
   const focusOf = (name: string | null) => (name ? today.program.days.find((d) => name === d.name || name.startsWith(d.name))?.focus ?? null : null);
+  // a program's missed session moves to the next training day; an own routine keeps its weekdays, so it's just missed
+  const fixedWeek = !!routineIdOf(today.program.id);
   return (
     <View style={{ flexDirection: 'row', gap: 6 }}>
       {today.week.map((d) => {
@@ -130,7 +147,7 @@ export function WeekStrip({ today }: { today: Today }) {
         const moved = d.missed;
         const rest = !name && !moved;
         const border = d.isToday ? c.accent : done ? `${c.success}66` : c.border;
-        const status = done ? `done: ${name}` : moved ? 'moved to your next day' : rest ? 'rest' : `${name}`;
+        const status = done ? `done: ${name}` : moved ? (fixedWeek ? 'missed' : 'moved to your next day') : rest ? 'rest' : `${name}`;
         return (
           <View key={d.date} accessibilityLabel={`${d.label}${d.isToday ? ', today' : ''}: ${status}`}
             style={{
@@ -144,7 +161,7 @@ export function WeekStrip({ today }: { today: Today }) {
                   <MuscleMap primary={FOCUS_MUSCLES[focus]} width={30} showLabels={false} />
                 </View>
               ) : (
-                <Icon name={done ? 'barbell-outline' : moved ? 'arrow-redo-outline' : 'moon-outline'} size={15} color={done ? c.success : moved ? c.textMuted : `${c.mana}AA`} />
+                <Icon name={done ? 'barbell-outline' : moved ? (fixedWeek ? 'remove-circle-outline' : 'arrow-redo-outline') : 'moon-outline'} size={15} color={done ? c.success : moved ? c.textMuted : `${c.mana}AA`} />
               )}
             </View>
             <View style={{ height: 14, justifyContent: 'center' }}>
@@ -153,7 +170,7 @@ export function WeekStrip({ today }: { today: Today }) {
               ) : d.isToday ? (
                 <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.accentGlow }} />
               ) : (
-                <Text variant="micro" muted>{focus && !moved ? FOCUS_LABEL[focus] : moved ? 'moved' : ''}</Text>
+                <Text variant="micro" muted>{focus && !moved ? FOCUS_LABEL[focus] : moved ? (fixedWeek ? 'missed' : 'moved') : ''}</Text>
               )}
             </View>
           </View>

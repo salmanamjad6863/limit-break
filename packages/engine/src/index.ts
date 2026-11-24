@@ -13,3 +13,6 @@ export * from './quests';
 export * from './follow';
 export * from './training/schedule';
 export * from './training/personalize';
+export * from './training/routine';
+export * from './quests/challenge';
+export * from './progression/achievements';

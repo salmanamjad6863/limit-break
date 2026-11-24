@@ -84,9 +84,10 @@ export const PostCard = memo(function PostCard({ post, canReact, showComments = 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
         <PressableScale haptic="tap" onPress={() => router.push(`/community/hunter/${post.author.handle}`)} accessibilityRole="link" accessibilityLabel={`Open @${post.author.handle}`}
           style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], flex: 1 }}>
-          <Avatar handle={post.author.handle} color={color} rank={post.author.rank} />
+          <Avatar handle={post.author.handle} color={color} rank={post.author.rank} frame={post.author.frame} aura={post.author.aura} />
           <View style={{ flex: 1 }}>
             <Text variant="heading" numberOfLines={1}>{`@${post.author.handle}`}</Text>
+            {post.author.title ? <Text variant="micro" color={c.accentGlow} numberOfLines={1} style={{ letterSpacing: 0.5 }}>{post.author.title.toUpperCase()}</Text> : null}
             <Text variant="caption" muted>{`${ago(post.createdAt)} · Lv ${post.author.level}${post.visibility === 'followers' ? ' · Followers' : post.visibility === 'private' ? ' · Only me' : ''}`}</Text>
           </View>
         </PressableScale>

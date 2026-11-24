@@ -2,6 +2,7 @@ import { exerciseById, programById } from '@lb/content';
 import type { TrainingStateResponse } from '@lb/contracts';
 import type { PrismaClient } from '@lb/db';
 import { getNotes, listWorkouts } from './service';
+import { listRoutines, ownsRoutineProgram } from './routines';
 
 export class TrainingStateError extends Error {
   constructor(public status: 400 | 404, message: string) {
@@ -18,7 +19,7 @@ export async function getTrainingState(prisma: PrismaClient, userId: string): Pr
     select: { activeProgramId: true, programStartedAt: true, avoidExercises: true },
   });
   const active = p?.activeProgramId ?? null;
-  const [recent, completedSessions, records, lastSets, notes] = await Promise.all([
+  const [recent, completedSessions, records, lastSets, notes, routines] = await Promise.all([
     listWorkouts(prisma, userId, undefined, 60),
     active
       ? prisma.workoutSession.count({
@@ -34,6 +35,7 @@ export async function getTrainingState(prisma: PrismaClient, userId: string): Pr
       ORDER BY ws."exerciseId", ws."completedAt" DESC
       LIMIT 1000`,
     getNotes(prisma, userId),
+    listRoutines(prisma, userId),
   ]);
   return {
     activeProgramId: active,
@@ -43,12 +45,13 @@ export async function getTrainingState(prisma: PrismaClient, userId: string): Pr
     lastSet: Object.fromEntries(lastSets.map((r) => [r.exerciseId, { reps: r.reps, loadKg: r.weightKg }])),
     avoid: p?.avoidExercises ?? [],
     notes: notes.notes,
+    routines,
   };
 }
 
 /** Picking a program restarts its rotation (same rule as the app). */
 export async function setActiveProgram(prisma: PrismaClient, userId: string, programId: string) {
-  if (!programById.has(programId)) throw new TrainingStateError(400, 'unknown program');
+  if (!programById.has(programId) && !(await ownsRoutineProgram(prisma, userId, programId))) throw new TrainingStateError(400, 'unknown program');
   const p = await prisma.profile.findUnique({ where: { id: userId }, select: { activeProgramId: true } });
   if (!p) throw new TrainingStateError(404, 'profile not found');
   if (p.activeProgramId !== programId) {

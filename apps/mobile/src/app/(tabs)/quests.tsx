@@ -4,6 +4,7 @@ import { STREAK } from '@lb/engine';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
+import { ChallengeCard, useChallenges } from '@/features/challenges';
 import { useBoss, useQuestActions, useQuests } from '@/features/quests';
 import { BossCard, SideTile, StreakHero, TileGrid } from '@/features/quests/QuestCards';
 import { SlotRow } from '@/features/quests/SlotRow';
@@ -20,6 +21,7 @@ export default function QuestsScreen() {
   const { data: boss } = useBoss();
   const deadline = useQuestDeadline();
   const history = useTraining((s) => s.history);
+  const challenges = useChallenges();
 
   if (!data) return <Screen title="Quests"><Text dim>Loading…</Text></Screen>;
   const { daily, penalty, streak } = data;
@@ -126,16 +128,32 @@ export default function QuestsScreen() {
         )}
       </Appear>
 
+      {/* Own habit challenges */}
+      <Appear index={5} style={{ gap: spacing[3] }}>
+        <SectionHeader title="Challenges" action={challenges.some((x) => x.status !== 'ACTIVE') ? 'Past' : undefined}
+          onAction={() => { const last = challenges.find((x) => x.status !== 'ACTIVE'); if (last) router.push(`/challenge/${last.id}`); }} />
+        {challenges.filter((x) => x.status === 'ACTIVE').map((ch) => <ChallengeCard key={ch.id} c={ch} today={data.date} />)}
+        <PressableScale haptic="tap" onPress={() => router.push('/challenge/new')} accessibilityRole="button" accessibilityLabel="Start a challenge"
+          style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[4], borderRadius: radius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: `${c.accent}80` }}>
+          <Icon name="flag-outline" size={20} color={c.accentGlow} />
+          <View style={{ flex: 1 }}>
+            <Text variant="callout" style={{ fontFamily: 'Inter_600SemiBold' }}>Start a challenge</Text>
+            <Text variant="caption" muted>30 days of push-ups, 60 days of 10k steps, your own habits. A missed day never restarts it.</Text>
+          </View>
+          <Icon name="chevron-forward" size={16} color={c.textMuted} />
+        </PressableScale>
+      </Appear>
+
       {/* Weekly boss */}
       {boss ? (
-        <Appear index={5} style={{ gap: spacing[3] }}>
+        <Appear index={6} style={{ gap: spacing[3] }}>
           <SectionHeader title="Weekly boss" action="Resets Monday" />
           <BossCard boss={boss} onClaim={() => claimBoss.mutate(boss)} claiming={claimBoss.isPending} />
         </Appear>
       ) : null}
 
       {/* Sick mode */}
-      <Appear index={6}>
+      <Appear index={7}>
         <PressableScale haptic="tap" disabled={!streak.sickToday && (!streak.sickAllowed || dailyDone)} onPress={() => setSick.mutate(!streak.sickToday)}
           accessibilityRole="switch" accessibilityState={{ checked: streak.sickToday, disabled: !streak.sickToday && (!streak.sickAllowed || dailyDone) }}
           accessibilityLabel="Sick or injured today: freeze streak">

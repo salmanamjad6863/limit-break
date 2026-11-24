@@ -1,4 +1,5 @@
 import type { FinishWorkoutInput, FinishWorkoutResponse, Reward } from '@lb/contracts';
+import { refreshAchievements } from '@/features/achievements/api';
 import { computeWorkoutRewards, gameDate, rpeZone, type FinishedSet } from '@lb/engine';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCelebrations } from '@/features/celebrations';
@@ -107,6 +108,7 @@ export function useFinishWorkout() {
       t.addXp(date, granted);
 
       enqueue(rewards as Reward[]);
+      refreshAchievements();
       track({ event: 'workout_finished', kind: session.kind === 'quick' ? 'quick' : 'program', minutes_bucket: minutesBucket(minutes), working_sets: working.length, prs: prs.length });
       const lvl = (rewards as Reward[]).find((r) => r.type === 'levelUp') as Extract<Reward, { type: 'levelUp' }> | undefined;
       return {
